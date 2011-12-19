@@ -1,0 +1,23 @@
+Manifest-Version: 1.0
+Export-Package: org.soyatec.windowsazure.authenticate,
+ org.soyatec.windowsazure.blob,
+ org.soyatec.windowsazure.blob.internal,
+ org.soyatec.windowsazure.blob.io,
+ org.soyatec.windowsazure.constants,
+ org.soyatec.windowsazure.error,
+ org.soyatec.windowsazure.internal.util,
+ org.soyatec.windowsazure.internal.util.ssl,
+ org.soyatec.windowsazure.internal.util.xml,
+ org.soyatec.windowsazure.management,
+ org.soyatec.windowsazure.queue,
+ org.soyatec.windowsazure.table,
+ org.soyatec.windowsazure.table.internal
+Bundle-Vendor: %Bundle-Vendor
+Bundle-ClassPath: .
+Bundle-Version: 2.0.1.qualifier
+Bundle-Name: %Bundle-Name
+Bundle-ManifestVersion: 2
+Bundle-SymbolicName: org.soyatec.windows.azure.java;singleton:=true
+Bundle-RequiredExecutionEnvironment: J2SE-1.5
+Require-Bundle: org.soyatec.windows.azure.lib;bundle-version="1.0.1"
+

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<site>
+   <feature url="features/org.soyatec.windows.azure.java.feature_2.0.1.qualifier.jar" id="org.soyatec.windows.azure.java.feature" version="2.0.1.qualifier">
+      <category name="Windows Azure SDK for Java"/>
+   </feature>
+   <category-def name="Windows Azure SDK for Java" label="Windows Azure SDK for Java"/>
+</site>
