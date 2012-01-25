@@ -1,0 +1,121 @@
+/*
+ * Copyright J. Craig Venter Institute, 2011
+ *
+ * The creation of this program was supported by the U.S. National
+ * Science Foundation grant 1048199 and the Microsoft allocation
+ * in the MS Azure cloud.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+@import url("messages.css");
+
+/* CLEAN FORM
+/////////////////////////////*/
+
+/* General */
+
+.cleanform {
+	font-size:1em;
+	width:40em;
+	color:#1b1b1b;
+	text-align:left;
+	margin:1em auto
+}
+
+/* Elements */
+
+.cleanform  label,.cleanform legend {
+	padding:0;
+	margin:0.3em 0
+}
+
+.cleanform fieldset {
+	padding:0.7em;
+	border:1px solid #ddd;
+	margin:0 0 0.5em 0
+}
+
+.cleanform label {
+	font-weight:bold
+}
+
+.cleanform fieldset input {
+	width:70%;
+	line-height:1.5em;
+	padding:0.15em
+}
+
+.cleanform .radio input,
+.cleanform .checkbox input {
+	width:auto;
+	border:none;
+	margin:0 1.5em 0 0
+}
+
+.cleanform input, .cleanform textarea, .cleanform select {
+	display:block;
+	margin-bottom:1em;
+	font-size:1em;
+	border:1px solid #bbb;
+	padding:0.15em;
+	margin-right:1em
+}
+
+.cleanform .radio label, .cleanform .radio input,
+.cleanform .checkbox label, .cleanform .checkbox input {
+	display:inline;
+	margin:0 1.5em 0 0
+}
+
+.cleanform .radio input, .cleanform .checkbox input {
+	margin:0 0.3em 0 0
+}
+
+.cleanform .multiple label{
+	float:left;
+	width:29%;
+	overflow:hidden;
+	padding-left:1px
+}
+
+.cleanform .multiple input {
+	cursor:pointer
+}
+
+
+/* information */
+
+.cleanform .formInfo {
+	margin-bottom:1em;
+	padding-bottom:0.5em;
+	border-bottom:0.1em solid #ddd
+}
+
+.cleanform .formInfo h2 {
+	color:#00889e;
+	font-weight:bold;
+	font-size:1.2em;
+	margin-bottom:1em
+}
+
+.cleanform .formInfo p{
+	text-align:justify
+}
+
+.cleanform .required {
+	color:#ff3838;
+	font-weight:bold;
+	font-size:0.8em
+}

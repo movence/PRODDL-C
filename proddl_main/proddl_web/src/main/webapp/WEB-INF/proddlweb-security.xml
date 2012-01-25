@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright J. Craig Venter Institute, 2011
+  ~
+  ~ The creation of this program was supported by the U.S. National
+  ~ Science Foundation grant 1048199 and the Microsoft allocation
+  ~ in the MS Azure cloud.
+  ~
+  ~ This program is free software: you can redistribute it and/or modify
+  ~ it under the terms of the GNU General Public License as published by
+  ~ the Free Software Foundation, either version 3 of the License, or
+  ~ (at your option) any later version.
+  ~
+  ~ This program is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  ~ GNU General Public License for more details.
+  ~
+  ~ You should have received a copy of the GNU General Public License
+  ~ along with this program.  If not, see <http://www.gnu.org/licenses/>.
+  -->
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:security="http://www.springframework.org/schema/security"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:p="http://www.springframework.org/schema/p"
+       xsi:schemaLocation="
+            http://www.springframework.org/schema/beans     http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+			http://www.springframework.org/schema/security  http://www.springframework.org/schema/security/spring-security-3.1.xsd
+			http://www.springframework.org/schema/context   http://www.springframework.org/schema/context/spring-context-3.0.xsd">
+
+    <bean id="basicAuthenticationFilter"
+          class="org.springframework.security.web.authentication.www.BasicAuthenticationFilter"
+          p:authenticationManager-ref="authenticationManager"
+          p:authenticationEntryPoint-ref="basicAuthenticationEntryPoint" />
+    <bean id="basicAuthenticationEntryPoint"
+          class="pdl.web.filter.JsonBasicAuthenticationEP"
+          p:realmName="proddl"/>
+    <bean id="formAuthenticationEntryPoint"
+          class="org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint"
+          p:loginFormUrl="/pdl/w/login"/>
+    <bean id="daep" class="org.springframework.security.web.authentication.DelegatingAuthenticationEntryPoint">
+        <constructor-arg>
+            <map>
+                <entry key="hasHeader('User-Agent','Mozilla')
+                            or hasHeader('User-Agent','Opera')
+                            or hasHeader('User-Agent','Explorer')"
+                    value-ref="formAuthenticationEntryPoint" />
+            </map>
+        </constructor-arg>
+        <property name="defaultEntryPoint" ref="basicAuthenticationEntryPoint"/>
+    </bean>
+
+    <!--<security:http pattern="/pdl/r/**" create-session="stateless" >
+        <security:intercept-url pattern="*" access="ROLE_USER" />
+        <security:http-basic />
+        &lt;!&ndash;<security:custom-filter ref="restAuthenticationFilter" after="BASIC_AUTH_FILTER"/>&ndash;&gt;
+        &lt;!&ndash;<security:custom-filter ref="digestFilter" before="BASIC_AUTH_FILTER" />&ndash;&gt;
+    </security:http>
+    <bean id="restAuthenticationFilter" class="pdl.web.filter.RestAuthenticationFilter" />-->
+
+    <!-- regular authentication check for GUI -->
+    <security:http entry-point-ref="daep" use-expressions="true" access-denied-page="/pdl/w/denied">
+        <security:intercept-url pattern="/favicon.ico" access="permitAll" />
+        <security:intercept-url pattern="/resources/**" access="permitAll" />
+        <security:intercept-url pattern="/pdl/w/login" access="permitAll" />
+        <security:intercept-url pattern="/pdl/w/admin/**" access="hasRole('ROLE_ADMIN')"/>
+        <security:intercept-url pattern="/**" access="hasRole('ROLE_USER')"/>
+
+        <security:form-login
+                login-page="/pdl/w/login"
+                authentication-failure-url="/pdl/w/login?error=true"
+                default-target-url="/pdl/w/main"/>
+
+        <security:logout
+                invalidate-session="true"
+                logout-success-url="/pdl/w/login"
+                logout-url="/pdl/w/logout"/>
+
+        <security:custom-filter position="BASIC_AUTH_FILTER" ref="basicAuthenticationFilter" />
+    </security:http>
+
+    <security:authentication-manager alias="authenticationManager">
+        <security:authentication-provider user-service-ref="userManagementService">
+            <security:password-encoder ref="passwordShaEncoder"/>
+        </security:authentication-provider>
+    </security:authentication-manager>
+    <bean id="passwordShaEncoder" class="org.springframework.security.authentication.encoding.ShaPasswordEncoder"/>
+    <bean id="userManagementService" class="pdl.web.service.UserManagementService"/>
+
+</beans>
