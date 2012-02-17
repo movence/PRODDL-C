@@ -118,7 +118,6 @@ namespace PRODDLMaster
 
             while (true)
             {
-                Trace.WriteLine("Is this getting printed???");
                 Thread.Sleep(10000);
             }
         }
@@ -244,7 +243,7 @@ namespace PRODDLMaster
                 IPEndPoint internalAddress = RoleEnvironment.CurrentRoleInstance.InstanceEndpoints["CatalogServer"].IPEndpoint;
                 String roleRoot = Environment.GetEnvironmentVariable("RoleRoot");
 
-                String jarPath = roleRoot + @"\approot\tools\proddl_main.jar";
+                String jarPath = roleRoot + @"\approot\tools\proddl_core-1.0.jar";
                 String jreHome = localStoragePath + @"jre";
 
                 Process proc = new SharedTools().buildCloudProcess(

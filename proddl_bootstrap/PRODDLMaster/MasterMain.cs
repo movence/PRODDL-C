@@ -77,6 +77,10 @@ namespace PRODDLMaster
 				};
 			});
 
+            string customTempLocalResourcePath = RoleEnvironment.GetLocalResource("TempStorage").RootPath;
+            Environment.SetEnvironmentVariable("TMP", customTempLocalResourcePath);
+            Environment.SetEnvironmentVariable("TEMP", customTempLocalResourcePath);
+
 			return base.OnStart();
 		}
 

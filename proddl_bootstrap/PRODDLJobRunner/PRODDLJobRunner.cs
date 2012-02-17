@@ -138,7 +138,7 @@ namespace PRODDLJobRunner
 
                 string roleRoot = Environment.GetEnvironmentVariable("RoleRoot");
 
-                string jarPath = roleRoot + @"\approot\tools\proddl_main.jar";
+                string jarPath = roleRoot + @"\approot\tools\proddl_core-1.0.jar";
                 string jreHome = localStoragePath + @"jre";
 
                 Process proc = new SharedTools().buildCloudProcess(
