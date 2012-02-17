@@ -22,7 +22,7 @@
 package pdl.web.service;
 
 import org.codehaus.jackson.map.ObjectMapper;
-import pdl.services.management.JobProcessingManager;
+import pdl.services.management.JobManager;
 import pdl.services.model.JobDetail;
 
 import java.util.Map;
@@ -35,7 +35,7 @@ import java.util.Map;
  */
 public class JobReuqestHandler {
 
-    public Map<String, Object> runJob( String jobName, String inputInString, String userName ) throws Exception {
+    public Map<String, Object> submitJob( String jobName, String inputInString, String userName ) {
         Map<String, Object> rtnJson = null;
 
         try {
@@ -48,20 +48,50 @@ public class JobReuqestHandler {
 
             if( inputInString != null && inputInString.length() > 0 ) {
                 ObjectMapper mapper = new ObjectMapper();
-                inputInMap = mapper.readValue( inputInString, Map.class );
-                for( String key : inputInMap.keySet() ) {
-                    if( "fileId".equals( key ) )
-                        jobDetail.setJobFileUUID( (String)inputInMap.get( key ) );
+                inputInMap = mapper.readValue( inputInString, Map.class);
+                for(Map.Entry<String, Object> entry : inputInMap.entrySet()) {
+                    if( "inputFileId".equals( entry.getKey() ) )
+                        jobDetail.setInputFileUUID((String)entry.getValue());
+                    else if("makeFileId".equals(entry.getKey()))
+                        jobDetail.setMakeflowFileUUID((String)entry.getValue());
                 }
             }
 
-            JobProcessingManager jobManager = new JobProcessingManager();
-            jobManager.addNewJob( jobDetail );
+            JobManager jobManager = new JobManager();
+            jobManager.submitJob(jobDetail);
 
         } catch (Exception ex) {
-            throw ex;
+            ex.printStackTrace();
         }
 
         return rtnJson;
+    }
+
+    public String getJobInfo( String jobId ) {
+        String rtnStr = null;
+
+        try {
+            rtnStr = "{\"t\":\"t\", \"s\":\"s\",\"w\":\"w\" }";
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+
+        return rtnStr;
+    }
+
+    public String getJobResult( String jobId ) {
+        String rtnStr = null;
+
+        try {
+            rtnStr = this.getJobInfo( jobId );
+            if( rtnStr != null ) {
+
+            }
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+
+        return rtnStr;
     }
 }

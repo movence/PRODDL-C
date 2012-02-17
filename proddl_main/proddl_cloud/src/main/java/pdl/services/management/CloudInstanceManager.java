@@ -36,7 +36,6 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import pdl.common.Configuration;
-import pdl.common.StaticValues;
 import pdl.services.model.PerformanceData;
 import pdl.services.storage.BlobOperator;
 import pdl.services.storage.TableOperator;
@@ -67,50 +66,45 @@ public class CloudInstanceManager {
     private TableOperator tableOperator;
 
     public CloudInstanceManager() {
-        try {
-            conf = Configuration.getInstance();
-            initializeManager( conf );
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    public CloudInstanceManager( Configuration conf ) {
-        this.conf = conf;
+        conf = Configuration.getInstance();
         initializeManager( conf );
     }
 
     private void initializeManager( Configuration conf ) {
         try {
-            this.storagePath = (String)conf.getProperty( "STORAGE_PATH" );
+            this.storagePath = conf.getStringProperty( "STORAGE_PATH" );
 
             tableOperator = new TableOperator( conf );
             tableOperator.initDiagnosticsTableClient();
 
             BlobOperator blobOperator = new BlobOperator( conf );
-            String keystoreFilePath = storagePath + File.separator + conf.getProperty( "KEYSTORE_FILE_NAME" );
-            String trustcacertFiePath = storagePath + File.separator + conf.getProperty( "TRUSTCACERT_FILE_NAME" );
+            String keystoreFilePath = storagePath + File.separator + conf.getStringProperty( "KEYSTORE_FILE_NAME" );
+            String trustcacertFiePath = storagePath + File.separator + conf.getStringProperty( "TRUSTCACERT_FILE_NAME" );
 
             //download keystore file for azure management
             if( !new File( keystoreFilePath ).exists() )
-                blobOperator.download( "tools", (String)conf.getProperty( "KEYSTORE_FILE_NAME" ), storagePath );
+                blobOperator.download(
+                        conf.getStringProperty( "BLOB_CONTAINER_TOOLS" ),
+                        conf.getStringProperty( "KEYSTORE_FILE_NAME" ),
+                        storagePath
+                );
             if( !new File( trustcacertFiePath ).exists() )
-                blobOperator.download( "tools", (String)conf.getProperty( "TRUSTCACERT_FILE_NAME" ), storagePath );
+                blobOperator.download(
+                        conf.getStringProperty( "BLOB_CONTAINER_TOOLS" ),
+                        conf.getStringProperty( "TRUSTCACERT_FILE_NAME" ),
+                        storagePath
+                );
 
             manager = new ServiceManagementRest(
-                    (String)conf.getProperty( "SUBSCRIPTION_ID" ),
+                    conf.getStringProperty( "SUBSCRIPTION_ID" ),
                     keystoreFilePath,
-                    (String)conf.getProperty( "CERTIFICATE_PASS" ),
+                    conf.getStringProperty( "CERTIFICATE_PASS" ),
                     trustcacertFiePath,
-                    (String)conf.getProperty( "CERTIFICATE_PASS" ),
-                    (String)conf.getProperty( "CERTIFICATE_ALIAS" ));
+                    conf.getStringProperty( "CERTIFICATE_PASS" ),
+                    conf.getStringProperty( "CERTIFICATE_ALIAS" ));
         } catch(Exception e) {
             e.printStackTrace();
         }
-    }
-
-    public void getServiceStatus() {
-        //TODO need to implement initialization checkups (i.e. table creation for workers' info, etc.)
     }
 
     public String getHostedServiceName() {
@@ -159,18 +153,16 @@ public class CloudInstanceManager {
 
                     Element roleElement = (Element) nodes.item(i);
 
-                    if( roleElement.getAttribute("name").equals( StaticValues.CLOUD_ROLE_WORKER_NAME ) ) {
+                    if( roleElement.getAttribute( "name" ).equals( conf.getStringProperty( "CLOUD_ROLE_WORKER_NAME" ) ) ) {
+
                         NodeList instanceCountNode = roleElement.getElementsByTagName( "Instances" );
                         Element instanceCountElement = (Element)instanceCountNode.item( 0 );
 
                         int currentInstanceCount = Integer.valueOf( instanceCountElement.getAttribute( "count" ) );
 
-
                         if( "up".equals( flag ) ) {
-                            //prevents number of total instances go over 100
-                            //TODO need to change instance number limit
-                            if( currentInstanceCount == 100 ) {
-                                System.out.println( "The number of worker instances is at the limit.");
+                            if( currentInstanceCount == Integer.valueOf( conf.getStringProperty( "MAX_WORKER_INSTANCE" ) ) ) {
+                                System.out.println( "The maximum allowable number of instances has been reached.");
                                 break;
                             }
 
@@ -178,7 +170,9 @@ public class CloudInstanceManager {
                         } else {
                             //prevents instance count becomes 0
                             if( currentInstanceCount == 1 ) {
-                                System.out.println( "There is only one worker instance.");
+                                System.out.printf(
+                                        "There should be at least one %s instance%n", conf.getStringProperty( "CLOUD_ROLE_WORKER_NAME" )
+                                );
                                 break;
                             }
 
@@ -206,12 +200,12 @@ public class CloudInstanceManager {
     }
 
     public boolean scaleUp() {
-        System.out.println( "MainManager - Scale Up" );
+        System.out.println( "CloudInstanceManager - Scale Up Worker instance." );
         return scaleService( "up" , null );
     }
 
     public boolean scaleDown() {
-        System.out.println( "MainManager - Scale Down" );
+        System.out.println( "CloudInstanceManager - Scale Down Worker instance." );
         return scaleService( "down", null );
     }
 
@@ -219,29 +213,23 @@ public class CloudInstanceManager {
         try {
             List<ITableServiceEntity> entityList = tableOperator.queryListBySearchKey(
                     TABLE_PERFORMANCE_COUNTER_NAME, COLUMN_PERFORMANCE_COUNTER_NAME,
-                    COLUMN_PERFORMANCE_COUNTER_VALUE, null, null, new PerformanceData() );
+                    COLUMN_PERFORMANCE_COUNTER_VALUE, null, null, PerformanceData.class );
 
-            float processorTimeFactor = 0;
-            for( ITableServiceEntity entity : entityList ) {
-                processorTimeFactor += (float)( ( PerformanceData )entity ).getCounterValue();
-                tableOperator.deleteEntity( TABLE_PERFORMANCE_COUNTER_NAME, entity );
-            }
-
-            processorTimeFactor /= entityList.size();
-            System.err.println( "Average Processor Time of Total Processors: " + processorTimeFactor );
-
-            /*if( processorTimeFactor > 90 || processorTimeFactor < 30 ) {
-                //deletes all performance data after scaling process happens
+            if( entityList != null && entityList.size() > 0 ) {
+                float processorTimeFactor = 0;
                 for( ITableServiceEntity entity : entityList ) {
-                    storageOperator.deleteEntity( TABLE_PERFORMANCE_COUNTER_NAME, entity );
-                }*/
+                    processorTimeFactor += (float)( ( PerformanceData )entity ).getCounterValue();
+                    tableOperator.deleteEntity( TABLE_PERFORMANCE_COUNTER_NAME, entity );
+                }
 
-            if( processorTimeFactor > 90 ) {
-                this.scaleUp();
-            } else if ( processorTimeFactor < 30 ) {
-                this.scaleDown();
+                processorTimeFactor /= entityList.size();
+
+                if( processorTimeFactor > 90 ) {
+                    this.scaleUp();
+                } else if ( processorTimeFactor < 30 ) {
+                    this.scaleDown();
+                }
             }
-            /*}*/
         } catch ( Exception ex ) {
             ex.printStackTrace();
         }

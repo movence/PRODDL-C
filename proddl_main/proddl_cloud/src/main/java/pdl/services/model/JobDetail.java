@@ -33,15 +33,17 @@ import org.soyatec.windowsazure.table.Guid;
  */
 public class JobDetail extends AbstractTableServiceEntity {
     private String jobName;
-    private String jobFileUUID;
+    private String inputFileUUID;
+    private String makeflowFileUUID;
     private String userId;
     private int status;
     private int priority;
     private String input;
     private String result;
+    private String jobDirectory;
 
     public JobDetail(String partitionKey, String rowKey) {
-        super( partitionKey, rowKey );
+        super(partitionKey, rowKey);
     }
 
     public JobDetail(String partitionKey) {
@@ -53,6 +55,10 @@ public class JobDetail extends AbstractTableServiceEntity {
         this( "generic_job" );
     }
 
+    public String getJobUUID() {
+        return getRowKey();
+    }
+
     public String getJobName() {
         return jobName;
     }
@@ -61,12 +67,20 @@ public class JobDetail extends AbstractTableServiceEntity {
         this.jobName = jobName;
     }
 
-    public String getJobFileUUID() {
-        return jobFileUUID;
+    public String getInputFileUUID() {
+        return inputFileUUID;
     }
 
-    public void setJobFileUUID(String jobFileUUID) {
-        this.jobFileUUID = jobFileUUID;
+    public void setInputFileUUID(String inputFileUUID) {
+        this.inputFileUUID = inputFileUUID;
+    }
+
+    public String getMakeflowFileUUID() {
+        return makeflowFileUUID;
+    }
+
+    public void setMakeflowFileUUID(String makeflowFileUUID) {
+        this.makeflowFileUUID = makeflowFileUUID;
     }
 
     public String getUserId() {
@@ -114,5 +128,13 @@ public class JobDetail extends AbstractTableServiceEntity {
 
     public void setResult(String result) {
         this.result = result;
+    }
+
+    public String getJobDirectory() {
+        return jobDirectory;
+    }
+
+    public void setJobDirectory(String jobDirectory) {
+        this.jobDirectory = jobDirectory;
     }
 }

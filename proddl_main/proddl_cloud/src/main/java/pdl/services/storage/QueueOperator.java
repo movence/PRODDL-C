@@ -57,10 +57,12 @@ public class QueueOperator {
     private void initQueueClient() {
         try {
             queueStorageClient = QueueStorageClient.create(
-                    URI.create( (String)conf.getProperty( "TABLE_HOST_NAME" ) ),
-                    Boolean.parseBoolean( (String)conf.getProperty( "PATH_STYLE_URIS" ) ),
-                    (String)conf.getProperty( "AZURE_ACCOUNT_NAME" ),
-                    (String)conf.getProperty( "AZURE_ACCOUNT_PKEY" ) );
+                    URI.create(
+                        conf.getStringProperty( "QUEUE_HOST_NAME" ) ),
+                        Boolean.parseBoolean( conf.getStringProperty( "PATH_STYLE_URIS" )
+                    ),
+                    conf.getStringProperty( "AZURE_ACCOUNT_NAME" ),
+                    conf.getStringProperty( "AZURE_ACCOUNT_PKEY" ) );
         } catch( Exception ex) {
             ex.printStackTrace();
         }

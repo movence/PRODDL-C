@@ -47,7 +47,7 @@ public class JettyThreadedOperator extends Thread {
 
     public void run() {
         try {
-            System.out.println("JettyThreadedOperator: start START");
+            System.out.println("JettyThreadedOperator: START");
 
             Server jettyServer = new Server();
             jettyServer.setStopAtShutdown(true);

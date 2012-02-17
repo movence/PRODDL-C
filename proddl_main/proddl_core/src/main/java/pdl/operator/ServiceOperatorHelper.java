@@ -26,11 +26,18 @@ import pdl.operator.app.CctoolsOperator;
 import pdl.operator.app.CygwinOperator;
 import pdl.operator.app.JettyThreadedOperator;
 import pdl.operator.app.PythonOperator;
+import pdl.operator.service.JobExecutor;
+import pdl.operator.service.JobExecutorThreadPool;
+import pdl.operator.service.JobHandler;
+import pdl.operator.service.RejectedJobExecutorHandler;
+import pdl.services.StorageServices;
 import pdl.services.management.ScheduledInstanceMonitor;
-import pdl.services.storage.BlobOperator;
+import pdl.services.model.JobDetail;
 
 import java.io.File;
 import java.util.Timer;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by IntelliJ IDEA.
@@ -40,7 +47,20 @@ import java.util.Timer;
  * To change this template use File | Settings | File Templates.
  */
 public class ServiceOperatorHelper {
-    public ServiceOperatorHelper() {}
+
+    private Configuration conf;
+    private StorageServices storageServices;
+
+    private PythonOperator pythonOperator;
+    private CygwinOperator cygwinOperator;
+    private CctoolsOperator cctoolsOperator;
+
+    private String storagePath;
+
+    public ServiceOperatorHelper() {
+        conf = Configuration.getInstance();
+        storageServices = new StorageServices();
+    }
 
     /**
      *
@@ -52,88 +72,116 @@ public class ServiceOperatorHelper {
      */
     public void run(String isMaster, String storagePath, String masterAddress, String catalogServerPort, String jettyPort) {
         try {
-            Configuration conf = Configuration.getInstance();
+
             storagePath = storagePath.replace( "/", File.separator );
             if( !storagePath.endsWith( File.separator ) )
                 storagePath += File.separator;
 
             conf.setProperty( "STORAGE_PATH", storagePath );
+            this.storagePath = storagePath;
 
-            BlobOperator blobOperator = new BlobOperator( conf );
+            this.runOperators();
 
-            PythonOperator pythonOperator = new PythonOperator(
-                    storagePath,
-                    (String)conf.getProperty( "PYTHON_NAME" ),
-                    (String)conf.getProperty( "PYTHON_FLAG_FILE" ),
-                    null
-            );
-            pythonOperator.runOperator( blobOperator );
-
-            CctoolsOperator cctoolsOperator = new CctoolsOperator(
-                    storagePath,
-                    (String)conf.getProperty( "CCTOOLS_NAME" ),
-                    "bin" + File.separator + conf.getProperty( "CCTOOLS_FLAG_FILE" ),
-                    null
-            );
-            cctoolsOperator.runOperator( blobOperator );
-
-            CygwinOperator cygwinOperator = new CygwinOperator(
-                    storagePath,
-                    (String)conf.getProperty( "CYGWIN_NAME" ),
-                    (String)conf.getProperty( "CYGWIN_FLAG_FILE" ),
-                    null
-            );
-            cygwinOperator.runOperator( blobOperator );
-
-            if( isMaster.equals( "true" ) ) {
-                /*JettyOperator jettyOperator = new JettyOperator( storagePath, prop.getProperty( "JETTY_NAME" ) );
-                if( jettyOperator.download( blobOperator, prop.getProperty( "JETTY_FLAG_FILE" ) ) ) {
-                    jettyOperator.start( jettyPort );
-                }*/
-                JettyThreadedOperator jettyOperator = new JettyThreadedOperator( jettyPort );
-                jettyOperator.start();
-
-                String tempCatalogServerAddress = cctoolsOperator.getCatalogServerAddress();
-                if( tempCatalogServerAddress == null) {
-                    if( !cctoolsOperator.startCatalogServer( masterAddress, catalogServerPort ) ) {
-                        throw new Exception( "Failed to start Catalog Server at " + masterAddress + ":" + catalogServerPort );
-                    }
-                }
-
-                //TODO hkim For local Testing Purpose
-                blobOperator.download( "tools", (String)conf.getProperty( "KEYSTORE_FILE_NAME" ), storagePath );
-                blobOperator.download( "tools", (String)conf.getProperty( "TRUSTCACERT_FILE_NAME" ), storagePath );
-
-                //Adds processor time monitor to timer
-                ScheduledInstanceMonitor instanceMonitor = new ScheduledInstanceMonitor( conf );
-                Timer instanceMonitorTimer = new Timer();
-                instanceMonitorTimer.scheduleAtFixedRate( instanceMonitor, 300000, 300000 );
-
-                while( true ) {
-                    cctoolsOperator.startMakeflow( "test" );
-                    Thread.sleep( 600000 );
-                }
-            } else { //For JobRunner
-                //blobOperator.download( "tools", "tester.jar", storagePath );
-
-                while( true ) {
-
-                    while( cctoolsOperator.getCatalogServerAddress() == null ) {
-                        //storageOperator.dequeue( StaticValues.QUEUE_JOBQUEUE_NAME, false ) == null ) {
-                        System.out.println(
-                                "CatalogServer or Makeflow has not been initialized. Worker role waits for 10s."
-                        );
-                        Thread.sleep(10000);
-                    }
-
-                    cctoolsOperator.startWorkQ();
-                    Thread.sleep( 600000 );
-                }
-
+            if( isMaster.equals( "true" ) ) { //Master Instance
+                this.runMaster( jettyPort, masterAddress, catalogServerPort );
+            } else { //Job(WorkQ) runner
+                this.runJobRunner();
             }
 
         } catch(Exception ex) {
             ex.printStackTrace();
+        }
+    }
+
+    private void runOperators() throws Exception {
+        pythonOperator = new PythonOperator(
+                storagePath,
+                (String)conf.getProperty( "PYTHON_NAME" ),
+                (String)conf.getProperty( "PYTHON_FLAG_FILE" ),
+                null
+        );
+        pythonOperator.run(storageServices);
+
+        cygwinOperator = new CygwinOperator(
+                storagePath,
+                (String)conf.getProperty( "CYGWIN_NAME" ),
+                (String)conf.getProperty( "CYGWIN_FLAG_FILE" ),
+                null
+        );
+        cygwinOperator.run(storageServices);
+
+        cctoolsOperator = new CctoolsOperator(
+                storagePath,
+                (String)conf.getProperty( "CCTOOLS_NAME" ),
+                "bin" + File.separator + conf.getProperty( "CCTOOLS_FLAG_FILE" ),
+                null
+        );
+        cctoolsOperator.run(storageServices);
+    }
+
+    private void runMaster(String jettyPort, String masterAddress, String catalogServerPort) throws Exception {
+        /*JettyOperator jettyOperator = new JettyOperator( storagePath, prop.getProperty( "JETTY_NAME" ) );
+        if( jettyOperator.download( blobOperator, prop.getProperty( "JETTY_FLAG_FILE" ) ) ) {
+            jettyOperator.start( jettyPort );
+        }*/
+        JettyThreadedOperator jettyOperator = new JettyThreadedOperator( jettyPort );
+        jettyOperator.start();
+
+        JobHandler jobHandler = new JobHandler();
+        //clear the "being processed" state from all jobs
+        jobHandler.rollbackAllRunningJobStatus();
+
+        String tempCatalogServerAddress = cctoolsOperator.getCatalogServerAddress();
+        if( tempCatalogServerAddress == null ) {
+            if( !cctoolsOperator.startCatalogServer( masterAddress, catalogServerPort ) ) {
+                throw new Exception( "Failed to start Catalog Server at " + masterAddress + ":" + catalogServerPort );
+            }
+        }
+
+        //Adds processor time monitor to timer
+        ScheduledInstanceMonitor instanceMonitor = new ScheduledInstanceMonitor();
+        Timer instanceMonitorTimer = new Timer();
+        instanceMonitorTimer.scheduleAtFixedRate( instanceMonitor, 180000, 180000 );
+
+        //Job running threads pool
+        final JobExecutorThreadPool threadExecutor = new JobExecutorThreadPool(
+                conf.getIntegerProperty( "CORE_NUMBER_JOB_EXECUTOR" ),
+                conf.getIntegerProperty( "MAX_NUMBER_JOB_EXECUTOR" ),
+                conf.getIntegerProperty( "MAX_KEEP_ALIVE_VALUE_JOB_EXECUTOR" ),
+                conf.getStringProperty( "MAX_KEEP_ALIVE_UNIT_JOB_EXECUTOR" ).equals( "min" )?TimeUnit.MINUTES:TimeUnit.SECONDS,
+                new SynchronousQueue<Runnable>(),
+                //new BlockingArrayQueue<Runnable>(5),
+                new RejectedJobExecutorHandler()
+        );
+
+        Runtime.getRuntime().addShutdownHook( new Thread() {
+            @Override
+            public void run() {
+                threadExecutor.shutdownNow();
+            }
+        });
+
+        ThreadGroup threadGroup = new ThreadGroup( Thread.currentThread().getThreadGroup(), "worker" );
+        //checks available job indefinitely
+        while( true ) {
+            JobDetail submittedJob = jobHandler.getSubmmittedJob();
+            if( submittedJob != null ) {
+                JobExecutor jobExecutor = new JobExecutor( threadGroup, submittedJob, cctoolsOperator );
+                threadExecutor.execute( jobExecutor );
+            }
+        }
+    }
+
+    private void runJobRunner() throws Exception {
+        while( true ) {
+
+            while( cctoolsOperator.getCatalogServerAddress() == null ) {
+                //storageOperator.dequeue( StaticValues.QUEUE_JOBQUEUE_NAME, false ) == null ) {
+                System.out.println( "CatalogServer or Makeflow has not been initialized. Worker role waits for 10s." );
+                Thread.sleep(10000);
+            }
+
+            cctoolsOperator.startWorkQ();
         }
     }
 }

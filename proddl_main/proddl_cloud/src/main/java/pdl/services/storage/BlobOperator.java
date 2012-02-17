@@ -67,10 +67,13 @@ public class BlobOperator {
     private void initBlobClient() {
         try {
             blobStorageClient = BlobStorageClient.create(
-                    URI.create( (String)conf.getProperty( "TABLE_HOST_NAME" ) ),
-                        Boolean.parseBoolean( (String)conf.getProperty( "PATH_STYLE_URIS" ) ),
-                        (String)conf.getProperty( "AZURE_ACCOUNT_NAME" ),
-                        (String)conf.getProperty( "AZURE_ACCOUNT_PKEY" ) );
+                    URI.create(
+                        conf.getStringProperty( "BLOB_HOST_NAME" ) ),
+                        Boolean.parseBoolean( conf.getStringProperty( "PATH_STYLE_URIS" )
+                    ),
+                    conf.getStringProperty( "AZURE_ACCOUNT_NAME" ),
+                    conf.getStringProperty( "AZURE_ACCOUNT_PKEY" )
+            );
             //blobStorageClient.setRetryPolicy( RetryPolicies.retryN( 1, TimeSpan.fromSeconds( 5 ) ) );
         } catch( Exception ex) {
             ex.printStackTrace();
@@ -80,7 +83,7 @@ public class BlobOperator {
     private IBlobContainer initBlobContainer( String containerName ) {
         IBlobContainer container = null;
         try {
-            if( blobStorageClient == null)
+            if( blobStorageClient == null )
                 initBlobClient();
 
             if( !blobStorageClient.isContainerExist( containerName ) )
@@ -89,10 +92,6 @@ public class BlobOperator {
                 container = blobStorageClient.getBlobContainer( containerName );
             container.setAccessControl( publicAccessACL );
 
-            /*if( containerName.equals( prop.get( "BLOB_NAME_JOB_FILES" ) ) )
-                jobFileBlobContainer = container;
-            else
-                toolsBlobContainer = container;*/
         } catch ( Exception ex ) {
             ex.printStackTrace();
         }
@@ -101,12 +100,6 @@ public class BlobOperator {
     private IBlobContainer getBlobContainer( String containerName ) {
         IBlobContainer container = null;
         try {
-            /*if( containerName.equals( prop.get( "BLOB_NAME_JOB_FILES" ) ) )
-                container = jobFileBlobContainer;
-            else if( containerName.equals( prop.get( "BLOB_NAME_TOOLS" ) ) )
-                container = toolsBlobContainer;*/
-
-            //if( container == null )
             container = initBlobContainer( containerName );
         } catch ( Exception ex ) {
             ex.printStackTrace();
@@ -117,12 +110,10 @@ public class BlobOperator {
     public boolean getBlob(String containerName, String blobName, String filePath, boolean isOverwrite) {
         boolean fSuccess = false;
 
-        if ((null == blobName) || blobName.isEmpty()) {
+        if ( blobName == null || blobName.isEmpty() )
             throw new IllegalArgumentException( "Blob Name parameter is invalid!" );
-        }
-        if (null == filePath || filePath.isEmpty()) {
+        if ( filePath == null || filePath.isEmpty() )
             throw new IllegalArgumentException( "File Path parameter is invalid!" );
-        }
 
         try {
             IBlobContainer theContainer = getBlobContainer( containerName );

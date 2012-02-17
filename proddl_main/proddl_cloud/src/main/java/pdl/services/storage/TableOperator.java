@@ -58,16 +58,22 @@ public class TableOperator {
 
             if( "diagnostics".equals( storageType ) )
                 tableStorageClient = TableStorageClient.create(
-                        URI.create( (String)conf.getProperty( "TABLE_HOST_NAME" ) ),
-                        Boolean.parseBoolean( (String)conf.getProperty( "PATH_STYLE_URIS" ) ),
-                        (String)conf.getProperty( "DIAGNOSTICS_ACCOUNT_NAME" ),
-                        (String)conf.getProperty( "DIAGNOSTICS_ACCOUNT_PKEY" ) );
+                        URI.create(
+                            conf.getStringProperty( "TABLE_HOST_NAME" ) ),
+                            Boolean.parseBoolean( conf.getStringProperty( "PATH_STYLE_URIS" )
+                        ),
+                        conf.getStringProperty( "DIAGNOSTICS_ACCOUNT_NAME" ),
+                        conf.getStringProperty( "DIAGNOSTICS_ACCOUNT_PKEY" )
+                );
             else
                 tableStorageClient = TableStorageClient.create(
-                        URI.create( (String)conf.getProperty( "TABLE_HOST_NAME" ) ),
-                        Boolean.parseBoolean( (String)conf.getProperty( "PATH_STYLE_URIS" ) ),
-                        (String)conf.getProperty( "AZURE_ACCOUNT_NAME" ),
-                        (String)conf.getProperty( "AZURE_ACCOUNT_PKEY" ) );
+                        URI.create(
+                            conf.getStringProperty( "TABLE_HOST_NAME" ) ),
+                            Boolean.parseBoolean( conf.getStringProperty( "PATH_STYLE_URIS" )
+                        ),
+                        conf.getStringProperty( "AZURE_ACCOUNT_NAME" ),
+                        conf.getStringProperty( "AZURE_ACCOUNT_PKEY" )
+                );
         } catch( Exception ex ) {
             ex.printStackTrace();
         }
@@ -146,7 +152,7 @@ public class TableOperator {
 
     public AbstractTableServiceEntity queryEntityBySearchKey(
             String tableName, String searchColumn,
-            String searchKey, Class model) {
+            Object searchKey, Class model) {
         AbstractTableServiceEntity entity = null;
 
         try {
@@ -155,12 +161,12 @@ public class TableOperator {
             );
 
             if( entityList != null && entityList.size() > 0 ) {
-                if( entityList.size() > 1 )
+                /*if( entityList.size() > 1 )
                     throw new Exception(
                             String.format(
-                                    "More than 1 record has been found for {0}({1}) in {2}" ,
+                                    "More than 1 record has been found for %s(%s) in %s" ,
                                     searchKey, searchColumn, tableName )
-                    );
+                    );*/
 
                 entity = (AbstractTableServiceEntity)entityList.get( 0 );
             }

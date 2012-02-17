@@ -23,6 +23,8 @@ package pdl.web.service.common;
 
 import org.apache.log4j.Logger;
 import org.springframework.web.multipart.MultipartFile;
+import pdl.common.StaticValues;
+import pdl.services.storage.BlobOperator;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -42,12 +44,14 @@ public class FileService {
         String fileUid = null;
 
         try {
-            logger.info( "File upload - Name=" + theFile.getOriginalFilename() + ",newName=" + theFile.getSize() + ",size=" + theFile.getSize() );
-
             if( theFile.getSize() > 0 ) {
                 InputStream fileIn = theFile.getInputStream();
-                //todo: need to specify file upload folder
-                FileOutputStream fileOut = new FileOutputStream( "d:"+ File.separator + theFile.getOriginalFilename() );
+
+                String storagePath = pdl.common.Configuration.getInstance().getStringProperty("STORAGE_PATH");
+                String newFilePath = storagePath + File.separator +
+                        StaticValues.DIRECTORY_FILE_UPLOAD_AREA + File.separator +
+                        theFile.getOriginalFilename();
+                FileOutputStream fileOut = new FileOutputStream( newFilePath );
 
                 int readBytes = 0;
                 int readBlockSize = 4 * 1024;
@@ -58,6 +62,14 @@ public class FileService {
 
                 fileOut.close();
                 fileIn.close();
+
+                //TODO It might need to allow files to be uploaded to other blob containers than jobFiles
+                if(type.equals("blob")) {
+                    BlobOperator operator = new BlobOperator();
+                    boolean uploaded = operator.uploadJobFileToBlob(theFile.getOriginalFilename(), newFilePath, false);
+                    if(!uploaded)
+                        throw new Exception("FileService-uploadFile:Failed to upload file to Blob storage.");
+                }
             }
         } catch ( IOException iex ) {
             iex.printStackTrace();

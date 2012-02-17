@@ -75,8 +75,15 @@ public class Configuration {
         return properties.get( key );
     }
 
+    public String getStringProperty(String key) {
+        return (String)getProperty( key );
+    }
+
+    public Integer getIntegerProperty(String key) {
+        return Integer.parseInt( getStringProperty( key ) );
+    }
+
     public void setProperty(String key, Object value) {
         properties.put( key, value );
     }
-
 }

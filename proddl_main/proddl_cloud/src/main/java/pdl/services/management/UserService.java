@@ -58,7 +58,7 @@ public class UserService {
             initializeTableOperator();
 
             AbstractTableServiceEntity rtnEntity = tableOperator.queryEntityBySearchKey(
-                    "user", "userid", userId, new User( null, null )
+                    "user", "userid", userId, User.class
             );
 
             if( rtnEntity != null ) {

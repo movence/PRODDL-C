@@ -21,8 +21,6 @@
 
 package pdl.services.management;
 
-import pdl.common.Configuration;
-
 import java.util.TimerTask;
 
 /**
@@ -35,8 +33,8 @@ import java.util.TimerTask;
 public class ScheduledInstanceMonitor extends TimerTask {
     private CloudInstanceManager instanceManager;
 
-    public ScheduledInstanceMonitor( Configuration conf) {
-        instanceManager = new CloudInstanceManager( conf );
+    public ScheduledInstanceMonitor() {
+        instanceManager = new CloudInstanceManager();
     }
 
     public synchronized  void run() {

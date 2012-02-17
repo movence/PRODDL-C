@@ -42,6 +42,7 @@ public class JettyOperator extends AbstractApplicationOperator {
 
     public boolean start( String port ){
         boolean rtnVal = false;
+        Process process;
 
         try{
             System.out.println("JettyOperator: start START");

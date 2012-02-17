@@ -22,7 +22,7 @@
 package pdl.operator.app;
 
 
-import pdl.services.storage.BlobOperator;
+import pdl.services.StorageServices;
 
 /**
  * Created by IntelliJ IDEA.
@@ -32,8 +32,8 @@ import pdl.services.storage.BlobOperator;
  * To change this template use File | Settings | File Templates.
  */
 public interface IApplicationOperator {
-    public void runOperator(BlobOperator blobOperator) throws Exception;
-    public boolean download(BlobOperator blobOperator);
+    public void run(StorageServices storageServices) throws Exception;
+    public boolean download(StorageServices storageServices) throws Exception;
     public boolean start(String port);
     public boolean stop();
 }

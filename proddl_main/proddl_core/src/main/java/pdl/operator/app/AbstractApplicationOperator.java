@@ -21,7 +21,7 @@
 
 package pdl.operator.app;
 
-import pdl.services.storage.BlobOperator;
+import pdl.services.StorageServices;
 import pdl.utils.ZipHandler;
 
 import java.io.File;
@@ -34,7 +34,6 @@ import java.io.File;
  * To change this template use File | Settings | File Templates.
  */
 public abstract class AbstractApplicationOperator implements IApplicationOperator {
-    protected Process process;
     protected String storagePath;
     protected String packagePath;
     protected String packageName;
@@ -53,56 +52,40 @@ public abstract class AbstractApplicationOperator implements IApplicationOperato
         this.param = param;
     }
 
-    public void runOperator( BlobOperator blobOperator ) throws Exception {
-        try {
-            if( download( blobOperator ) )
-                if( unzip( flagFile ) )
-                    start( param );
-        } catch ( Exception ex ) {
-            throw ex;
-        }
+    public void run(StorageServices services) throws Exception {
+        if(download(services))
+            if( unzip(flagFile))
+                start( param );
     }
 
-    public boolean download( BlobOperator blobOperator ) {
+    public boolean download(StorageServices services) throws Exception {
         boolean rtnVal = false;
-        try {
-            if( blobOperator.download( "tools", packageFile, storagePath ) ) {
-                System.out.println("Download is Done for " + packageName );
-                rtnVal = true;
-            }
-        } catch( Exception ex ){
-            ex.printStackTrace();
+
+        if( services.downloadToolsByName(packageFile, storagePath)) {
+            rtnVal = true;
         }
+
         return rtnVal;
     }
 
     public abstract boolean start( String param );
 
-    public boolean unzip(String flagFile) {
+    public boolean unzip(String flagFile) throws Exception {
         boolean rtnVal = false;
-        try {
-            ZipHandler zipOperator = new ZipHandler();
-            if( zipOperator.unZip( packageFilePath, storagePath ) ) {
-                File pachageLocation = new File( packagePath );
-                if( pachageLocation.isDirectory()
-                        && pachageLocation.exists()
-                        && ( new File( packagePath + File.separator + flagFile ) ).exists() )
-                    rtnVal = true;
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
+
+        ZipHandler zipOperator = new ZipHandler();
+        if( zipOperator.unZip( packageFilePath, storagePath ) ) {
+            File pachageLocation = new File( packagePath );
+            if( pachageLocation.isDirectory()
+                    && pachageLocation.exists()
+                    && ( new File( packagePath + File.separator + flagFile ) ).exists() )
+                rtnVal = true;
         }
+
         return rtnVal;
     }
 
-    public boolean stop(){
-        boolean rtnVal = false;
-        try{
-            process.destroy();
-            rtnVal = true;
-        }catch( Exception ex ){
-            ex.printStackTrace();
-        }
-        return rtnVal;
+    public boolean stop() {
+        return true;
     }
 }
