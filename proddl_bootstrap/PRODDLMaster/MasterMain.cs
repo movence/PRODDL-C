@@ -77,6 +77,7 @@ namespace PRODDLMaster
 				};
 			});
 
+            //application temp directory for Jetty
             string customTempLocalResourcePath = RoleEnvironment.GetLocalResource("TempStorage").RootPath;
             Environment.SetEnvironmentVariable("TMP", customTempLocalResourcePath);
             Environment.SetEnvironmentVariable("TEMP", customTempLocalResourcePath);
