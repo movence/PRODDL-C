@@ -46,7 +46,6 @@ public class RestAuthenticationFilter extends OncePerRequestFilter {
             HttpServletResponse response,
             FilterChain filterChain) throws ServletException, IOException {
 
-        System.err.println("Auth type: " + request.getAuthType() );
         List<String> headerKeys = Arrays.asList( USER_NAME_PARAM, USER_PASS_PARAM );
         Map<String, String> headerAndParms = new HashMap<String, String>();
 
@@ -55,7 +54,6 @@ public class RestAuthenticationFilter extends OncePerRequestFilter {
         while ( e.hasMoreElements() ) {
             String key = (String)e.nextElement();
 
-            System.err.println( "header:" + key + ", value=" + request.getHeader(key));
             if ( headerKeys.contains( key ) ) {
                 headerAndParms.put( key, request.getHeader( key ) );
             }
@@ -69,8 +67,6 @@ public class RestAuthenticationFilter extends OncePerRequestFilter {
 
         String userName = headerAndParms.get( USER_NAME_PARAM );
         String userPasswd = headerAndParms.get( USER_PASS_PARAM );
-
-        System.err.println( "User: " + userName + ", userPasswd: " + userPasswd );
 
         if ( userName == null || userPasswd == null ) {
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "REST signature failed validation.");
