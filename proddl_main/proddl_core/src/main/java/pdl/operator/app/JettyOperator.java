@@ -37,42 +37,42 @@ import java.util.List;
 public class JettyOperator extends AbstractApplicationOperator {
 
     public JettyOperator(String storagePath, String packageName, String flagFile, String param) {
-        super( storagePath, packageName, flagFile, param );
+        super(storagePath, packageName, flagFile, param);
     }
 
-    public boolean start( String port ){
+    public boolean start(String port) {
         boolean rtnVal = false;
         Process process;
 
-        try{
+        try {
             System.out.println("JettyOperator: start START");
 
             //External Jetty container
             List<String> command = new ArrayList<String>();
             String line;
 
-            command.add( storagePath + File.separator + "jre" + File.separator + "bin" + File.separator + "java" );
-            command.add( "-jar" );
-            command.add( packagePath + File.separator + "start.jar" );
-            command.add( "-Djetty.port=" + port );
-            command.add( "-Djetty.home=" + packagePath );
+            command.add(storagePath + File.separator + "jre" + File.separator + "bin" + File.separator + "java");
+            command.add("-jar");
+            command.add(packagePath + File.separator + "start.jar");
+            command.add("-Djetty.port=" + port);
+            command.add("-Djetty.home=" + packagePath);
 
             ProcessBuilder builder = new ProcessBuilder(command);
             builder.redirectErrorStream(true);
-            builder.directory(new File( packagePath ));
+            builder.directory(new File(packagePath));
 
             process = builder.start();
 
-            BufferedReader reader = new BufferedReader( new InputStreamReader( process.getInputStream() ) );
-            while ((line = reader.readLine ()) != null) {
+            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            while ((line = reader.readLine()) != null) {
                 //System.out.println( "JETTY OUTPUT: " + line );
-                if( line.contains( "Started" ) && line.endsWith( "STARTING" ) ) {
+                if (line.contains("Started") && line.endsWith("STARTING")) {
                     rtnVal = true;
                     break;
                 }
             }
-        }catch( Exception ex ){
-            System.out.println( "JettyOperator.start threw : " + ex.toString() );
+        } catch (Exception ex) {
+            System.out.println("JettyOperator.start threw : " + ex.toString());
             ex.printStackTrace();
         }
 

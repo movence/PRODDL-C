@@ -37,7 +37,8 @@ import java.util.zip.ZipFile;
  * To change this template use File | Settings | File Templates.
  */
 public class ZipHandler {
-    public ZipHandler() {}
+    public ZipHandler() {
+    }
 
     public boolean unZip(String filePath, String parentPath) throws Exception {
         ZipFile zipFile;
@@ -46,7 +47,7 @@ public class ZipHandler {
         boolean rtnVal = false;
 
         try {
-            zipFile = new ZipFile( filePath );
+            zipFile = new ZipFile(filePath);
             Enumeration files = zipFile.entries();
 
             while (files.hasMoreElements()) {
@@ -55,7 +56,7 @@ public class ZipHandler {
                 byte[] buffer = new byte[1024];
                 int bytesRead = 0;
 
-                f = new File( new File( parentPath ) + File.separator + entry.getName());
+                f = new File(new File(parentPath) + File.separator + entry.getName());
 
                 if (entry.isDirectory()) {
                     f.mkdirs();
@@ -76,7 +77,7 @@ public class ZipHandler {
             rtnVal = true;
         } catch (Exception ex) {
             ex.printStackTrace();
-            throw new Exception( "ZipHandler.unZip threw : " + ex.toString() );
+            throw new Exception("ZipHandler.unZip threw : " + ex.toString());
         } finally {
             if (fos != null) {
                 try {

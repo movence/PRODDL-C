@@ -22,8 +22,8 @@
 package pdl.web.service;
 
 import org.codehaus.jackson.map.ObjectMapper;
-import pdl.services.management.JobManager;
-import pdl.services.model.JobDetail;
+import pdl.cloud.management.JobManager;
+import pdl.cloud.model.JobDetail;
 
 import java.util.Map;
 
@@ -35,25 +35,25 @@ import java.util.Map;
  */
 public class JobReuqestHandler {
 
-    public Map<String, Object> submitJob( String jobName, String inputInString, String userName ) {
+    public Map<String, Object> submitJob(String jobName, String inputInString, String userName) {
         Map<String, Object> rtnJson = null;
 
         try {
             Map<String, Object> inputInMap = null;
 
-            JobDetail jobDetail = new JobDetail( jobName );
-            jobDetail.setJobName( jobName );
-            jobDetail.setInput( inputInString );
-            jobDetail.setUserId( userName );
+            JobDetail jobDetail = new JobDetail(jobName);
+            jobDetail.setJobName(jobName);
+            jobDetail.setInput(inputInString);
+            jobDetail.setUserId(userName);
 
-            if( inputInString != null && inputInString.length() > 0 ) {
+            if (inputInString != null && inputInString.length() > 0) {
                 ObjectMapper mapper = new ObjectMapper();
-                inputInMap = mapper.readValue( inputInString, Map.class);
-                for(Map.Entry<String, Object> entry : inputInMap.entrySet()) {
-                    if( "inputFileId".equals( entry.getKey() ) )
-                        jobDetail.setInputFileUUID((String)entry.getValue());
-                    else if("makeFileId".equals(entry.getKey()))
-                        jobDetail.setMakeflowFileUUID((String)entry.getValue());
+                inputInMap = mapper.readValue(inputInString, Map.class);
+                for (Map.Entry<String, Object> entry : inputInMap.entrySet()) {
+                    if ("inputFileId".equals(entry.getKey()))
+                        jobDetail.setInputFileUUID((String) entry.getValue());
+                    else if ("makeFileId".equals(entry.getKey()))
+                        jobDetail.setMakeflowFileUUID((String) entry.getValue());
                 }
             }
 
@@ -67,7 +67,7 @@ public class JobReuqestHandler {
         return rtnJson;
     }
 
-    public String getJobInfo( String jobId ) {
+    public String getJobInfo(String jobId) {
         String rtnStr = null;
 
         try {
@@ -79,12 +79,12 @@ public class JobReuqestHandler {
         return rtnStr;
     }
 
-    public String getJobResult( String jobId ) {
+    public String getJobResult(String jobId) {
         String rtnStr = null;
 
         try {
-            rtnStr = this.getJobInfo( jobId );
-            if( rtnStr != null ) {
+            rtnStr = this.getJobInfo(jobId);
+            if (rtnStr != null) {
 
             }
 

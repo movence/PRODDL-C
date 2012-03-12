@@ -46,29 +46,29 @@ public class RestAuthenticationFilter extends OncePerRequestFilter {
             HttpServletResponse response,
             FilterChain filterChain) throws ServletException, IOException {
 
-        List<String> headerKeys = Arrays.asList( USER_NAME_PARAM, USER_PASS_PARAM );
+        List<String> headerKeys = Arrays.asList(USER_NAME_PARAM, USER_PASS_PARAM);
         Map<String, String> headerAndParms = new HashMap<String, String>();
 
         // load header values we care about
         Enumeration e = request.getHeaderNames();
-        while ( e.hasMoreElements() ) {
-            String key = (String)e.nextElement();
+        while (e.hasMoreElements()) {
+            String key = (String) e.nextElement();
 
-            if ( headerKeys.contains( key ) ) {
-                headerAndParms.put( key, request.getHeader( key ) );
+            if (headerKeys.contains(key)) {
+                headerAndParms.put(key, request.getHeader(key));
             }
         }
 
         // load parameters
-        for( Object key : request.getParameterMap().keySet() ) {
-            String[] o = (String[]) request.getParameterMap().get( key );
-            headerAndParms.put( (String) key, o[0] );
+        for (Object key : request.getParameterMap().keySet()) {
+            String[] o = (String[]) request.getParameterMap().get(key);
+            headerAndParms.put((String) key, o[0]);
         }
 
-        String userName = headerAndParms.get( USER_NAME_PARAM );
-        String userPasswd = headerAndParms.get( USER_PASS_PARAM );
+        String userName = headerAndParms.get(USER_NAME_PARAM);
+        String userPasswd = headerAndParms.get(USER_PASS_PARAM);
 
-        if ( userName == null || userPasswd == null ) {
+        if (userName == null || userPasswd == null) {
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "REST signature failed validation.");
             return;
         }

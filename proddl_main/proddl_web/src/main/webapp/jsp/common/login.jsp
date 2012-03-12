@@ -22,7 +22,7 @@
 <%@taglib prefix="sf" uri="http://www.springframework.org/tags/form" %>
 <%@taglib prefix="s" uri="http://www.springframework.org/tags" %>
 <%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
-<%@page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 
 <!DOCTYPE html>
 <html>
@@ -33,25 +33,26 @@
     <script src="/resources/js/jquery-1.6.2.min.js"></script>
     <script src="/resources/js/jquery-ui-1.8.16.custom.min.js"></script>
     <script>
-        $(document).ready( function() {
+        $(document).ready(function() {
             var $iserror = '${error}';
-            if( $iserror != 'true' )
+            if ($iserror != 'true')
                 $(".ui-state-error").hide();
 
-            $("#btnLogin").click(function(){
+            $("#btnLogin").click(function() {
                 //TODO needs some validation check here!!
                 $("form").submit();
             });
         });
 
     </script>
-    <link href="/resources/css/redmond/jquery-ui-1.8.16.custom.css" rel="stylesheet" type="text/css" />
-    <link href="/resources/css/main.css" rel="stylesheet" type="text/css" />
+    <link href="/resources/css/redmond/jquery-ui-1.8.16.custom.css" rel="stylesheet" type="text/css"/>
+    <link href="/resources/css/main.css" rel="stylesheet" type="text/css"/>
     <style type="text/css">
         #login #content {
             width: 500px;
             margin: 20px auto;
         }
+
         #login section {
             font-size: 1em;
             width: 475px;
@@ -59,6 +60,7 @@
             position: relative;
             z-index: 1003;
         }
+
         #login header, #login section div.ui-widget-content {
             padding: 12px;
         }
@@ -69,7 +71,7 @@
 <form action="/j_spring_security_check" method="post">
     <div id="content">
         <section class="ui-widget ui-corner-all">
-            <header class="h1 ui-widget-header ui-corner-top">PRODDL-C Login </header>
+            <header class="h1 ui-widget-header ui-corner-top">PRODDL-C Login</header>
             <div class="ui-widget-content ui-corner-bottom">
                 <h1>Please use the login form below to login to PRODDL-C Cloud Management</h1>
 
@@ -81,11 +83,11 @@
                 <form>
                     <div style="text-align: center;margin-top: 15px">
                         <label for="j_username">Username</label>
-                        <input width="100%" id="j_username" name="j_username" type="text" />
+                        <input width="100%" id="j_username" name="j_username" type="text"/>
                     </div>
                     <div style="text-align: center;margin-top: 15px">
                         <label for="j_password">Password</label>
-                        <input id="j_password" name="j_password" type="password" />
+                        <input id="j_password" name="j_password" type="password"/>
                     </div>
                     <div style="text-align: center;margin-top: 15px">
                         <input type="submit"

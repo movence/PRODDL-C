@@ -26,4 +26,4 @@
   Time: 11:14 AM
 --%>
 <%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
-<c:redirect url='/pdl/w/common' />
+<c:redirect url='/pdl/w/common'/>

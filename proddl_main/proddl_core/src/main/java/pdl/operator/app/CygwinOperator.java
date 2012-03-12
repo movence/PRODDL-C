@@ -30,11 +30,11 @@ package pdl.operator.app;
  */
 public class CygwinOperator extends AbstractApplicationOperator {
     public CygwinOperator(String storagePath, String packageName, String flagFile, String param) {
-        super( storagePath, packageName, flagFile, param );
+        super(storagePath, packageName, flagFile, param);
     }
 
     @Override
-    public boolean start( String port ){
+    public boolean start(String port) {
         return true;
     }
 }

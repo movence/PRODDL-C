@@ -31,7 +31,7 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import pdl.services.management.UserService;
+import pdl.cloud.management.UserService;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -44,24 +44,24 @@ import java.util.List;
  * Time: 9:34 AM
  */
 public class UserManagementService implements UserDetailsService {
-    protected static Logger logger = Logger.getLogger( "UserDetailService" );
+    protected static Logger logger = Logger.getLogger("UserManagementService");
 
     @Override
-    public UserDetails loadUserByUsername( String userId ) throws UsernameNotFoundException, DataAccessException {
+    public UserDetails loadUserByUsername(String userId) throws UsernameNotFoundException, DataAccessException {
         PasswordEncoder passwordEncoder = new ShaPasswordEncoder();
         UserDetails user = null;
         try {
             UserService pdlUserService = new UserService();
-            pdl.services.model.User pdlUser = pdlUserService.getUserById( userId );
+            pdl.cloud.model.User pdlUser = pdlUserService.getUserById(userId);
 
-            user =  new User(
+            user = new User(
                     pdlUser.getUserid(),
                     pdlUser.getUserpass(),
                     true,
                     true,
                     true,
                     true,
-                    getAuthorities( pdlUser.getAdmin() )
+                    getAuthorities(pdlUser.getAdmin())
             );
 
         } catch (Exception e) {
@@ -82,10 +82,10 @@ public class UserManagementService implements UserDetailsService {
      */
     public Collection<GrantedAuthority> getAuthorities(int access) {
         List<GrantedAuthority> authList = new ArrayList<GrantedAuthority>(2);
-        authList.add( new GrantedAuthorityImpl( "ROLE_USER" ) );
+        authList.add(new GrantedAuthorityImpl("ROLE_USER"));
 
-        if ( access == 1 ) {
-            authList.add( new GrantedAuthorityImpl( "ROLE_ADMIN" ) );
+        if (access == 1) {
+            authList.add(new GrantedAuthorityImpl("ROLE_ADMIN"));
         }
 
         return authList;

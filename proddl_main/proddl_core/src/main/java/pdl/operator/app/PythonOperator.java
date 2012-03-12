@@ -31,10 +31,10 @@ package pdl.operator.app;
 public class PythonOperator extends AbstractApplicationOperator {
 
     public PythonOperator(String storagePath, String packageName, String flagFile, String param) {
-        super( storagePath, packageName, flagFile, param );
+        super(storagePath, packageName, flagFile, param);
     }
 
-    public boolean start( String port ){
+    public boolean start(String port) {
         return true;
     }
 }

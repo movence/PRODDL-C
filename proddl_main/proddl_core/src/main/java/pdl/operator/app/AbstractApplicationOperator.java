@@ -21,7 +21,7 @@
 
 package pdl.operator.app;
 
-import pdl.services.StorageServices;
+import pdl.common.ToolPool;
 import pdl.utils.ZipHandler;
 
 import java.io.File;
@@ -52,33 +52,32 @@ public abstract class AbstractApplicationOperator implements IApplicationOperato
         this.param = param;
     }
 
-    public void run(StorageServices services) throws Exception {
-        if(download(services))
-            if( unzip(flagFile))
-                start( param );
-    }
+    public void run(pdl.cloud.StorageServices services) throws Exception {
+        boolean result = false;
 
-    public boolean download(StorageServices services) throws Exception {
-        boolean rtnVal = false;
-
-        if( services.downloadToolsByName(packageFile, storagePath)) {
-            rtnVal = true;
+        if ((result = download(services))) {
+            if ((result = unzip())) {
+                result = start(param);
+            }
         }
+        if (!result)
+            throw new Exception(String.format("Failed to obtain tool - %s%n", packageName));
 
-        return rtnVal;
     }
 
-    public abstract boolean start( String param );
+    public boolean download(pdl.cloud.StorageServices services) throws Exception {
+        File tool = new File(packagePath);
+        return tool.exists() || services.downloadToolsByName(packageFile, packageFilePath);
+    }
 
-    public boolean unzip(String flagFile) throws Exception {
+    public abstract boolean start(String param);
+
+    public boolean unzip() throws Exception {
         boolean rtnVal = false;
 
         ZipHandler zipOperator = new ZipHandler();
-        if( zipOperator.unZip( packageFilePath, storagePath ) ) {
-            File pachageLocation = new File( packagePath );
-            if( pachageLocation.isDirectory()
-                    && pachageLocation.exists()
-                    && ( new File( packagePath + File.separator + flagFile ) ).exists() )
+        if (zipOperator.unZip(packageFilePath, storagePath)) {
+            if (ToolPool.isDirectoryExist(packagePath) && (new File(packagePath + File.separator + flagFile)).exists())
                 rtnVal = true;
         }
 

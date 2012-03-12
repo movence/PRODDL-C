@@ -107,7 +107,7 @@
     <dependencies>
         <dependency>
             <groupId>proddl</groupId>
-            <artifactId>proddl_cloud</artifactId>
+            <artifactId>proddl_core</artifactId>
             <version>1.0</version>
         </dependency>
         <!-- Spring framework -->

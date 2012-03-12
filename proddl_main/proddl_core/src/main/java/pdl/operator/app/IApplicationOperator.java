@@ -22,8 +22,6 @@
 package pdl.operator.app;
 
 
-import pdl.services.StorageServices;
-
 /**
  * Created by IntelliJ IDEA.
  * User: hkim
@@ -32,8 +30,11 @@ import pdl.services.StorageServices;
  * To change this template use File | Settings | File Templates.
  */
 public interface IApplicationOperator {
-    public void run(StorageServices storageServices) throws Exception;
-    public boolean download(StorageServices storageServices) throws Exception;
+    public void run(pdl.cloud.StorageServices storageServices) throws Exception;
+
+    public boolean download(pdl.cloud.StorageServices storageServices) throws Exception;
+
     public boolean start(String port);
+
     public boolean stop();
 }

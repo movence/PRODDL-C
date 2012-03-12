@@ -65,7 +65,7 @@ public class CertificateToolLocal {
             int n = 0;
             List<String> list = new ArrayList<String>();
             if (!eAliases.hasMoreElements()) {
-                throw new Exception( "Certificate is not valid. It does not contain any alias." );
+                throw new Exception("Certificate is not valid. It does not contain any alias.");
             }
             while (eAliases.hasMoreElements()) {
                 String strAlias = (String) eAliases.nextElement();
@@ -87,7 +87,7 @@ public class CertificateToolLocal {
             out.close();
 
             rtnVal = true;
-        } catch(Exception e) {
+        } catch (Exception e) {
             System.err.println(e.toString());
         }
         return rtnVal;

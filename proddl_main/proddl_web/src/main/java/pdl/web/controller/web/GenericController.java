@@ -54,18 +54,18 @@ public class GenericController {
         model.addAttribute("ajaxRequest", AjaxUtils.isAjaxRequest(request));
     }
 
-    @RequestMapping(value="fileupload", method= RequestMethod.GET)
+    @RequestMapping(value = "fileupload", method = RequestMethod.GET)
     public String fileUploadForm() {
         return "fileupload";
     }
 
-    @RequestMapping(value="fileupload", method= RequestMethod.POST)
+    @RequestMapping(value = "fileupload", method = RequestMethod.POST)
     public String processUpload(@RequestParam("file") MultipartFile file, @RequestParam("type") String type, Model model) {
 
         try {
             FileService fileService = new FileService();
-            fileService.uploadFile( file, type );
-        } catch ( Exception ex ) {
+            fileService.uploadFile(file, type);
+        } catch (Exception ex) {
 
         }
 
@@ -78,6 +78,6 @@ public class GenericController {
     public ModelAndView test() {
         String uuid1 = UUID.randomUUID().toString();
         String uuid2 = UUID.randomUUID().toString();
-        return new ModelAndView("test", "message", uuid1+"::::"+uuid2);
+        return new ModelAndView("test", "message", uuid1 + "::::" + uuid2);
     }
 }

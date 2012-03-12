@@ -29,7 +29,7 @@
 <%@taglib prefix="sf" uri="http://www.springframework.org/tags/form" %>
 <%@taglib prefix="s" uri="http://www.springframework.org/tags" %>
 <%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
-<%@page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 
 <!DOCTYPE html>
 <html>
@@ -40,13 +40,13 @@
     <script src="/resources/js/jquery-1.6.2.min.js"></script>
     <script src="/resources/js/jquery-ui-1.8.16.custom.min.js"></script>
     <script>
-        $(document).ready( function() {
+        $(document).ready(function() {
             $("#accordion").accordion({ header: "h3" });
         });
 
     </script>
-    <link href="/resources/css/redmond/jquery-ui-1.8.16.custom.css" rel="stylesheet" type="text/css" />
-    <link href="/resources/css/main.css" rel="stylesheet" type="text/css" />
+    <link href="/resources/css/redmond/jquery-ui-1.8.16.custom.css" rel="stylesheet" type="text/css"/>
+    <link href="/resources/css/main.css" rel="stylesheet" type="text/css"/>
     <style type="text/css">
     </style>
 </head>
@@ -55,14 +55,17 @@
     <div id="accordion">
         <div>
             <h3><a href="#">Cloud Management</a></h3>
+
             <div>Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet.</div>
         </div>
         <div>
             <h3><a href="#">User Management</a></h3>
+
             <div>Phasellus mattis tincidunt nibh.</div>
         </div>
         <div>
             <h3><a href="#">Upload PyRosetta</a></h3>
+
             <div>This page allows administrator to upload PyRosetta application to the cloud.</div>
         </div>
     </div>

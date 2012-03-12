@@ -20,7 +20,7 @@
  */
 
 /**
- * 
+ *
  */
 package pdl.web.controller.web;
 
@@ -42,26 +42,28 @@ import java.util.Map;
 @Controller
 @RequestMapping(value = "w")
 public class AuthenticationController {
-	@RequestMapping(value = "login", method = RequestMethod.GET)
-	public String getLoginPage(@RequestParam(value="error", required=false) boolean error, ModelMap model) {
-		if (error == true) {
-			model.put("error", "true");
-		} else {
-			model.put("error", "");
-		}
-		return "common/login";
-	}
+    @RequestMapping(value = "login", method = RequestMethod.GET)
+    public String getLoginPage(@RequestParam(value = "error", required = false) boolean error, ModelMap model) {
+        if (error == true) {
+            model.put("error", "true");
+        } else {
+            model.put("error", "");
+        }
+        return "common/login";
+    }
 
     @RequestMapping(value = "auth", method = RequestMethod.POST)
-    public @ResponseBody Map<String, String> processLoginInJson(
+    public
+    @ResponseBody
+    Map<String, String> processLoginInJson(
             @RequestParam(value = "userId", required = true) String userId,
-            @RequestParam(value = "userPass", required = true) String userPass, Model model ) {
+            @RequestParam(value = "userPass", required = true) String userPass, Model model) {
         Map<String, String> resultMap = new HashMap<String, String>();
         return resultMap;
     }
 
-	@RequestMapping(value = "/denied", method = RequestMethod.GET)
- 	public String getDeniedPage() {
-		return "common/denied";
-	}
+    @RequestMapping(value = "/denied", method = RequestMethod.GET)
+    public String getDeniedPage() {
+        return "common/denied";
+    }
 }

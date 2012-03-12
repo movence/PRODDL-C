@@ -33,7 +33,7 @@
     <bean id="basicAuthenticationFilter"
           class="org.springframework.security.web.authentication.www.BasicAuthenticationFilter"
           p:authenticationManager-ref="authenticationManager"
-          p:authenticationEntryPoint-ref="basicAuthenticationEntryPoint" />
+          p:authenticationEntryPoint-ref="basicAuthenticationEntryPoint"/>
     <bean id="basicAuthenticationEntryPoint"
           class="pdl.web.filter.JsonBasicAuthenticationEP"
           p:realmName="proddl"/>
@@ -46,7 +46,7 @@
                 <entry key="hasHeader('User-Agent','Mozilla')
                             or hasHeader('User-Agent','Opera')
                             or hasHeader('User-Agent','Explorer')"
-                    value-ref="formAuthenticationEntryPoint" />
+                       value-ref="formAuthenticationEntryPoint"/>
             </map>
         </constructor-arg>
         <property name="defaultEntryPoint" ref="basicAuthenticationEntryPoint"/>
@@ -62,9 +62,9 @@
 
     <!-- regular authentication check for GUI -->
     <security:http entry-point-ref="daep" use-expressions="true" access-denied-page="/pdl/w/denied">
-        <security:intercept-url pattern="/favicon.ico" access="permitAll" />
-        <security:intercept-url pattern="/resources/**" access="permitAll" />
-        <security:intercept-url pattern="/pdl/w/login" access="permitAll" />
+        <security:intercept-url pattern="/favicon.ico" access="permitAll"/>
+        <security:intercept-url pattern="/resources/**" access="permitAll"/>
+        <security:intercept-url pattern="/pdl/w/login" access="permitAll"/>
         <security:intercept-url pattern="/pdl/w/admin/**" access="hasRole('ROLE_ADMIN')"/>
         <security:intercept-url pattern="/**" access="hasRole('ROLE_USER')"/>
 
@@ -78,7 +78,7 @@
                 logout-success-url="/pdl/w/login"
                 logout-url="/pdl/w/logout"/>
 
-        <security:custom-filter position="BASIC_AUTH_FILTER" ref="basicAuthenticationFilter" />
+        <security:custom-filter position="BASIC_AUTH_FILTER" ref="basicAuthenticationFilter"/>
     </security:http>
 
     <security:authentication-manager alias="authenticationManager">

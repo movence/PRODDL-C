@@ -34,6 +34,6 @@ public class ServiceOperator {
         helper.run(
                 args[0]/*master role identifier*/, args[1]/*storage path*/,
                 args[2]/*current master's IP address*/, args[3]/*catalog_server port*/,
-                args[4]/*jetty port*/ );
+                args[4]/*jetty port*/);
     }
 }

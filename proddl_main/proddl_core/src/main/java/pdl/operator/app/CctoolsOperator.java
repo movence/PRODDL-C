@@ -23,8 +23,7 @@ package pdl.operator.app;
 
 import pdl.common.Configuration;
 import pdl.common.StaticValues;
-import pdl.services.model.DynamicData;
-import pdl.services.storage.TableOperator;
+import pdl.common.ToolPool;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -57,7 +56,7 @@ public class CctoolsOperator extends AbstractApplicationOperator {
     private boolean isEnvironmentVarialbeSet = false;
 
     public CctoolsOperator(String storagePath, String packageName, String flagFile, String param) {
-        super( storagePath, packageName, flagFile, param );
+        super(storagePath, packageName, flagFile, param);
         setPaths();
     }
 
@@ -66,41 +65,41 @@ public class CctoolsOperator extends AbstractApplicationOperator {
             conf = Configuration.getInstance();
 
             cctoolsBinPath = packagePath + File.separator + "bin";
-            cygwinBinPath = storagePath + conf.getProperty( "CYGWIN_NAME" ) + File.separator + "bin";
+            cygwinBinPath = storagePath + conf.getProperty("CYGWIN_NAME") + File.separator + "bin";
 
             processes = new ArrayList<Process>();
 
-            Runtime.getRuntime().addShutdownHook( new Thread() {
+            Runtime.getRuntime().addShutdownHook(new Thread() {
                 @Override
                 public void run() {
-                    if( processes != null && processes.size() > 0 ) {
-                        for( Process currProcess : processes )
+                    if (processes != null && processes.size() > 0) {
+                        for (Process currProcess : processes)
                             currProcess.destroy();
                     }
                 }
             });
-        } catch(Exception ex) {
+        } catch (Exception ex) {
             ex.printStackTrace();
         }
     }
 
-    public boolean start( String param ){
+    public boolean start(String param) {
         return true;
     }
 
-    private ProcessBuilder buildProcessBuilder( String... args ) {
-        if( cygwinBinPath == null || cctoolsBinPath == null )
+    private ProcessBuilder buildProcessBuilder(String... args) {
+        if (cygwinBinPath == null || cctoolsBinPath == null)
             this.setPaths();
 
-        ProcessBuilder pb = new ProcessBuilder( args );
-        pb.directory( new File( cctoolsBinPath ) );
+        ProcessBuilder pb = new ProcessBuilder(args);
+        pb.directory(new File(cctoolsBinPath));
         pb.redirectErrorStream(true);
 
-        if( !isEnvironmentVarialbeSet ) {
+        if (!isEnvironmentVarialbeSet) {
             Map<String, String> env = pb.environment();
-            for( String key : env.keySet() ) {
-                if( key.toLowerCase().equals( "path" ) ) {
-                    env.put( key, cygwinBinPath + File.pathSeparator + cctoolsBinPath + File.pathSeparator + env.get( key ) );
+            for (String key : env.keySet()) {
+                if (key.toLowerCase().equals("path")) {
+                    env.put(key, cygwinBinPath + File.pathSeparator + cctoolsBinPath + File.pathSeparator + env.get(key));
                     break;
                 }
             }
@@ -115,29 +114,28 @@ public class CctoolsOperator extends AbstractApplicationOperator {
         try {
             validateCatalogServerInformation();
 
-            if( taskFileName != null && !taskFileName.isEmpty() && taskDirectory!= null && !taskDirectory.isEmpty() ) {
-                File currDirectory = new File(taskDirectory);
-                if(currDirectory.exists() && currDirectory.isDirectory()) {
+            if (taskFileName != null && !taskFileName.isEmpty() && taskDirectory != null && !taskDirectory.isEmpty()) {
+                if (ToolPool.isDirectoryExist(taskDirectory)) {
                     File currFile = new File(taskDirectory + File.separator + taskFileName);
-                    if(currFile.exists() || currFile.canRead()) {
+                    if (currFile.exists() || currFile.canRead()) {
                         ProcessBuilder pb = this.buildProcessBuilder(
                                 cctoolsBinPath + File.separator + "makeflow",
                                 "-T", "wq",
                                 "-C", catalogServerAddress + ":" + catalogServerPort, "-a",
                                 "-N", taskName,
-                                currFile.getPath() );
+                                currFile.getPath());
 
                         Process process = pb.start();
-                        processes.add( process );
+                        processes.add(process);
 
-                        BufferedReader ireader = new BufferedReader( new InputStreamReader( process.getInputStream() ) );
+                        BufferedReader ireader = new BufferedReader(new InputStreamReader(process.getInputStream()));
                         String line;
                         //storageOperator.enqueue( StaticValues.QUEUE_JOBQUEUE_NAME, taskName );
-                        while ( (line = ireader.readLine ()) != null ) {
-                            System.out.println( "MAKEFLOW OUTPUT: " + line );
+                        while ((line = ireader.readLine()) != null) {
+                            System.out.println("MAKEFLOW OUTPUT: " + line);
                         }
 
-                        System.out.printf( "Makeflow process for job(%s) has been completed.%n", taskName );
+                        System.out.printf("Makeflow process for job(%s) has been completed.%n", taskName);
 
                         rtnVal = true;
                     }
@@ -158,19 +156,19 @@ public class CctoolsOperator extends AbstractApplicationOperator {
 
             ProcessBuilder pb = this.buildProcessBuilder(
                     cctoolsBinPath + File.separator + "work_queue_worker",
-                    "-C",  catalogServerAddress + ":" + catalogServerPort, "-a", "-s" );
+                    "-C", catalogServerAddress + ":" + catalogServerPort, "-a", "-s");
             //"-N", taskName );
 
             Process process = pb.start();
-            processes.add( process );
+            processes.add(process);
 
-            BufferedReader ireader = new BufferedReader( new InputStreamReader( process.getInputStream() ) );
+            BufferedReader ireader = new BufferedReader(new InputStreamReader(process.getInputStream()));
             String line;
-            while ( (line = ireader.readLine ()) != null ) {
-                System.out.println( "WORKQ OUTPUT: " + line );
+            while ((line = ireader.readLine()) != null) {
+                System.out.println("WORKQ OUTPUT: " + line);
             }
 
-            System.out.println( "Makeflow process for has been completed." );
+            System.out.println("Makeflow process for has been completed.");
 
             rtnVal = true;
         } catch (Exception e) {
@@ -186,13 +184,13 @@ public class CctoolsOperator extends AbstractApplicationOperator {
             this.catalogServerAddress = catalogServerAddress;
             this.catalogServerPort = catalogServerPort;
 
-            this.updateCatalogServerInfo( KEY_DYNAMIC_DATA_CATALOGSERVERADDRESS, catalogServerAddress );
-            this.updateCatalogServerInfo( KEY_DYNAMIC_DATA_CATALOGSERVERPORT, catalogServerPort );
+            this.updateCatalogServerInfo(KEY_DYNAMIC_DATA_CATALOGSERVERADDRESS, catalogServerAddress);
+            this.updateCatalogServerInfo(KEY_DYNAMIC_DATA_CATALOGSERVERPORT, catalogServerPort);
 
-            ProcessBuilder pb = this.buildProcessBuilder( cctoolsBinPath + File.separator + "catalog_server", "-p", catalogServerPort );
+            ProcessBuilder pb = this.buildProcessBuilder(cctoolsBinPath + File.separator + "catalog_server", "-p", catalogServerPort);
 
             Process process = pb.start();
-            processes.add( process );
+            processes.add(process);
             /*BufferedReader ireader = new BufferedReader( new InputStreamReader( catalogServerProcess.getInputStream() ) );
             String line;
             while ( (line = ireader.readLine ()) != null ) {
@@ -218,8 +216,8 @@ public class CctoolsOperator extends AbstractApplicationOperator {
 
     public String getCatalogServerAddress() {
         try {
-            if( this.catalogServerAddress == null || this.catalogServerAddress.isEmpty() )
-                this.catalogServerAddress = this.getCatalogServerInfo( KEY_DYNAMIC_DATA_CATALOGSERVERADDRESS );
+            if (this.catalogServerAddress == null || this.catalogServerAddress.isEmpty())
+                this.catalogServerAddress = this.getCatalogServerInfo(KEY_DYNAMIC_DATA_CATALOGSERVERADDRESS);
         } catch (Exception ex) {
             ex.printStackTrace();
         }
@@ -228,46 +226,46 @@ public class CctoolsOperator extends AbstractApplicationOperator {
 
     public String getCatalogServerPort() {
         try {
-            if( this.catalogServerPort == null || this.catalogServerPort.isEmpty() )
-                this.catalogServerPort = this.getCatalogServerInfo( KEY_DYNAMIC_DATA_CATALOGSERVERPORT );
+            if (this.catalogServerPort == null || this.catalogServerPort.isEmpty())
+                this.catalogServerPort = this.getCatalogServerInfo(KEY_DYNAMIC_DATA_CATALOGSERVERPORT);
         } catch (Exception ex) {
             ex.printStackTrace();
         }
         return this.catalogServerPort;
     }
 
-    public  void updateCatalogServerInfo(String key, String value) {
+    public void updateCatalogServerInfo(String key, String value) {
         try {
-            DynamicData catalogServerInfo = new DynamicData( "catalogserver_info" );
-            catalogServerInfo.setDataKey( key );
-            catalogServerInfo.setDataValue( value );
+            pdl.cloud.model.DynamicData catalogServerInfo = new pdl.cloud.model.DynamicData("catalogserver_info");
+            catalogServerInfo.setDataKey(key);
+            catalogServerInfo.setDataValue(value);
 
-            TableOperator tableOperator = new TableOperator( conf );
-            tableOperator.insertSingleEntity( conf.getStringProperty( "TABLE_NAME_DYNAMIC_DATA" ), catalogServerInfo );
+            pdl.cloud.storage.TableOperator tableOperator = new pdl.cloud.storage.TableOperator(conf);
+            tableOperator.insertSingleEntity(conf.getStringProperty("TABLE_NAME_DYNAMIC_DATA"), catalogServerInfo);
             System.out.printf(
                     "Update catalogServerPort('%s':'%s') information to '%s'%n",
-                    key, value, conf.getStringProperty( "TABLE_NAME_DYNAMIC_DATA" ) );
-        } catch ( Exception e ) {
+                    key, value, conf.getStringProperty("TABLE_NAME_DYNAMIC_DATA"));
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    public String getCatalogServerInfo( String key ) {
+    public String getCatalogServerInfo(String key) {
         String rtnVal = null;
 
         try {
-            TableOperator tableOperator = new TableOperator( conf );
+            pdl.cloud.storage.TableOperator tableOperator = new pdl.cloud.storage.TableOperator(conf);
 
-            DynamicData catalogServerInfo = (DynamicData)tableOperator.queryEntityBySearchKey(
-                    conf.getStringProperty( "TABLE_NAME_DYNAMIC_DATA" ),
+            pdl.cloud.model.DynamicData catalogServerInfo = (pdl.cloud.model.DynamicData) tableOperator.queryEntityBySearchKey(
+                    conf.getStringProperty("TABLE_NAME_DYNAMIC_DATA"),
                     StaticValues.COLUMN_DYNAMIC_DATA_NAME,
                     key,
-                    DynamicData.class
+                    pdl.cloud.model.DynamicData.class
             );
 
-            if( catalogServerInfo != null )
+            if (catalogServerInfo != null)
                 rtnVal = catalogServerInfo.getDataValue();
-        } catch ( Exception e ) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return rtnVal;

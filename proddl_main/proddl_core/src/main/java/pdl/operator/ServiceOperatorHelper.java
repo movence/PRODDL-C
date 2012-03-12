@@ -30,9 +30,6 @@ import pdl.operator.service.JobExecutor;
 import pdl.operator.service.JobExecutorThreadPool;
 import pdl.operator.service.JobHandler;
 import pdl.operator.service.RejectedJobExecutorHandler;
-import pdl.services.StorageServices;
-import pdl.services.management.ScheduledInstanceMonitor;
-import pdl.services.model.JobDetail;
 
 import java.io.File;
 import java.util.Timer;
@@ -49,7 +46,7 @@ import java.util.concurrent.TimeUnit;
 public class ServiceOperatorHelper {
 
     private Configuration conf;
-    private StorageServices storageServices;
+    private pdl.cloud.StorageServices storageServices;
 
     private PythonOperator pythonOperator;
     private CygwinOperator cygwinOperator;
@@ -59,11 +56,10 @@ public class ServiceOperatorHelper {
 
     public ServiceOperatorHelper() {
         conf = Configuration.getInstance();
-        storageServices = new StorageServices();
+        storageServices = new pdl.cloud.StorageServices();
     }
 
     /**
-     *
      * @param isMaster
      * @param storagePath
      * @param masterAddress
@@ -73,22 +69,22 @@ public class ServiceOperatorHelper {
     public void run(String isMaster, String storagePath, String masterAddress, String catalogServerPort, String jettyPort) {
         try {
 
-            storagePath = storagePath.replace( "/", File.separator );
-            if( !storagePath.endsWith( File.separator ) )
+            storagePath = storagePath.replace("/", File.separator);
+            if (!storagePath.endsWith(File.separator))
                 storagePath += File.separator;
 
-            conf.setProperty( "STORAGE_PATH", storagePath );
+            conf.setProperty("STORAGE_PATH", storagePath);
             this.storagePath = storagePath;
 
             this.runOperators();
 
-            if( isMaster.equals( "true" ) ) { //Master Instance
-                this.runMaster( jettyPort, masterAddress, catalogServerPort );
+            if (isMaster.equals("true")) { //Master Instance
+                this.runMaster(jettyPort, masterAddress, catalogServerPort);
             } else { //Job(WorkQ) runner
                 this.runJobRunner();
             }
 
-        } catch(Exception ex) {
+        } catch (Exception ex) {
             ex.printStackTrace();
         }
     }
@@ -96,24 +92,24 @@ public class ServiceOperatorHelper {
     private void runOperators() throws Exception {
         pythonOperator = new PythonOperator(
                 storagePath,
-                (String)conf.getProperty( "PYTHON_NAME" ),
-                (String)conf.getProperty( "PYTHON_FLAG_FILE" ),
+                (String) conf.getProperty("PYTHON_NAME"),
+                (String) conf.getProperty("PYTHON_FLAG_FILE"),
                 null
         );
         pythonOperator.run(storageServices);
 
         cygwinOperator = new CygwinOperator(
                 storagePath,
-                (String)conf.getProperty( "CYGWIN_NAME" ),
-                (String)conf.getProperty( "CYGWIN_FLAG_FILE" ),
+                (String) conf.getProperty("CYGWIN_NAME"),
+                (String) conf.getProperty("CYGWIN_FLAG_FILE"),
                 null
         );
         cygwinOperator.run(storageServices);
 
         cctoolsOperator = new CctoolsOperator(
                 storagePath,
-                (String)conf.getProperty( "CCTOOLS_NAME" ),
-                "bin" + File.separator + conf.getProperty( "CCTOOLS_FLAG_FILE" ),
+                (String) conf.getProperty("CCTOOLS_NAME"),
+                "bin" + File.separator + conf.getProperty("CCTOOLS_FLAG_FILE"),
                 null
         );
         cctoolsOperator.run(storageServices);
@@ -124,7 +120,7 @@ public class ServiceOperatorHelper {
         if( jettyOperator.download( blobOperator, prop.getProperty( "JETTY_FLAG_FILE" ) ) ) {
             jettyOperator.start( jettyPort );
         }*/
-        JettyThreadedOperator jettyOperator = new JettyThreadedOperator( jettyPort );
+        JettyThreadedOperator jettyOperator = new JettyThreadedOperator(jettyPort);
         jettyOperator.start();
 
         JobHandler jobHandler = new JobHandler();
@@ -132,52 +128,52 @@ public class ServiceOperatorHelper {
         jobHandler.rollbackAllRunningJobStatus();
 
         String tempCatalogServerAddress = cctoolsOperator.getCatalogServerAddress();
-        if( tempCatalogServerAddress == null ) {
-            if( !cctoolsOperator.startCatalogServer( masterAddress, catalogServerPort ) ) {
-                throw new Exception( "Failed to start Catalog Server at " + masterAddress + ":" + catalogServerPort );
+        if (tempCatalogServerAddress == null) {
+            if (!cctoolsOperator.startCatalogServer(masterAddress, catalogServerPort)) {
+                throw new Exception("Failed to start Catalog Server at " + masterAddress + ":" + catalogServerPort);
             }
         }
 
         //Adds processor time monitor to timer
-        ScheduledInstanceMonitor instanceMonitor = new ScheduledInstanceMonitor();
+        //TODO is CPU usage monitor really needed?
+        int timeInterval = 180000;
+        pdl.cloud.management.ScheduledInstanceMonitor instanceMonitor = new pdl.cloud.management.ScheduledInstanceMonitor();
         Timer instanceMonitorTimer = new Timer();
-        instanceMonitorTimer.scheduleAtFixedRate( instanceMonitor, 180000, 180000 );
+        instanceMonitorTimer.scheduleAtFixedRate(instanceMonitor, timeInterval, timeInterval);
 
         //Job running threads pool
         final JobExecutorThreadPool threadExecutor = new JobExecutorThreadPool(
-                conf.getIntegerProperty( "CORE_NUMBER_JOB_EXECUTOR" ),
-                conf.getIntegerProperty( "MAX_NUMBER_JOB_EXECUTOR" ),
-                conf.getIntegerProperty( "MAX_KEEP_ALIVE_VALUE_JOB_EXECUTOR" ),
-                conf.getStringProperty( "MAX_KEEP_ALIVE_UNIT_JOB_EXECUTOR" ).equals( "min" )?TimeUnit.MINUTES:TimeUnit.SECONDS,
+                conf.getIntegerProperty("CORE_NUMBER_JOB_EXECUTOR"),
+                conf.getIntegerProperty("MAX_NUMBER_JOB_EXECUTOR"),
+                conf.getIntegerProperty("MAX_KEEP_ALIVE_VALUE_JOB_EXECUTOR"),
+                conf.getStringProperty("MAX_KEEP_ALIVE_UNIT_JOB_EXECUTOR").equals("min") ? TimeUnit.MINUTES : TimeUnit.SECONDS,
                 new SynchronousQueue<Runnable>(),
                 //new BlockingArrayQueue<Runnable>(5),
                 new RejectedJobExecutorHandler()
         );
 
-        Runtime.getRuntime().addShutdownHook( new Thread() {
+        Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
             public void run() {
                 threadExecutor.shutdownNow();
             }
         });
 
-        ThreadGroup threadGroup = new ThreadGroup( Thread.currentThread().getThreadGroup(), "worker" );
+        ThreadGroup threadGroup = new ThreadGroup(Thread.currentThread().getThreadGroup(), "worker");
         //checks available job indefinitely
-        while( true ) {
-            JobDetail submittedJob = jobHandler.getSubmmittedJob();
-            if( submittedJob != null ) {
-                JobExecutor jobExecutor = new JobExecutor( threadGroup, submittedJob, cctoolsOperator );
-                threadExecutor.execute( jobExecutor );
+        while (true) {
+            pdl.cloud.model.JobDetail submittedJob = jobHandler.getSubmmittedJob();
+            if (submittedJob != null) {
+                JobExecutor jobExecutor = new JobExecutor(threadGroup, submittedJob, cctoolsOperator);
+                threadExecutor.execute(jobExecutor);
             }
         }
     }
 
     private void runJobRunner() throws Exception {
-        while( true ) {
+        while (true) {
 
-            while( cctoolsOperator.getCatalogServerAddress() == null ) {
-                //storageOperator.dequeue( StaticValues.QUEUE_JOBQUEUE_NAME, false ) == null ) {
-                System.out.println( "CatalogServer or Makeflow has not been initialized. Worker role waits for 10s." );
+            while (cctoolsOperator.getCatalogServerAddress() == null) {
                 Thread.sleep(10000);
             }
 

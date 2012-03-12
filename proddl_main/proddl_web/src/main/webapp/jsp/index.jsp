@@ -49,7 +49,7 @@
 <%@taglib prefix="sf" uri="http://www.springframework.org/tags/form" %>
 <%@taglib prefix="s" uri="http://www.springframework.org/tags" %>
 <%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
-<%@page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 
 <!DOCTYPE html>
 <html>
@@ -64,26 +64,27 @@
     </script>
     <![endif]-->
     <script>
-        $(document).ready( function() {
+        $(document).ready(function() {
             $('#topMenuTabs').tabs();
             /*setInterval(setIframeSize, 5);*/
             setIframeSize();
         });
 
         function setIframeSize() {
-            $('iframe').height($(window).height()*.8);
+            $('iframe').height($(window).height() * .8);
             //$('iframe').width("100%");
         }
     </script>
-    <link href="/resources/css/redmond/jquery-ui-1.8.16.custom.css" rel="stylesheet" type="text/css" />
-    <link href="/resources/css/main.css" rel="stylesheet" type="text/css" />
+    <link href="/resources/css/redmond/jquery-ui-1.8.16.custom.css" rel="stylesheet" type="text/css"/>
+    <link href="/resources/css/main.css" rel="stylesheet" type="text/css"/>
     <style type="text/css">
     </style>
 </head>
 <body>
 <div id="topUserInfo" style="text-align: right;">
     <form action="/pdl/w/logout" method="post" name="logoutform">
-        Hello!! <%= request.getUserPrincipal().getName() %> <a href="javascript:document.logoutform.submit();">log out</a>
+        Hello!! <%= request.getUserPrincipal().getName() %> <a href="javascript:document.logoutform.submit();">log
+        out</a>
     </form>
 </div>
 <div id="topMenuTabs" style="width: 100%; height: 100%;">

@@ -41,7 +41,7 @@ import java.security.ProtectionDomain;
 public class JettyThreadedOperator extends Thread {
     private String jettyPort;
 
-    public JettyThreadedOperator( String port ) {
+    public JettyThreadedOperator(String port) {
         jettyPort = port;
     }
 
@@ -51,33 +51,33 @@ public class JettyThreadedOperator extends Thread {
 
             Server jettyServer = new Server();
             jettyServer.setStopAtShutdown(true);
-            jettyServer.setGracefulShutdown( 1000 );
+            jettyServer.setGracefulShutdown(1000);
 
             QueuedThreadPool threadPool = new QueuedThreadPool();
-            threadPool.setMaxThreads( 100 );
+            threadPool.setMaxThreads(100);
             jettyServer.setThreadPool(threadPool);
 
             Connector connector = new SelectChannelConnector();
-            connector.setPort( Integer.parseInt( jettyPort ) );
-            jettyServer.setConnectors( new Connector[]{ connector } );
+            connector.setPort(Integer.parseInt(jettyPort));
+            jettyServer.setConnectors(new Connector[]{connector});
 
             ProtectionDomain protectionDomain = JettyOperator.class.getProtectionDomain();
             String warFile = protectionDomain.getCodeSource().getLocation().toExternalForm();
             String currentDir = new File(protectionDomain.getCodeSource().getLocation().getPath()).getParent();
 
-            WebAppContext context = new WebAppContext( warFile, "/" );
-            context.setServer( jettyServer );
+            WebAppContext context = new WebAppContext(warFile, "/");
+            context.setServer(jettyServer);
 
             HandlerList handlers = new HandlerList();
-            handlers.addHandler( context );
-            jettyServer.setHandler( handlers );
+            handlers.addHandler(context);
+            jettyServer.setHandler(handlers);
 
             jettyServer.start();
             jettyServer.join();
 
-            System.out.println( "JettyThreadedOperator: start DONE" );
-        }catch( Exception ex ){
-            System.out.println( "JettyThreadedOperator.start threw : " + ex.toString() );
+            System.out.println("JettyThreadedOperator: start DONE");
+        } catch (Exception ex) {
+            System.out.println("JettyThreadedOperator.start threw : " + ex.toString());
             ex.printStackTrace();
         }
     }
