@@ -23,8 +23,8 @@ package pdl.web.service.common;
 
 import org.apache.log4j.Logger;
 import org.springframework.web.multipart.MultipartFile;
+import pdl.cloud.storage.BlobOperator;
 import pdl.common.StaticValues;
-import pdl.services.storage.BlobOperator;
 
 import java.io.File;
 import java.io.FileOutputStream;

@@ -21,6 +21,8 @@
 
 package pdl.cloud.management;
 
+import pdl.cloud.model.JobDetail;
+import pdl.cloud.storage.TableOperator;
 import org.soyatec.windowsazure.table.ITableServiceEntity;
 import pdl.common.Configuration;
 import pdl.common.QueryTool;
@@ -39,12 +41,12 @@ import java.util.List;
 public class JobManager {
 
     private Configuration conf;
-    private pdl.cloud.storage.TableOperator tableOperator;
+    private TableOperator tableOperator;
     private String jobDetailTableName;
 
     public JobManager() {
         conf = Configuration.getInstance();
-        tableOperator = new pdl.cloud.storage.TableOperator(conf);
+        tableOperator = new TableOperator(conf);
         jobDetailTableName = conf.getStringProperty("TABLE_NAME_JOB_DETAIL");
     }
 
@@ -58,9 +60,9 @@ public class JobManager {
             List<ITableServiceEntity> jobs = getJobList(
                     QueryTool.getSingleConditionalStatement("status", "eq", StaticValues.JOB_STATUS_SUBMITTED));
 
-            ArrayList<pdl.cloud.model.JobDetail> prioritisedJobList = new ArrayList<pdl.cloud.model.JobDetail>();
+            ArrayList<JobDetail> prioritisedJobList = new ArrayList<JobDetail>();
             for (ITableServiceEntity job : jobs) {
-                pdl.cloud.model.JobDetail currJob = (pdl.cloud.model.JobDetail) job;
+                JobDetail currJob = (JobDetail) job;
 
                 //simply adds a job if priority list is empty
                 if (prioritisedJobList.size() == 0) {
@@ -71,7 +73,7 @@ public class JobManager {
                         int i;
                         for (i = 0; i < prioritisedJobList.size(); i++) {
 
-                            pdl.cloud.model.JobDetail currentJob = prioritisedJobList.get(i);
+                            JobDetail currentJob = prioritisedJobList.get(i);
                             if (currentJob.getStatus() == StaticValues.JOB_STATUS_SUBMITTED) {
                                 continue;
                             } else {
@@ -86,7 +88,7 @@ public class JobManager {
             }
 
             for (int curr = 0; curr < prioritisedJobList.size(); curr++) {
-                pdl.cloud.model.JobDetail currentJob = prioritisedJobList.get(curr);
+                JobDetail currentJob = prioritisedJobList.get(curr);
                 currentJob.setPriority(curr + 1);
             }
 
@@ -105,16 +107,14 @@ public class JobManager {
      * @return boolean
      * @throws Exception
      */
-    public boolean submitJob(pdl.cloud.model.JobDetail jobDetail) throws Exception {
+    public boolean submitJob(JobDetail jobDetail) throws Exception {
         boolean rtnVal = false;
 
         try {
             rtnVal = tableOperator.insertSingleEntity(jobDetailTableName, jobDetail);
-
-            /*if( rtnVal )
-                this.reorderPendingJobs();
-            else*/
-            if (rtnVal)
+            if( rtnVal )
+                this.reorderSubmittedJobs();
+            else
                 throw new Exception("Adding job to Azure table failed.");
 
         } catch (Exception ex) {
@@ -131,8 +131,8 @@ public class JobManager {
      * @return JobDetail corresponding to given jobUUID
      * @throws Exception
      */
-    public pdl.cloud.model.JobDetail getJobByID(String jobId) throws Exception {
-        pdl.cloud.model.JobDetail job = null;
+    public JobDetail getJobByID(String jobId) throws Exception {
+        JobDetail job = null;
 
         try {
             ITableServiceEntity retrievedJob = null;
@@ -142,12 +142,12 @@ public class JobManager {
                         jobDetailTableName,
                         StaticValues.COLUMN_ROW_KEY,
                         jobId,
-                        pdl.cloud.model.JobDetail.class
+                        JobDetail.class
                 );
             }
 
-            if (retrievedJob != null && retrievedJob.getClass() == pdl.cloud.model.JobDetail.class)
-                job = (pdl.cloud.model.JobDetail) retrievedJob;
+            if (retrievedJob != null && retrievedJob.getClass() == JobDetail.class)
+                job = (JobDetail) retrievedJob;
             else
                 throw new Exception(String.format("Job (ID:'%s') does not exist.", jobId));
 
@@ -165,8 +165,8 @@ public class JobManager {
      * @return JobDetail
      * @throws Exception
      */
-    public pdl.cloud.model.JobDetail getSingleSubmittedJob() throws Exception {
-        pdl.cloud.model.JobDetail job = null;
+    public JobDetail getSingleSubmittedJob() throws Exception {
+        JobDetail job = null;
 
         try {
             ITableServiceEntity retrievedJob = null;
@@ -187,7 +187,7 @@ public class JobManager {
                                     1
                             )
                     ),
-                    pdl.cloud.model.JobDetail.class
+                    JobDetail.class
             );
 
             //if no job is found in previous step, grab a submitted job to run
@@ -196,12 +196,12 @@ public class JobManager {
                         jobDetailTableName,
                         StaticValues.COLUMN_JOB_DETAIL_STATUS,
                         StaticValues.JOB_STATUS_SUBMITTED,
-                        pdl.cloud.model.JobDetail.class
+                        JobDetail.class
                 );
             }
 
-            if (retrievedJob != null && retrievedJob.getClass() == pdl.cloud.model.JobDetail.class)
-                job = (pdl.cloud.model.JobDetail) retrievedJob;
+            if (retrievedJob != null && retrievedJob.getClass() == JobDetail.class)
+                job = (JobDetail) retrievedJob;
 
         } catch (Exception ex) {
             throw ex;
@@ -222,7 +222,7 @@ public class JobManager {
         boolean rtnVal = false;
 
         try {
-            pdl.cloud.model.JobDetail entity = getJobByID(jobId);
+            JobDetail entity = getJobByID(jobId);
 
             if (entity != null && entity.getStatus() != status) {
                 entity.setStatus(status);
@@ -247,7 +247,7 @@ public class JobManager {
             );
 
             for (ITableServiceEntity entity : jobList) {
-                pdl.cloud.model.JobDetail currJob = (pdl.cloud.model.JobDetail) entity;
+                JobDetail currJob = (JobDetail) entity;
                 updateJobStatus(currJob.getJobUUID(), newStatus);
             }
         } catch (Exception ex) {
@@ -259,7 +259,7 @@ public class JobManager {
         boolean rtnVal = false;
 
         try {
-            pdl.cloud.model.JobDetail entity = getJobByID(jobId);
+            JobDetail entity = getJobByID(jobId);
 
             if (entity != null) {
                 entity.setJobDirectory(path);
@@ -279,7 +279,7 @@ public class JobManager {
             jobs = tableOperator.queryListByCondition(
                     conf.getStringProperty("TABLE_NAME_JOB_DETAIL"),
                     condition,
-                    pdl.cloud.model.JobDetail.class);
+                    JobDetail.class);
 
         } catch (Exception ex) {
             ex.printStackTrace();

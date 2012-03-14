@@ -38,7 +38,7 @@ public class JobHandler {
     }
 
     public synchronized JobDetail getSubmmittedJob() {
-        pdl.cloud.model.JobDetail singleJob = null;
+        JobDetail singleJob = null;
 
         try {
             singleJob = jobManager.getSingleSubmittedJob();
@@ -53,8 +53,8 @@ public class JobHandler {
         return singleJob;
     }
 
-    public pdl.cloud.model.JobDetail getCurrentJob(String jobUUID) {
-        pdl.cloud.model.JobDetail currJob = null;
+    public JobDetail getCurrentJob(String jobUUID) {
+        JobDetail currJob = null;
 
         try {
             currJob = jobManager.getJobByID(jobUUID);

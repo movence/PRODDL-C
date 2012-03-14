@@ -11,6 +11,7 @@
     <modules>
         <module>proddl_core</module>
         <module>proddl_web</module>
+        <module>proddl_cloud</module>
     </modules>
 
     <dependencies>

@@ -21,6 +21,7 @@
 
 package pdl.cloud.storage;
 
+import pdl.cloud.storage.listener.QueueMessageReceivedListener;
 import org.soyatec.windowsazure.queue.IMessage;
 import org.soyatec.windowsazure.queue.IQueue;
 import org.soyatec.windowsazure.queue.QueueStorageClient;
@@ -87,7 +88,7 @@ public class QueueOperator {
 
     private void addQueueListner(IQueue queue) {
         try {
-            pdl.cloud.storage.listener.QueueMessageReceivedListener queueMRL = new pdl.cloud.storage.listener.QueueMessageReceivedListener();
+            QueueMessageReceivedListener queueMRL = new QueueMessageReceivedListener();
             queue.addMessageReceivedListener(queueMRL);
         } catch (Exception ex) {
             ex.printStackTrace();

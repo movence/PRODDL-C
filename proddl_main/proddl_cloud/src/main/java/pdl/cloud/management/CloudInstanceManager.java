@@ -21,6 +21,9 @@
 
 package pdl.cloud.management;
 
+import pdl.cloud.model.PerformanceData;
+import pdl.cloud.storage.BlobOperator;
+import pdl.cloud.storage.TableOperator;
 import com.sun.org.apache.xerces.internal.parsers.DOMParser;
 import com.sun.org.apache.xml.internal.serialize.OutputFormat;
 import com.sun.org.apache.xml.internal.serialize.XMLSerializer;
@@ -60,7 +63,7 @@ public class CloudInstanceManager {
     private String hostedServiceName;
 
     private String storagePath;
-    private pdl.cloud.storage.TableOperator tableOperator;
+    private TableOperator tableOperator;
 
     public CloudInstanceManager() {
         conf = Configuration.getInstance();
@@ -71,10 +74,10 @@ public class CloudInstanceManager {
         try {
             this.storagePath = conf.getStringProperty("STORAGE_PATH");
 
-            tableOperator = new pdl.cloud.storage.TableOperator(conf);
+            tableOperator = new TableOperator(conf);
             tableOperator.initDiagnosticsTableClient();
 
-            pdl.cloud.storage.BlobOperator blobOperator = new pdl.cloud.storage.BlobOperator(conf);
+            BlobOperator blobOperator = new BlobOperator(conf);
             String keystoreFilePath = storagePath + File.separator + conf.getStringProperty("KEYSTORE_FILE_NAME");
             String trustcacertFiePath = storagePath + File.separator + conf.getStringProperty("TRUSTCACERT_FILE_NAME");
 
@@ -210,12 +213,12 @@ public class CloudInstanceManager {
         try {
             List<ITableServiceEntity> entityList = tableOperator.queryListBySearchKey(
                     TABLE_PERFORMANCE_COUNTER_NAME, COLUMN_PERFORMANCE_COUNTER_NAME,
-                    COLUMN_PERFORMANCE_COUNTER_VALUE, null, null, pdl.cloud.model.PerformanceData.class);
+                    COLUMN_PERFORMANCE_COUNTER_VALUE, null, null, PerformanceData.class);
 
             if (entityList != null && entityList.size() > 0) {
                 float processorTimeFactor = 0;
                 for (ITableServiceEntity entity : entityList) {
-                    processorTimeFactor += (float) ((pdl.cloud.model.PerformanceData) entity).getCounterValue();
+                    processorTimeFactor += (float) ((PerformanceData) entity).getCounterValue();
                     tableOperator.deleteEntity(TABLE_PERFORMANCE_COUNTER_NAME, entity);
                 }
 

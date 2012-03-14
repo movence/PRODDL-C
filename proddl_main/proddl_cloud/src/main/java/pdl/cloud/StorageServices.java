@@ -22,6 +22,9 @@
 package pdl.cloud;
 
 
+import pdl.cloud.model.FileInfo;
+import pdl.cloud.storage.BlobOperator;
+import pdl.cloud.storage.TableOperator;
 import pdl.common.Configuration;
 import pdl.common.StaticValues;
 
@@ -34,8 +37,8 @@ import pdl.common.StaticValues;
 public class StorageServices {
     private Configuration conf;
 
-    private pdl.cloud.storage.TableOperator tableOperator;
-    private pdl.cloud.storage.BlobOperator blobOperator;
+    private TableOperator tableOperator;
+    private BlobOperator blobOperator;
 
     public StorageServices() {
         conf = Configuration.getInstance();
@@ -44,17 +47,17 @@ public class StorageServices {
     /*
      *TABLE OPERATIONS
      */
-    private pdl.cloud.storage.TableOperator getTableOperator() {
+    private TableOperator getTableOperator() {
         if (tableOperator == null)
-            tableOperator = new pdl.cloud.storage.TableOperator(conf);
+            tableOperator = new TableOperator(conf);
         return tableOperator;
     }
 
     public String getFileNameById(String name) {
-        pdl.cloud.model.FileInfo currFile = (pdl.cloud.model.FileInfo) getTableOperator().queryEntityBySearchKey(
+        FileInfo currFile = (FileInfo) getTableOperator().queryEntityBySearchKey(
                 conf.getStringProperty("TABLE_NAME_FILES"),
                 StaticValues.COLUMN_FILE_INFO_NAME, name,
-                pdl.cloud.model.FileInfo.class);
+                FileInfo.class);
         return currFile.getName() + "." + currFile.getType();
     }
 
@@ -62,9 +65,9 @@ public class StorageServices {
     /*
      *BLOB OPERATIONS
      */
-    private pdl.cloud.storage.BlobOperator getBlobOperator() {
+    private BlobOperator getBlobOperator() {
         if (blobOperator == null)
-            blobOperator = new pdl.cloud.storage.BlobOperator(conf);
+            blobOperator = new BlobOperator(conf);
         return blobOperator;
     }
 

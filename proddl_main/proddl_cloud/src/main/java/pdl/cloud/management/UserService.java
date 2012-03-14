@@ -21,13 +21,12 @@
 
 package pdl.cloud.management;
 
+import pdl.cloud.model.User;
+import pdl.cloud.storage.TableOperator;
 import org.soyatec.windowsazure.table.AbstractTableServiceEntity;
 import org.springframework.security.authentication.encoding.PasswordEncoder;
 import org.springframework.security.authentication.encoding.ShaPasswordEncoder;
-import pdl.cloud.model.User;
 import pdl.common.Configuration;
-
-import javax.print.DocFlavor;
 
 /**
  * Created by IntelliJ IDEA.
@@ -37,7 +36,7 @@ import javax.print.DocFlavor;
  */
 public class UserService {
     private Configuration conf;
-    private pdl.cloud.storage.TableOperator tableOperator;
+    private TableOperator tableOperator;
 
     public UserService() {
         conf = Configuration.getInstance();
@@ -49,7 +48,7 @@ public class UserService {
 
     private void initializeTableOperator() {
         if (tableOperator == null)
-            tableOperator = new pdl.cloud.storage.TableOperator(conf);
+            tableOperator = new TableOperator(conf);
     }
 
     public User getUserById(String userId) throws Exception {
@@ -59,7 +58,7 @@ public class UserService {
             initializeTableOperator();
 
             AbstractTableServiceEntity rtnEntity = tableOperator.queryEntityBySearchKey(
-                    "user", "userid", userId, pdl.cloud.model.User.class
+                    "user", "userid", userId, User.class
             );
 
             if (rtnEntity != null) {

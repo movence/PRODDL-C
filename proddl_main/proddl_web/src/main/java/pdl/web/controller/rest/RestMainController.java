@@ -128,8 +128,8 @@ public class RestMainController {
             rtnJson.put("info", "Job Execution");
             rtnJson.put("jobName", jobName);
             rtnJson.put("input", inputInString);
-            rtnJson.put("result", jobResult);
-            rtnJson.put("message", "Job has been submitted.");
+            rtnJson.put("result", jobResult+"%n");
+            rtnJson.put("message", "Job has been submitted.%n");
         } catch (Exception e) {
             if (exceptionStr == null)
                 exceptionStr = e.toString();
