@@ -53,7 +53,7 @@ namespace PRODDLMaster
                 storageHelper.unMountCloudDrive();
             }
 
-            //Delete diagnositcs table
+            //Delete diagnositcs tables
             storageHelper.deleteDiagnosticsTables(RoleEnvironment.GetConfigurationSettingValue("DiagnosticConnectionString"));
 
             //Clean up Dynamic Data table except azure drive information
@@ -167,8 +167,9 @@ namespace PRODDLMaster
         {
             if (_dynamicDataContext == null)
                 initializeTableContext();
-            _dynamicDataContext.deleteDynamicData("dynamicdata_catalogserver", "CatalogServerAddress");
-            _dynamicDataContext.deleteDynamicData("dynamicdata_catalogserver", "CatalogServerPort");
+            _dynamicDataContext.deleteDynamicData("CatalogServerAddress");
+            _dynamicDataContext.deleteDynamicData("CatalogServerPort");
+            _dynamicDataContext.deleteDynamicData("StoragePath");
         }
 
         private String createDriveFromCMD()

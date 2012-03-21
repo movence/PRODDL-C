@@ -35,6 +35,6 @@ namespace CommonTool.data
         public String dataValue { get; set; }
 
         public DynamicDataModel(String partitionKey, String rowKey) : base(partitionKey, rowKey) {}
-        public DynamicDataModel() : this(Guid.NewGuid().ToString(), String.Empty) { }
+        public DynamicDataModel() : this("generic_dynamic", Guid.NewGuid().ToString()) { }
     }
 }

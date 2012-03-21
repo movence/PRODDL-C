@@ -61,7 +61,7 @@ namespace CommonTool.data
 
         public void insertDynamicData(String key, String value)
         {
-            this.insertDynamicData("generic", key.ToString(), key, value);
+            this.insertDynamicData(null, null, key, value);
         }
 
         public DynamicDataModel getDynamicData(String key)
@@ -81,13 +81,12 @@ namespace CommonTool.data
             return null;
         }
 
-        public void deleteDynamicData(String partitionKey, String rowKey)
+        public void deleteDynamicData(String key)
         {
             try
             {
-                DynamicDataModel data = new DynamicDataModel(partitionKey, rowKey);
+                DynamicDataModel data = this.getDynamicData(key);
                 this.IgnoreResourceNotFoundException = true;
-                this.AttachTo(dynamicDataTableName, data, "*");
                 this.DeleteObject(data);
                 this.SaveChanges();
             }
