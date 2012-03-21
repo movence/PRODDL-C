@@ -34,7 +34,6 @@ public class StaticValues {
     public static final String COLUMN_DYNAMIC_DATA_KEY = "dataKey";
     public static final String COLUMN_JOB_DETAIL_PRIORITY = "priority";
     public static final String COLUMN_JOB_DETAIL_STATUS = "status";
-    public static final String COLUMN_FILE_INFO_NAME = "name";
     public static final String COLUMN_FILE_INFO_SUUID = "suuid";
 
     public static final String KEY_DYNAMIC_DATA_STORAGE_PATH="StoragePath";
@@ -47,4 +46,7 @@ public class StaticValues {
     public static final int JOB_STATUS_RUNNING = 3;
     public static final int JOB_STATUS_COMPLETED = 4;
     public static final int JOB_STATUS_FAILED = 5;
+
+    public static final String ADMIN_ONLY_JOBS = "makeflow";
+    public static final String USER_AVAILABLE_JOBS = "docking";
 }

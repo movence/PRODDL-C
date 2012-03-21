@@ -78,6 +78,7 @@ public class JobExecutor extends Thread {
 
                 String workDirPath = createJobDirectoryIfNotExist(jobID);
                 if (workDirPath != null) {
+                    //TODO This part should be replaced to python execution code
                     String fileName = validateJobFiles(workDirPath);
                     //executes universal job script then waits until its execution finishes
                     cctoolsOperator.startMakeflow(jobID, fileName, workDirPath);
@@ -116,7 +117,7 @@ public class JobExecutor extends Thread {
     }
 
     private String validateJobFiles(String workingDirectory) throws Exception {
-        pdl.cloud.StorageServices storageServices = new StorageServices();
+        StorageServices storageServices = new StorageServices();
 
         String inputFileName = storageServices.getFileNameById(currJob.getInputFileUUID());
         String inputFilePath = workingDirectory + File.separator + inputFileName;

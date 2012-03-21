@@ -28,9 +28,7 @@ import pdl.web.service.JobRequestHandler;
 import pdl.web.service.common.FileService;
 
 import java.security.Principal;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.TreeMap;
 
 /**
  * Created by IntelliJ IDEA.
@@ -46,55 +44,11 @@ public class RestMainController {
         handler = new JobRequestHandler();
     }
 
-    /*$ curl -k -u 'key:secret_key' https://api.picloud.com/r/unique_id/square_func/
-    {
-        "label": "square_func",
-        "output_encoding": "json",
-        "version": "0.1",
-        "uri": "https://api.picloud.com/r/unique_id/square_func",
-        "signature": "square_func(x)"
-        "description": "Returns square of a number"
-    }
-    $ curl -k -u 'key:secret_key' https://api.picloud.com/job/?jids=12
-    {
-      "info":
-      {
-        "12":
-        {
-          "status": "done",
-          "exception": null,
-          "runtime": 0.1,
-          "stderr": "",
-          "stdout": "Squaring 5"
-         }
-      },
-      "version": "0.1"
-    }
-    $ curl -k -u 'key:secret_key' https://api.picloud.com/job/?jids=12&field=status&field=stdout
-    {
-      "info":
-      {
-        "12":
-        {
-          "status": "done",
-          "stdout": "Squaring 5"
-         }
-      },
-      "version": "0.1"
-    }
-    $ curl -k -u 'key:secret_key' https://api.picloud.com/job/result/?jid=12
-    {
-      "version": "0.1",
-      "result": 25
-    }
-    {"version": "0.1", "error_code": 455, "retry": false, "error_msg": "Requested job is not done."}
-    $ curl -k -u 'key:secret_key' -X POST https://api.picloud.com/job/delete/?jids=12
-    $ curl -k -u 'key:secret_key' -X POST https://api.picloud.com/job/kill/?jids=12*/
-
     /**
-     * This allows user to query available jobs through RestFul service
-     *
-     * @return available job information in json format
+     * Returns list of job ids under current user
+     * @param principal
+     * @return list of jobs of current user in json format
+     * @format curl <ip address>:<port>/pdl/r/joblist -u <user id>:<pass>
      */
     @RequestMapping(value = "joblist", method = RequestMethod.GET)
     public @ResponseBody Map<String, Object> getJobList(Principal principal) {
@@ -103,6 +57,14 @@ public class RestMainController {
         return rtnJson;
     }
 
+    /**
+     * submit a job
+     * @param jobName
+     * @param inputInString json formate input
+     * @param principal
+     * @return job submission result in json format
+     * @format curl <ip address>:<port>/pdl/r/job/<jobname> -d '{"key":"value"}' -u <user id>:<pass>
+     */
     @RequestMapping(value = "job/{name}", method = {RequestMethod.POST, RequestMethod.GET}, headers = "Accept=application/json")
     public @ResponseBody Map<String, Object> jobRunner(
             @PathVariable("name") String jobName,
@@ -114,8 +76,10 @@ public class RestMainController {
     }
 
     /**
+     * queries job status with given job id
      * @param jobId
-     * @return
+     * @return job status in json format
+     * @format curl <ip address>:<port>/pdl/r/job/?jid=<jobid> -u <user id>:<pass>
      */
     @RequestMapping(value = "job", method = {RequestMethod.POST, RequestMethod.GET})
     public @ResponseBody Map<String, Object> getJobInfo(@RequestParam(value = "jid", defaultValue = "") String jobId) {
@@ -125,8 +89,10 @@ public class RestMainController {
     }
 
     /**
+     * get job result
      * @param jobId
-     * @return
+     * @return job result in json format
+     * @format curl <ip address>:<port>/pdl/r/job/result/?jid=<jobid> -u <user id>:<pass>
      */
     @RequestMapping(value = "job/result", method = {RequestMethod.POST, RequestMethod.GET})
     public @ResponseBody Map<String, String> getJobResult(@RequestParam(value = "jid", defaultValue = "") String jobId) {
@@ -136,10 +102,12 @@ public class RestMainController {
     }
 
     /**
+     * kills a job
      * @param jobId
-     * @return
+     * @return result in json format
+     * @format curl <ip address>:<port>/pdl/r/job/kill/?jid=<jobid> -u <user id>:<pass> -X POST|GET
      */
-    @RequestMapping(value = "job/kill", method = RequestMethod.POST)
+    @RequestMapping(value = "job/kill", method = {RequestMethod.POST, RequestMethod.GET})
     public @ResponseBody Map<String, String> killJob(@RequestParam(value = "jid", defaultValue = "") String jobId) {
 
         Map<String, String> jsonResult = null;
@@ -148,65 +116,30 @@ public class RestMainController {
 
     /**
      * File upload request handler (POST, PUT)
-     *
      * @param file MultipartFile data in form
      * @return file information in json format
+     * @format curl <ip address>:<port>/pdl/r/file/upload -u <user id>:<pass> -F file=@<file> -X POST|PUT
      */
     @RequestMapping(value = "file/upload", method = {RequestMethod.POST, RequestMethod.PUT})
-    public @ResponseBody Map<String, Object> fileUpload(
+    public @ResponseBody Map<String, String> fileUpload(
             @RequestParam("file") MultipartFile file, @RequestParam(value = "type", defaultValue = "") String type, Principal principal) {
 
-        Map<String, Object> rtnJson = new TreeMap<String, Object>();
-        String exceptionStr = "";
-
-        try {
-            FileService fileService = new FileService();
-            if(type.isEmpty())
-                type="blob";
-            String fileUid = fileService.uploadFile(file, type, principal.getName());
-
-            if (fileUid == null)
-                throw new Exception();
-
-            rtnJson.put("Result", "Succeed");
-            rtnJson.put("Name", file.getOriginalFilename());
-            rtnJson.put("AccessId", fileUid);
-            rtnJson.put("Size", String.valueOf(file.getSize()));
-            rtnJson.put("User", principal.getName());
-            rtnJson.put("Contnet-Type", file.getContentType());
-        } catch (Exception e) {
-            rtnJson.put("error", "File upload failed for " + file.getOriginalFilename());
-            rtnJson.put("message", exceptionStr);
-        }
-
+        FileService fileService = new FileService();
+        Map<String, String> rtnJson = fileService.uploadFile(file, type, principal.getName());
         return rtnJson;
     }
 
     /**
-     * deletes request of cloud file
-     *
-     * @param fileName original file name
+     * deletes a file
      * @param fileId   unique file identifier (rowKey of FileDetail table)
      * @return string message in json format
-     * @format curl <ip address>:<port>/pdl/r/file/upload -u <user id>:<pass> -F file=@<filepath> -X POST
+     * @format curl <ip address>:<port>/pdl/r/file/delete/?fileId=<fileId> -u <user id>:<pass>
      */
     @RequestMapping(value = "file/delete", method = RequestMethod.POST)
-    public @ResponseBody Map<String, String> fileDelete(@RequestParam("name") String fileName, @RequestParam("fileId") String fileId) {
-        Map<String, String> rtnJson = new HashMap<String, String>();
+    public @ResponseBody Map<String, String> fileDelete(@RequestParam("fileId") String fileId, Principal principal) {
 
-        try {
-            if ((fileName == null || fileName.trim().isEmpty()) && (fileId == null || fileId.trim().isEmpty()))
-                throw new Exception();
-
-            FileService fileService = new FileService();
-            if (fileService.deleteFile(fileName, fileId))
-                throw new Exception();
-
-            rtnJson.put("message", "File has been deleted");
-        } catch (Exception e) {
-            rtnJson.put("error_msg", String.format("File deletion failed for %s (id:%s).", fileName, fileId));
-        }
-
+        FileService fileService = new FileService();
+        Map<String, String> rtnJson = fileService.deleteFile(fileId, principal.getName());
         return rtnJson;
     }
 }

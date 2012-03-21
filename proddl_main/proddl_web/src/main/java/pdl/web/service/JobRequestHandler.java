@@ -22,9 +22,11 @@
 package pdl.web.service;
 
 import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.map.ObjectWriter;
 import org.codehaus.jackson.type.TypeReference;
 import org.soyatec.windowsazure.table.ITableServiceEntity;
 import pdl.cloud.management.JobManager;
+import pdl.cloud.management.UserService;
 import pdl.cloud.model.JobDetail;
 import pdl.common.QueryTool;
 import pdl.common.StaticValues;
@@ -49,6 +51,17 @@ public class JobRequestHandler {
         try {
             Map<String, Object> inputInMap = null;
 
+            //check user privilege for special jobs
+            UserService userService = new UserService();
+            boolean isAdminUser = userService.isAdmin(userName);
+            if(StaticValues.ADMIN_ONLY_JOBS.contains(jobName)) {
+                if(!isAdminUser) {
+                    rtnVal.put("message", String.format("'%s' is only allowed for Admin", jobName));
+                    throw new Exception("User requested a job that is only allowed for Admin");
+                }
+
+            }
+
             JobDetail jobDetail = new JobDetail(jobName);
             jobDetail.setJobName(jobName);
             jobDetail.setUserId(userName);
@@ -60,7 +73,7 @@ public class JobRequestHandler {
                 inputInMap.put("jobName", jobName);
                 inputInMap.put("username", userName);
 
-                org.codehaus.jackson.map.ObjectWriter writer = mapper.writer();
+                ObjectWriter writer = mapper.writer();
                 inputInString = writer.writeValueAsString(inputInMap);
                 jobDetail.setInput(inputInString);
 

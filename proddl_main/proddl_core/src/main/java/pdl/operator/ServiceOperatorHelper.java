@@ -145,7 +145,6 @@ public class ServiceOperatorHelper {
         }
 
         //Adds processor time monitor to timer
-        //TODO is CPU usage monitor really needed?
         int timeInterval = 180000;
         ScheduledInstanceMonitor instanceMonitor = new ScheduledInstanceMonitor();
         Timer instanceMonitorTimer = new Timer();

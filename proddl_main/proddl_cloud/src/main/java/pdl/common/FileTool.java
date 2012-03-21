@@ -36,27 +36,42 @@ import java.io.InputStream;
  * Time: 1:46 PM
  */
 public class FileTool {
+    Configuration conf;
+    StorageServices services;
+    String uploadDirectoryPath;
+
+    public FileTool() {
+        services = new StorageServices();
+        this.getUploadDirectoryPath();
+    }
+
+    private void getUploadDirectoryPath() {
+        if(conf==null)
+            conf = Configuration.getInstance();
+
+        String storagePath = conf.getStringProperty("STORAGE_PATH");
+
+        if(storagePath==null) {
+            DynamicData storageData = (DynamicData)services.queryEntityBySearchKey(conf.getStringProperty("TABLE_NAME_DYNAMIC_DATA"),
+                    StaticValues.COLUMN_DYNAMIC_DATA_KEY, StaticValues.KEY_DYNAMIC_DATA_STORAGE_PATH, DynamicData.class);
+
+            if(storageData==null)
+                storagePath = System.getProperty("java.io.tmpdir");
+            else
+                storagePath = storageData.getDataValue();
+            conf.setProperty("STORAGE_PATH", storagePath);
+        }
+
+        uploadDirectoryPath = storagePath + StaticValues.DIRECTORY_FILE_UPLOAD_AREA;
+        File uploadDir = new File(uploadDirectoryPath);
+        if(!uploadDir.exists())
+            uploadDir.mkdir();
+    }
+
     public String createFile(String type, InputStream fileIn, String fileName, String fileType, String username) throws Exception{
         String rtnVal = null;
         try {
-            Configuration conf = Configuration.getInstance();
-
-            StorageServices services = new StorageServices();
-            String storagePath = conf.getStringProperty("STORAGE_PATH");
-
-            if(storagePath==null) {
-                DynamicData storageData = (DynamicData)services.queryEntityBySearchKey(conf.getStringProperty("TABLE_NAME_DYNAMIC_DATA"),
-                        StaticValues.COLUMN_DYNAMIC_DATA_KEY, StaticValues.KEY_DYNAMIC_DATA_STORAGE_PATH, DynamicData.class);
-                storagePath = storageData.getDataValue();
-                conf.setProperty("STORAGE_PATH", storagePath);
-            }
-
-            String uploadDirPath = storagePath + StaticValues.DIRECTORY_FILE_UPLOAD_AREA;
-            File uploadDir = new File(uploadDirPath);
-            if(!uploadDir.exists())
-                uploadDir.mkdir();
-
-            String newFilePath = uploadDirPath + File.separator + fileName;
+            String newFilePath = uploadDirectoryPath + File.separator + fileName;
             FileOutputStream fileOut = new FileOutputStream(newFilePath);
 
             int readBytes = 0;
@@ -73,7 +88,7 @@ public class FileTool {
 
             //TODO It might need to allow files to be uploaded to other blob containers than jobFiles
             if (type!=null && type.equals("blob")) {
-                boolean uploaded = services.uploadJobFileToBlob(fileName, newFilePath, fileType, false);
+                boolean uploaded = services.uploadFileToBlob(conf.getStringProperty("BLOB_CONTAINER_UPLOADS"), fileName, newFilePath, fileType, false);
                 boolean inserted = false;
                 if(uploaded) {
                     FileInfo fileInfo = new FileInfo();
@@ -98,6 +113,34 @@ public class FileTool {
         } catch(Exception ex) {
             throw ex;
         }
+        return rtnVal;
+    }
+
+    public boolean delete(String fileId, String username) throws Exception {
+        boolean rtnVal = false;
+        try {
+            String filesTable = conf.getStringProperty("TABLE_NAME_FILES");
+            FileInfo info = (FileInfo)services.queryEntityBySearchKey(
+                    filesTable, StaticValues.COLUMN_ROW_KEY, fileId, FileInfo.class
+            );
+
+            if(info!=null) {
+                if(!username.equals(info.getUserId()))
+                    throw new Exception("The file belongs to another user");
+
+                services.deleteEntity(filesTable, info);
+
+                String filePath = uploadDirectoryPath + File.separator + info.getName();
+                File file = new File(filePath);
+                if(file.exists())
+                    file.delete();
+
+                rtnVal = services.deleteBlob(conf.getStringProperty("BLOB_CONTAINER_UPLOADS"), info.getName());
+            }
+        } catch(Exception ex) {
+            throw ex;
+        }
+
         return rtnVal;
     }
 }

@@ -58,16 +58,20 @@ public class StorageServices {
         return getTableOperator().insertSingleEntity(tablename, entity);
     }
 
-    public String getFileNameById(String name) {
+    public String getFileNameById(String fileId) {
         FileInfo currFile = (FileInfo) getTableOperator().queryEntityBySearchKey(
                 conf.getStringProperty("TABLE_NAME_FILES"),
-                StaticValues.COLUMN_FILE_INFO_NAME, name,
+                StaticValues.COLUMN_FILE_INFO_SUUID, fileId,
                 FileInfo.class);
-        return currFile.getName() + "." + currFile.getType();
+        return currFile==null?null:currFile.getName();
     }
 
     public ITableServiceEntity queryEntityBySearchKey(String tablename, String column, String key, Class model) {
         return getTableOperator().queryEntityBySearchKey(tablename, column, key, model);
+    }
+
+    public void deleteEntity(String tablename, ITableServiceEntity entity) {
+        getTableOperator().deleteEntity(tablename, entity);
     }
 
 
@@ -80,8 +84,8 @@ public class StorageServices {
         return blobOperator;
     }
 
-    public boolean uploadJobFileToBlob(String filename, String path, String fileType, boolean overwrite) {
-        return getBlobOperator().uploadJobFileToBlob(filename, path, fileType, overwrite);
+    public boolean uploadFileToBlob(String container, String filename, String path, String fileType, boolean overwrite) {
+        return getBlobOperator().uploadFileToBlob(container, filename, path, fileType, overwrite);
     }
 
     public boolean downloadByName(String container, String name, String path) {
@@ -94,5 +98,13 @@ public class StorageServices {
 
     public boolean downloadToolsByName(String name, String path) {
         return this.downloadByName(conf.getStringProperty("BLOB_CONTAINER_TOOLS"), name, path);
+    }
+
+    public boolean downloadUploadedFileByName(String name, String path) {
+        return this.downloadByName(conf.getStringProperty("BLOB_CONTAINER_UPLOADS"), name, path);
+    }
+
+    public boolean deleteBlob(String containerName, String blobName) {
+        return getBlobOperator().deleteBlob(containerName, blobName);
     }
 }

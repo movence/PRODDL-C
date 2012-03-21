@@ -71,7 +71,7 @@ public class JobHandler {
         boolean rtnVal = false;
 
         try {
-            rtnVal = jobManager.updateJobStatus(jobUUID, StaticValues.JOB_STATUS_COMPLETED);
+            rtnVal = jobManager.updateJobStatus(jobUUID, StaticValues.JOB_STATUS_SUBMITTED);
         } catch (Exception ex) {
             ex.printStackTrace();
         }

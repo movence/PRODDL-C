@@ -98,12 +98,15 @@ public class BlobOperator {
         return container;
     }
 
-    private IBlobContainer getBlobContainer(String containerName) {
+    private IBlobContainer getBlobContainer(String containerName) throws Exception {
         IBlobContainer container = null;
         try {
             container = initBlobContainer(containerName);
+            if (!container.isContainerExist())
+                throw new IllegalArgumentException("IBlobContainer does not exist!");
         } catch (Exception ex) {
             ex.printStackTrace();
+            throw ex;
         }
         return container;
     }
@@ -118,9 +121,6 @@ public class BlobOperator {
 
         try {
             IBlobContainer theContainer = getBlobContainer(containerName);
-
-            if (!theContainer.isContainerExist())
-                throw new IllegalArgumentException("IBlobContainer does not exist!");
             if (!theContainer.isBlobExist(blobName))
                 throw new Exception("Blob " + blobName + " does not exist in Container: " + containerName + "!");
 
@@ -169,12 +169,10 @@ public class BlobOperator {
         return rtnVal;
     }
 
-    public boolean uploadFileToBlob(String containerName, String blobName, String fileName, byte[] fileBytes, String fileType, boolean overWrite) {
+    public boolean uploadBlob(String containerName, String blobName, String fileName, byte[] fileBytes, String fileType, boolean overWrite) {
         boolean rtnVal = false;
         try {
             IBlobContainer theContainer = getBlobContainer(containerName);
-            if (!theContainer.isContainerExist())
-                throw new IllegalArgumentException("BlobContainer does not exist!");
             if (theContainer.isBlobExist(blobName) && !overWrite)
                 throw new Exception(String.format("Blob '%s' Already Exists! Cannot overwrite.", blobName));
 
@@ -211,7 +209,7 @@ public class BlobOperator {
         return rtnVal;
     }
 
-    public boolean uploadJobFileToBlob(String blobName, String filePath, String fileType, boolean overWrite) {
+    public boolean uploadFileToBlob(String container, String blobName, String filePath, String fileType, boolean overWrite) {
         boolean rtnVal = false;
         try {
             File uploadingFile = new File(filePath);
@@ -219,14 +217,29 @@ public class BlobOperator {
                 throw new Exception(String.format("File '%s' was not found!", filePath));
 
             BlobFileStream fileStream = new BlobFileStream(uploadingFile);
-            rtnVal = this.uploadFileToBlob(
-                    conf.getStringProperty("BLOB_CONTAINER_JOB_FILES"),
+            rtnVal = this.uploadBlob(
+                    container,
                     blobName,
                     uploadingFile.getName(),
                     fileStream.getBytes(),
                     fileType,
                     overWrite);
         } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+
+        return rtnVal;
+    }
+
+    public boolean deleteBlob(String containerName, String blobName) {
+        boolean rtnVal = false;
+        try {
+            IBlobContainer theContainer = getBlobContainer(containerName);
+            if (!theContainer.isBlobExist(blobName))
+                throw new Exception("Blob " + blobName + " does not exist in Container: " + containerName + "!");
+
+            rtnVal = theContainer.deleteBlob(blobName);
+        } catch(Exception ex) {
             ex.printStackTrace();
         }
 

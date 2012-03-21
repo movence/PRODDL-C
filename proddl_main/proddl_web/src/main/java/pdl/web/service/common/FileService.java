@@ -26,6 +26,8 @@ import org.springframework.web.multipart.MultipartFile;
 import pdl.common.FileTool;
 
 import java.io.InputStream;
+import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * Created by IntelliJ IDEA.
@@ -35,35 +37,56 @@ import java.io.InputStream;
  */
 public class FileService {
     protected static Logger logger = Logger.getLogger("FileService");
+    private FileTool fileTool;
 
-    public String uploadFile(MultipartFile theFile, String type, String username) throws Exception {
-        String fileUid = null;
-
-        try {
-            if (theFile.getSize() > 0) {
-                InputStream fileIn = theFile.getInputStream();
-                FileTool fileTool = new FileTool();
-                fileUid = fileTool.createFile(type, fileIn, theFile.getOriginalFilename(), theFile.getContentType(), username);
-            }
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            throw ex;
-        }
-
-        return fileUid;
+    public FileService() {
+        fileTool = new FileTool();
     }
 
-    public boolean deleteFile(String fileName, String fileId) throws Exception {
-        boolean result = false;
-
+    public Map<String, String> uploadFile(MultipartFile theFile, String type, String username) {
+        Map<String, String> rtnJson = new TreeMap<String, String>();
         try {
+            if(type.isEmpty())
+                type="blob";
 
+            String fileUid = null;
+            if (theFile.getSize() > 0) {
+                InputStream fileIn = theFile.getInputStream();
+                fileUid = fileTool.createFile(type, fileIn, theFile.getOriginalFilename(), theFile.getContentType(), username);
+            }
 
+            if (fileUid == null)
+                throw new Exception();
+
+            rtnJson.put("Name", theFile.getOriginalFilename());
+            rtnJson.put("AccessId", fileUid);
+            rtnJson.put("Size", String.valueOf(theFile.getSize()));
+            /*rtnJson.put("User", principal.getName());
+            rtnJson.put("Result", "Succeed");
+            rtnJson.put("Contnet-Type", file.getContentType());*/
         } catch (Exception ex) {
-            ex.printStackTrace();
-            throw ex;
+            rtnJson.put("error", "File upload failed for " + theFile.getOriginalFilename());
         }
 
-        return result;
+        return rtnJson;
+    }
+
+    public Map<String, String> deleteFile(String fileId, String username) {
+        Map<String, String> rtnJson = new TreeMap<String, String>();
+        try {
+            if(fileId!=null && !fileId.isEmpty()) {
+                boolean deleted = fileTool.delete(fileId, username);
+                if(deleted) {
+                    rtnJson.put("result", String.format("File '%s' has been deleted", fileId));
+                } else {
+                    rtnJson.put("result", "File ID does not exist!");
+                }
+
+            }
+        } catch (Exception ex) {
+            rtnJson.put("error", String.format("File upload failed for ID '%s'", fileId));
+        }
+
+        return rtnJson;
     }
 }

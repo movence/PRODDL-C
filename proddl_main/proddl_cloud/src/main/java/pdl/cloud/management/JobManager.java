@@ -21,9 +21,9 @@
 
 package pdl.cloud.management;
 
+import org.soyatec.windowsazure.table.ITableServiceEntity;
 import pdl.cloud.model.JobDetail;
 import pdl.cloud.storage.TableOperator;
-import org.soyatec.windowsazure.table.ITableServiceEntity;
 import pdl.common.Configuration;
 import pdl.common.QueryTool;
 import pdl.common.StaticValues;

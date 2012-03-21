@@ -21,6 +21,8 @@
 
 package pdl.operator.app;
 
+import pdl.cloud.model.DynamicData;
+import pdl.cloud.storage.TableOperator;
 import pdl.common.Configuration;
 import pdl.common.StaticValues;
 import pdl.common.ToolPool;
@@ -127,7 +129,8 @@ public class CctoolsOperator extends AbstractApplicationOperator {
                         ProcessBuilder pb = this.buildProcessBuilder(
                                 cctoolsBinPath + File.separator + "makeflow",
                                 "-T", "wq",
-                                "-C", catalogServerAddress + ":" + catalogServerPort, "-a",
+                                "-C", catalogServerAddress + ":" + catalogServerPort, "-a", //catalog server and advertise makeflow to catalog server
+                                "-p", "-1", //random port
                                 "-N", taskName,
                                 currFile.getPath());
 
@@ -242,11 +245,11 @@ public class CctoolsOperator extends AbstractApplicationOperator {
 
     public void updateCatalogServerInfo(String key, String value) {
         try {
-            pdl.cloud.model.DynamicData catalogServerInfo = new pdl.cloud.model.DynamicData("catalogserver_info");
+            DynamicData catalogServerInfo = new DynamicData("catalogserver_info");
             catalogServerInfo.setDataKey(key);
             catalogServerInfo.setDataValue(value);
 
-            pdl.cloud.storage.TableOperator tableOperator = new pdl.cloud.storage.TableOperator(conf);
+            TableOperator tableOperator = new TableOperator(conf);
             tableOperator.insertSingleEntity(conf.getStringProperty("TABLE_NAME_DYNAMIC_DATA"), catalogServerInfo);
             System.out.printf(
                     "Update catalogServerPort('%s':'%s') information to '%s'%n",
@@ -260,13 +263,13 @@ public class CctoolsOperator extends AbstractApplicationOperator {
         String rtnVal = null;
 
         try {
-            pdl.cloud.storage.TableOperator tableOperator = new pdl.cloud.storage.TableOperator(conf);
+            TableOperator tableOperator = new TableOperator(conf);
 
-            pdl.cloud.model.DynamicData catalogServerInfo = (pdl.cloud.model.DynamicData) tableOperator.queryEntityBySearchKey(
+            DynamicData catalogServerInfo = (DynamicData) tableOperator.queryEntityBySearchKey(
                     conf.getStringProperty("TABLE_NAME_DYNAMIC_DATA"),
                     StaticValues.COLUMN_DYNAMIC_DATA_KEY,
                     key,
-                    pdl.cloud.model.DynamicData.class
+                    DynamicData.class
             );
 
             if (catalogServerInfo != null)
