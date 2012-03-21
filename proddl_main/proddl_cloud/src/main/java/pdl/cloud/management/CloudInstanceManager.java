@@ -78,8 +78,8 @@ public class CloudInstanceManager {
             tableOperator.initDiagnosticsTableClient();
 
             BlobOperator blobOperator = new BlobOperator(conf);
-            String keystoreFilePath = storagePath + File.separator + conf.getStringProperty("KEYSTORE_FILE_NAME");
-            String trustcacertFiePath = storagePath + File.separator + conf.getStringProperty("TRUSTCACERT_FILE_NAME");
+            String keystoreFilePath = storagePath + conf.getStringProperty("KEYSTORE_FILE_NAME");
+            String trustcacertFiePath = storagePath + conf.getStringProperty("TRUSTCACERT_FILE_NAME");
 
             //download keystore file for azure management
             if (!new File(keystoreFilePath).exists())

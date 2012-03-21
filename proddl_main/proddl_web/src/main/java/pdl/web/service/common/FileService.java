@@ -23,12 +23,8 @@ package pdl.web.service.common;
 
 import org.apache.log4j.Logger;
 import org.springframework.web.multipart.MultipartFile;
-import pdl.cloud.storage.BlobOperator;
-import pdl.common.StaticValues;
+import pdl.common.FileTool;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
 
 /**
@@ -38,42 +34,17 @@ import java.io.InputStream;
  * Time: 4:06 PM
  */
 public class FileService {
-    protected static Logger logger = Logger.getLogger("FileUploadService");
+    protected static Logger logger = Logger.getLogger("FileService");
 
-    public String uploadFile(MultipartFile theFile, String type) throws IOException, Exception {
+    public String uploadFile(MultipartFile theFile, String type, String username) throws Exception {
         String fileUid = null;
 
         try {
             if (theFile.getSize() > 0) {
                 InputStream fileIn = theFile.getInputStream();
-
-                String storagePath = pdl.common.Configuration.getInstance().getStringProperty("STORAGE_PATH");
-                String newFilePath = storagePath + File.separator +
-                        StaticValues.DIRECTORY_FILE_UPLOAD_AREA + File.separator +
-                        theFile.getOriginalFilename();
-                FileOutputStream fileOut = new FileOutputStream(newFilePath);
-
-                int readBytes = 0;
-                int readBlockSize = 4 * 1024;
-                byte[] buffer = new byte[readBlockSize];
-                while ((readBytes = fileIn.read(buffer, 0, readBlockSize)) != -1) {
-                    fileOut.write(buffer, 0, readBytes);
-                }
-
-                fileOut.close();
-                fileIn.close();
-
-                //TODO It might need to allow files to be uploaded to other blob containers than jobFiles
-                if (type.equals("blob")) {
-                    BlobOperator operator = new BlobOperator();
-                    boolean uploaded = operator.uploadJobFileToBlob(theFile.getOriginalFilename(), newFilePath, false);
-                    if (!uploaded)
-                        throw new Exception("FileService-uploadFile:Failed to upload file to Blob storage.");
-                }
+                FileTool fileTool = new FileTool();
+                fileUid = fileTool.createFile(type, fileIn, theFile.getOriginalFilename(), theFile.getContentType(), username);
             }
-        } catch (IOException iex) {
-            iex.printStackTrace();
-            throw iex;
         } catch (Exception ex) {
             ex.printStackTrace();
             throw ex;

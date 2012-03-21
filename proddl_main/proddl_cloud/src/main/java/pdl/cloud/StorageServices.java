@@ -22,6 +22,7 @@
 package pdl.cloud;
 
 
+import org.soyatec.windowsazure.table.ITableServiceEntity;
 import pdl.cloud.model.FileInfo;
 import pdl.cloud.storage.BlobOperator;
 import pdl.cloud.storage.TableOperator;
@@ -53,12 +54,20 @@ public class StorageServices {
         return tableOperator;
     }
 
+    public boolean insertSingleEnttity(String tablename, ITableServiceEntity entity) {
+        return getTableOperator().insertSingleEntity(tablename, entity);
+    }
+
     public String getFileNameById(String name) {
         FileInfo currFile = (FileInfo) getTableOperator().queryEntityBySearchKey(
                 conf.getStringProperty("TABLE_NAME_FILES"),
                 StaticValues.COLUMN_FILE_INFO_NAME, name,
                 FileInfo.class);
         return currFile.getName() + "." + currFile.getType();
+    }
+
+    public ITableServiceEntity queryEntityBySearchKey(String tablename, String column, String key, Class model) {
+        return getTableOperator().queryEntityBySearchKey(tablename, column, key, model);
     }
 
 
@@ -71,6 +80,9 @@ public class StorageServices {
         return blobOperator;
     }
 
+    public boolean uploadJobFileToBlob(String filename, String path, String fileType, boolean overwrite) {
+        return getBlobOperator().uploadJobFileToBlob(filename, path, fileType, overwrite);
+    }
 
     public boolean downloadByName(String container, String name, String path) {
         return getBlobOperator().getBlob(container, name, path, false);

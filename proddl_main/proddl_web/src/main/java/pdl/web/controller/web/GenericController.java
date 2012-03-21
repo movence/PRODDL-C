@@ -33,6 +33,7 @@ import org.springframework.web.servlet.ModelAndView;
 import pdl.web.service.common.FileService;
 import pdl.web.utils.AjaxUtils;
 
+import java.security.Principal;
 import java.util.UUID;
 
 @Controller
@@ -60,11 +61,11 @@ public class GenericController {
     }
 
     @RequestMapping(value = "fileupload", method = RequestMethod.POST)
-    public String processUpload(@RequestParam("file") MultipartFile file, @RequestParam("type") String type, Model model) {
+    public String processUpload(@RequestParam("file") MultipartFile file, @RequestParam("type") String type, Model model, Principal principal) {
 
         try {
             FileService fileService = new FileService();
-            fileService.uploadFile(file, type);
+            fileService.uploadFile(file, type, principal.getName());
         } catch (Exception ex) {
 
         }

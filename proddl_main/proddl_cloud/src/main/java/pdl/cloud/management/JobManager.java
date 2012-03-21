@@ -57,15 +57,19 @@ public class JobManager {
      */
     private void reorderSubmittedJobs() throws Exception {
         try {
-            List<ITableServiceEntity> jobs = getJobList(
-                    QueryTool.getSingleConditionalStatement("status", "eq", StaticValues.JOB_STATUS_SUBMITTED));
+            System.err.println("Entering Reordering Submitted Jobs");
+            List<ITableServiceEntity> jobs = getJobList(QueryTool.getSingleConditionalStatement("status", "eq", StaticValues.JOB_STATUS_SUBMITTED));
 
             ArrayList<JobDetail> prioritisedJobList = new ArrayList<JobDetail>();
             for (ITableServiceEntity job : jobs) {
+
                 JobDetail currJob = (JobDetail) job;
+                prioritisedJobList.add(currJob);
+
+                //TODO needs more sophisticated reordering mechanism
 
                 //simply adds a job if priority list is empty
-                if (prioritisedJobList.size() == 0) {
+                /*if (prioritisedJobList.size() == 0) {
                     prioritisedJobList.add(currJob);
                 } else {
                     //appends pending jobs without changing their orders
@@ -84,12 +88,13 @@ public class JobManager {
                     } else if (currJob.getStatus() == StaticValues.JOB_STATUS_RUNNING) {
                         prioritisedJobList.add(currJob);
                     }
-                }
+                }*/
             }
 
             for (int curr = 0; curr < prioritisedJobList.size(); curr++) {
                 JobDetail currentJob = prioritisedJobList.get(curr);
                 currentJob.setPriority(curr + 1);
+                //currentJob.setStatus(StaticValues.JOB_STATUS_SUBMITTED);
             }
 
             tableOperator.updateMultipleEntities(jobDetailTableName, prioritisedJobList);
@@ -111,6 +116,8 @@ public class JobManager {
         boolean rtnVal = false;
 
         try {
+            jobDetail.setStatus(StaticValues.JOB_STATUS_SUBMITTED);
+            jobDetail.setPriority(0);
             rtnVal = tableOperator.insertSingleEntity(jobDetailTableName, jobDetail);
             if( rtnVal )
                 this.reorderSubmittedJobs();
@@ -240,11 +247,7 @@ public class JobManager {
 
     public void updateMultipleJobStatus(int prevStatus, int newStatus) throws Exception {
         try {
-            List<ITableServiceEntity> jobList = getJobList(
-                    QueryTool.getSingleConditionalStatement(
-                            StaticValues.COLUMN_JOB_DETAIL_STATUS, "eq", prevStatus
-                    )
-            );
+            List<ITableServiceEntity> jobList = getJobList(QueryTool.getSingleConditionalStatement(StaticValues.COLUMN_JOB_DETAIL_STATUS, "eq", prevStatus));
 
             for (ITableServiceEntity entity : jobList) {
                 JobDetail currJob = (JobDetail) entity;

@@ -21,6 +21,7 @@
 
 package pdl.operator.app;
 
+import pdl.cloud.StorageServices;
 import pdl.common.ToolPool;
 import pdl.utils.ZipHandler;
 
@@ -52,7 +53,7 @@ public abstract class AbstractApplicationOperator implements IApplicationOperato
         this.param = param;
     }
 
-    public void run(pdl.cloud.StorageServices services) throws Exception {
+    public void run(StorageServices services) throws Exception {
         boolean result = false;
 
         if ((result = download(services))) {
@@ -65,7 +66,7 @@ public abstract class AbstractApplicationOperator implements IApplicationOperato
 
     }
 
-    public boolean download(pdl.cloud.StorageServices services) throws Exception {
+    public boolean download(StorageServices services) throws Exception {
         File tool = new File(packagePath);
         return tool.exists() || services.downloadToolsByName(packageFile, packageFilePath);
     }

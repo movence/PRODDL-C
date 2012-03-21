@@ -33,7 +33,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @Controller
 @RequestMapping(value = "error")
 public class ErroController {
-    @RequestMapping(value = "404.html")
+    @RequestMapping(value = "404.html, 405.html, 403.html")
     public String handle404() {
         return "errorPage";
     }

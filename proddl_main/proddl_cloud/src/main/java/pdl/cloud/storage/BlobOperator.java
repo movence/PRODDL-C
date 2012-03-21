@@ -169,7 +169,7 @@ public class BlobOperator {
         return rtnVal;
     }
 
-    public boolean uploadFileToBlob(String containerName, String blobName, String fileName, byte[] fileBytes, boolean overWrite) {
+    public boolean uploadFileToBlob(String containerName, String blobName, String fileName, byte[] fileBytes, String fileType, boolean overWrite) {
         boolean rtnVal = false;
         try {
             IBlobContainer theContainer = getBlobContainer(containerName);
@@ -182,7 +182,7 @@ public class BlobOperator {
                 throw new Exception("File Binary is null or empty");
 
             BlobProperties blobProperties = new BlobProperties(blobName);
-            blobProperties.setContentType("text/html"); //TODO: need to specify file contents type
+            blobProperties.setContentType(fileType);
 
             NameValueCollection blobMetaData = new NameValueCollection();
             blobMetaData.put("FileName", fileName);
@@ -211,7 +211,7 @@ public class BlobOperator {
         return rtnVal;
     }
 
-    public boolean uploadJobFileToBlob(String blobName, String filePath, boolean overWrite) {
+    public boolean uploadJobFileToBlob(String blobName, String filePath, String fileType, boolean overWrite) {
         boolean rtnVal = false;
         try {
             File uploadingFile = new File(filePath);
@@ -220,10 +220,11 @@ public class BlobOperator {
 
             BlobFileStream fileStream = new BlobFileStream(uploadingFile);
             rtnVal = this.uploadFileToBlob(
-                    (String) conf.getProperty("BLOB_NAME_JOB_FILES"),
+                    conf.getStringProperty("BLOB_CONTAINER_JOB_FILES"),
                     blobName,
                     uploadingFile.getName(),
                     fileStream.getBytes(),
+                    fileType,
                     overWrite);
         } catch (Exception ex) {
             ex.printStackTrace();

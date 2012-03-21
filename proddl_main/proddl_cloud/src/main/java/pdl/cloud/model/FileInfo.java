@@ -33,8 +33,7 @@ import org.soyatec.windowsazure.table.Guid;
 public class FileInfo extends AbstractTableServiceEntity {
     //String iuuid; this is unique identifier same as rowKey property of table entity
     String type;
-    String suuid;
-    String name;
+    String suuid; //file name
     String content;
     String userId;
 
@@ -43,11 +42,11 @@ public class FileInfo extends AbstractTableServiceEntity {
     }
 
     public FileInfo(String partitionKey) {
-        this(partitionKey, new Guid().getValue());
+        this(partitionKey+"_file", new Guid().getValue());
     }
 
     public FileInfo() {
-        this("generic_file");
+        this("generic");
     }
 
     public String getIuuid() {
@@ -71,11 +70,11 @@ public class FileInfo extends AbstractTableServiceEntity {
     }
 
     public String getName() {
-        return name;
+        return this.suuid;
     }
 
     public void setName(String name) {
-        this.name = name;
+        this.setSuuid(name);
     }
 
     public String getContent() {

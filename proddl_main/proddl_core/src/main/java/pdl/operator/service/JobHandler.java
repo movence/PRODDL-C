@@ -21,6 +21,7 @@
 
 package pdl.operator.service;
 
+import pdl.cloud.management.JobManager;
 import pdl.cloud.model.JobDetail;
 import pdl.common.StaticValues;
 
@@ -31,10 +32,10 @@ import pdl.common.StaticValues;
  * Time: 10:42 AM
  */
 public class JobHandler {
-    private pdl.cloud.management.JobManager jobManager;
+    private JobManager jobManager;
 
     public JobHandler() {
-        jobManager = new pdl.cloud.management.JobManager();
+        jobManager = new JobManager();
     }
 
     public synchronized JobDetail getSubmmittedJob() {

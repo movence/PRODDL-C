@@ -51,7 +51,7 @@ public class JettyOperator extends AbstractApplicationOperator {
             List<String> command = new ArrayList<String>();
             String line;
 
-            command.add(storagePath + File.separator + "jre" + File.separator + "bin" + File.separator + "java");
+            command.add(storagePath + "jre" + File.separator + "bin" + File.separator + "java");
             command.add("-jar");
             command.add(packagePath + File.separator + "start.jar");
             command.add("-Djetty.port=" + port);

@@ -100,10 +100,16 @@ public class CctoolsOperator extends AbstractApplicationOperator {
             for (String key : env.keySet()) {
                 if (key.toLowerCase().equals("path")) {
                     env.put(key, cygwinBinPath + File.pathSeparator + cctoolsBinPath + File.pathSeparator + env.get(key));
+                    isEnvironmentVarialbeSet = true;
                     break;
                 }
             }
-            isEnvironmentVarialbeSet = true;
+
+            //If no Path variable found in environment, add it
+            if(!isEnvironmentVarialbeSet) {
+                env.put("path", cygwinBinPath + File.pathSeparator + cctoolsBinPath);
+                isEnvironmentVarialbeSet = true;
+            }
         }
         return pb;
     }
@@ -258,7 +264,7 @@ public class CctoolsOperator extends AbstractApplicationOperator {
 
             pdl.cloud.model.DynamicData catalogServerInfo = (pdl.cloud.model.DynamicData) tableOperator.queryEntityBySearchKey(
                     conf.getStringProperty("TABLE_NAME_DYNAMIC_DATA"),
-                    StaticValues.COLUMN_DYNAMIC_DATA_NAME,
+                    StaticValues.COLUMN_DYNAMIC_DATA_KEY,
                     key,
                     pdl.cloud.model.DynamicData.class
             );

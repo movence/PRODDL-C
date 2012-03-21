@@ -37,8 +37,8 @@ public class JobDetail extends AbstractTableServiceEntity {
     private String inputFileUUID;
     private String makeflowFileUUID;
     private String userId;
-    private Integer status;
-    private Integer priority;
+    private int status;
+    private int priority;
     private String input;
     private String result;
     private String jobDirectory;
@@ -53,7 +53,7 @@ public class JobDetail extends AbstractTableServiceEntity {
 
     public JobDetail() {
         //this( UUID.randomUUID().toString() );
-        this("generic_job");
+        this("generic");
     }
 
     public String getJobUUID() {
@@ -103,19 +103,19 @@ public class JobDetail extends AbstractTableServiceEntity {
                 :"failed";
     }
 
-    public Integer getStatus() {
+    public int getStatus() {
         return status;
     }
 
-    public void setStatus(Integer status) {
+    public void setStatus(int status) {
         this.status = status;
     }
 
-    public Integer getPriority() {
+    public int getPriority() {
         return priority;
     }
 
-    public void setPriority(Integer priority) {
+    public void setPriority(int priority) {
         this.priority = priority;
     }
 

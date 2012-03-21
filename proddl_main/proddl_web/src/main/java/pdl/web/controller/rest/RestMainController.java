@@ -24,12 +24,13 @@ package pdl.web.controller.rest;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import pdl.web.service.JobReuqestHandler;
+import pdl.web.service.JobRequestHandler;
 import pdl.web.service.common.FileService;
 
 import java.security.Principal;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * Created by IntelliJ IDEA.
@@ -40,6 +41,10 @@ import java.util.Map;
 @Controller
 @RequestMapping(value = "r")
 public class RestMainController {
+    JobRequestHandler handler;
+    public RestMainController() {
+        handler = new JobRequestHandler();
+    }
 
     /*$ curl -k -u 'key:secret_key' https://api.picloud.com/r/unique_id/square_func/
     {
@@ -92,52 +97,20 @@ public class RestMainController {
      * @return available job information in json format
      */
     @RequestMapping(value = "joblist", method = RequestMethod.GET)
-    public
-    @ResponseBody
-    Map<String, Object> getAvailableJobs() {
-        Map<String, Object> rtnJson = new HashMap<String, Object>();
-        String exceptionStr = null;
+    public @ResponseBody Map<String, Object> getJobList(Principal principal) {
 
-        try {
-            JobReuqestHandler jobHandler = new JobReuqestHandler();
-
-        } catch (Exception e) {
-            if (exceptionStr == null)
-                exceptionStr = e.toString();
-            rtnJson.put("error_msg", "Failed to get available job list");
-            rtnJson.put("exception", exceptionStr);
-        }
-
+        Map rtnJson = handler.getJobsForUser(principal.getName());
         return rtnJson;
     }
 
-    @RequestMapping(value = "job/{name}", method = RequestMethod.POST)
-    public
-    @ResponseBody
-    Map<String, Object> jobRunner(
+    @RequestMapping(value = "job/{name}", method = {RequestMethod.POST, RequestMethod.GET}, headers = "Accept=application/json")
+    public @ResponseBody Map<String, Object> jobRunner(
             @PathVariable("name") String jobName,
-            @RequestBody final String inputInString,
+            @RequestBody final String inputInString, //format '{"key":"value"}'
             Principal principal) {
-        Map<String, Object> rtnJson = new HashMap<String, Object>();
-        String exceptionStr = null;
 
-        try {
-            JobReuqestHandler jobHandler = new JobReuqestHandler();
-            Map<String, Object> jobResult = jobHandler.submitJob(jobName, inputInString, principal.getName());
-
-            rtnJson.put("info", "Job Execution");
-            rtnJson.put("jobName", jobName);
-            rtnJson.put("input", inputInString);
-            rtnJson.put("result", jobResult+"%n");
-            rtnJson.put("message", "Job has been submitted.%n");
-        } catch (Exception e) {
-            if (exceptionStr == null)
-                exceptionStr = e.toString();
-            rtnJson.put("error_msg", "Failed Job Execution.");
-            rtnJson.put("exception", exceptionStr);
-        }
-
-        return rtnJson;
+        Map<String, Object> jobResult = handler.submitJob(jobName, inputInString, principal.getName());
+        return jobResult;
     }
 
     /**
@@ -145,58 +118,21 @@ public class RestMainController {
      * @return
      */
     @RequestMapping(value = "job", method = {RequestMethod.POST, RequestMethod.GET})
-    public
-    @ResponseBody
-    String getJobInfo(@RequestParam(value = "jid", defaultValue = "") String jobId) {
-        Map<String, Object> rtnJson = new HashMap<String, Object>();
-        String exceptionStr = null;
-        String result = null;
+    public @ResponseBody Map<String, Object> getJobInfo(@RequestParam(value = "jid", defaultValue = "") String jobId) {
 
-        try {
-            JobReuqestHandler jobHandler = new JobReuqestHandler();
-
-            result = jobHandler.getJobInfo(jobId);
-            if (result == null) {
-                exceptionStr = String.format("Failed to get job information (JOB ID: %s)", jobId);
-                throw new Exception();
-            }
-            rtnJson.put("info", jobHandler.getJobResult(jobId));
-
-        } catch (Exception e) {
-            rtnJson.put("error_msg", "Failed Job Result Retrieval.");
-            rtnJson.put("exception", exceptionStr);
-        }
-
-        return result;
+        Map<String, Object> jsonResult = handler.getJobInfo(jobId);
+        return jsonResult;
     }
 
     /**
      * @param jobId
      * @return
      */
-    @RequestMapping(value = "job/result", method = RequestMethod.POST)
-    public
-    @ResponseBody
-    Map<String, Object> jobRunner(@RequestParam(value = "jid", defaultValue = "") String jobId) {
-        Map<String, Object> rtnJson = new HashMap<String, Object>();
-        String exceptionStr = null;
+    @RequestMapping(value = "job/result", method = {RequestMethod.POST, RequestMethod.GET})
+    public @ResponseBody Map<String, String> getJobResult(@RequestParam(value = "jid", defaultValue = "") String jobId) {
 
-        try {
-            JobReuqestHandler jobHandler = new JobReuqestHandler();
-            exceptionStr = jobHandler.getJobResult(jobId);
-            if (exceptionStr != null) {
-                throw new Exception();
-            }
-
-            rtnJson.put("info", "Job Execution");
-            rtnJson.put("JobId", jobId);
-
-        } catch (Exception e) {
-            rtnJson.put("error_msg", "Failed Job Result Retrieval.");
-            rtnJson.put("exception", exceptionStr);
-        }
-
-        return rtnJson;
+        Map<String, String> jsonResult = handler.getJobResult(jobId);
+        return jsonResult;
     }
 
     /**
@@ -204,29 +140,10 @@ public class RestMainController {
      * @return
      */
     @RequestMapping(value = "job/kill", method = RequestMethod.POST)
-    public
-    @ResponseBody
-    Map<String, Object> killJob(@RequestParam(value = "jid", defaultValue = "") String jobId) {
-        Map<String, Object> rtnJson = new HashMap<String, Object>();
-        String exceptionStr = "";
+    public @ResponseBody Map<String, String> killJob(@RequestParam(value = "jid", defaultValue = "") String jobId) {
 
-        try {
-            if ("".equals(jobId)) {
-                exceptionStr = "JOB ID must be provided ([host]/pdll/r/job/kill?jobId=[job id to kill]).";
-                throw new Exception();
-            }
-
-            JobReuqestHandler jobHandler = new JobReuqestHandler();
-
-            rtnJson.put("info", "Job Termination");
-            rtnJson.put("job ID", jobId);
-            rtnJson.put("status", "done");
-        } catch (Exception e) {
-            rtnJson.put("error_msg", "Failed Job Termination.");
-            rtnJson.put("exception", exceptionStr);
-        }
-
-        return rtnJson;
+        Map<String, String> jsonResult = null;
+        return jsonResult;
     }
 
     /**
@@ -236,34 +153,30 @@ public class RestMainController {
      * @return file information in json format
      */
     @RequestMapping(value = "file/upload", method = {RequestMethod.POST, RequestMethod.PUT})
-    public
-    @ResponseBody
-    Map<String, Object> fileUpload(
-            @RequestParam("file") MultipartFile file, @RequestParam("type") String type, Principal principal) {
-        Map<String, Object> rtnJson = new HashMap<String, Object>();
+    public @ResponseBody Map<String, Object> fileUpload(
+            @RequestParam("file") MultipartFile file, @RequestParam(value = "type", defaultValue = "") String type, Principal principal) {
+
+        Map<String, Object> rtnJson = new TreeMap<String, Object>();
         String exceptionStr = "";
 
         try {
             FileService fileService = new FileService();
-            String fileUid = fileService.uploadFile(file, type);
+            if(type.isEmpty())
+                type="blob";
+            String fileUid = fileService.uploadFile(file, type, principal.getName());
 
             if (fileUid == null)
                 throw new Exception();
 
-            rtnJson.put("info", "File Upload");
-
-            Map<String, String> fileJson = new HashMap<String, String>();
-            fileJson.put("name", file.getOriginalFilename());
-            fileJson.put("accessId", fileUid);
-            fileJson.put("size", String.valueOf(file.getSize()));
-            fileJson.put("user", principal.getName());
-            fileJson.put("Contnet-Type", file.getContentType());
-            rtnJson.put("file", fileJson);
-            rtnJson.put("status", "success");
-            rtnJson.put("message", "File has been uploaded");
+            rtnJson.put("Result", "Succeed");
+            rtnJson.put("Name", file.getOriginalFilename());
+            rtnJson.put("AccessId", fileUid);
+            rtnJson.put("Size", String.valueOf(file.getSize()));
+            rtnJson.put("User", principal.getName());
+            rtnJson.put("Contnet-Type", file.getContentType());
         } catch (Exception e) {
-            rtnJson.put("error_msg", "File upload failed for " + file.getOriginalFilename());
-            rtnJson.put("exception", exceptionStr);
+            rtnJson.put("error", "File upload failed for " + file.getOriginalFilename());
+            rtnJson.put("message", exceptionStr);
         }
 
         return rtnJson;
@@ -275,12 +188,10 @@ public class RestMainController {
      * @param fileName original file name
      * @param fileId   unique file identifier (rowKey of FileDetail table)
      * @return string message in json format
+     * @format curl <ip address>:<port>/pdl/r/file/upload -u <user id>:<pass> -F file=@<filepath> -X POST
      */
     @RequestMapping(value = "file/delete", method = RequestMethod.POST)
-    public
-    @ResponseBody
-    Map<String, String> fileDelete(
-            @RequestParam("name") String fileName, @RequestParam("fileId") String fileId) {
+    public @ResponseBody Map<String, String> fileDelete(@RequestParam("name") String fileName, @RequestParam("fileId") String fileId) {
         Map<String, String> rtnJson = new HashMap<String, String>();
 
         try {
@@ -297,14 +208,5 @@ public class RestMainController {
         }
 
         return rtnJson;
-    }
-
-    @RequestMapping(value = "jsontest", method = RequestMethod.POST)
-    public
-    @ResponseBody
-    Map<String, String> getJsonResult() {
-        HashMap<String, String> rtnVal = new HashMap<String, String>();
-        rtnVal.put("test", "pompom");
-        return rtnVal;
     }
 }

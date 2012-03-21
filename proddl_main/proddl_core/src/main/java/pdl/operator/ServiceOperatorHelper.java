@@ -21,7 +21,12 @@
 
 package pdl.operator;
 
+import pdl.cloud.StorageServices;
+import pdl.cloud.management.ScheduledInstanceMonitor;
+import pdl.cloud.model.DynamicData;
+import pdl.cloud.model.JobDetail;
 import pdl.common.Configuration;
+import pdl.common.StaticValues;
 import pdl.operator.app.CctoolsOperator;
 import pdl.operator.app.CygwinOperator;
 import pdl.operator.app.JettyThreadedOperator;
@@ -46,7 +51,7 @@ import java.util.concurrent.TimeUnit;
 public class ServiceOperatorHelper {
 
     private Configuration conf;
-    private pdl.cloud.StorageServices storageServices;
+    private StorageServices storageServices;
 
     private PythonOperator pythonOperator;
     private CygwinOperator cygwinOperator;
@@ -56,7 +61,7 @@ public class ServiceOperatorHelper {
 
     public ServiceOperatorHelper() {
         conf = Configuration.getInstance();
-        storageServices = new pdl.cloud.StorageServices();
+        storageServices = new StorageServices();
     }
 
     /**
@@ -76,6 +81,11 @@ public class ServiceOperatorHelper {
             conf.setProperty("STORAGE_PATH", storagePath);
             this.storagePath = storagePath;
 
+            DynamicData storageData = new DynamicData("storage_info");
+            storageData.setDataKey(StaticValues.KEY_DYNAMIC_DATA_STORAGE_PATH);
+            storageData.setDataValue(storagePath);
+            storageServices.insertSingleEnttity(conf.getStringProperty("TABLE_NAME_DYNAMIC_DATA"), storageData);
+
             this.runOperators();
 
             if (isMaster.equals("true")) { //Master Instance
@@ -92,23 +102,23 @@ public class ServiceOperatorHelper {
     private void runOperators() throws Exception {
         pythonOperator = new PythonOperator(
                 storagePath,
-                (String) conf.getProperty("PYTHON_NAME"),
-                (String) conf.getProperty("PYTHON_FLAG_FILE"),
+                conf.getStringProperty("PYTHON_NAME"),
+                conf.getStringProperty("PYTHON_FLAG_FILE"),
                 null
         );
         pythonOperator.run(storageServices);
 
         cygwinOperator = new CygwinOperator(
                 storagePath,
-                (String) conf.getProperty("CYGWIN_NAME"),
-                (String) conf.getProperty("CYGWIN_FLAG_FILE"),
+                conf.getStringProperty("CYGWIN_NAME"),
+                conf.getStringProperty("CYGWIN_FLAG_FILE"),
                 null
         );
         cygwinOperator.run(storageServices);
 
         cctoolsOperator = new CctoolsOperator(
                 storagePath,
-                (String) conf.getProperty("CCTOOLS_NAME"),
+                conf.getStringProperty("CCTOOLS_NAME"),
                 "bin" + File.separator + conf.getProperty("CCTOOLS_FLAG_FILE"),
                 null
         );
@@ -137,7 +147,7 @@ public class ServiceOperatorHelper {
         //Adds processor time monitor to timer
         //TODO is CPU usage monitor really needed?
         int timeInterval = 180000;
-        pdl.cloud.management.ScheduledInstanceMonitor instanceMonitor = new pdl.cloud.management.ScheduledInstanceMonitor();
+        ScheduledInstanceMonitor instanceMonitor = new ScheduledInstanceMonitor();
         Timer instanceMonitorTimer = new Timer();
         instanceMonitorTimer.scheduleAtFixedRate(instanceMonitor, timeInterval, timeInterval);
 
@@ -162,7 +172,7 @@ public class ServiceOperatorHelper {
         ThreadGroup threadGroup = new ThreadGroup(Thread.currentThread().getThreadGroup(), "worker");
         //checks available job indefinitely
         while (true) {
-            pdl.cloud.model.JobDetail submittedJob = jobHandler.getSubmmittedJob();
+            JobDetail submittedJob = jobHandler.getSubmmittedJob();
             if (submittedJob != null) {
                 JobExecutor jobExecutor = new JobExecutor(threadGroup, submittedJob, cctoolsOperator);
                 threadExecutor.execute(jobExecutor);

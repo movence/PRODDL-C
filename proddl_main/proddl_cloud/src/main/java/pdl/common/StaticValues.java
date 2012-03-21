@@ -31,18 +31,20 @@ package pdl.common;
 public class StaticValues {
     public static final String COLUMN_ROW_KEY = "RowKey";
     public static final String COLUMN_USER_ID = "userId";
-    public static final String COLUMN_DYNAMIC_DATA_NAME = "dataKey";
+    public static final String COLUMN_DYNAMIC_DATA_KEY = "dataKey";
     public static final String COLUMN_JOB_DETAIL_PRIORITY = "priority";
     public static final String COLUMN_JOB_DETAIL_STATUS = "status";
     public static final String COLUMN_FILE_INFO_NAME = "name";
     public static final String COLUMN_FILE_INFO_SUUID = "suuid";
 
+    public static final String KEY_DYNAMIC_DATA_STORAGE_PATH="StoragePath";
+
     public static final String DIRECTORY_TASK_AREA = "task";
     public static final String DIRECTORY_FILE_UPLOAD_AREA = "uploads";
 
-    public static final int JOB_STATUS_SUBMITTED = 0;
-    public static final int JOB_STATUS_PENDING = 1;
-    public static final int JOB_STATUS_RUNNING = 2;
-    public static final int JOB_STATUS_COMPLETED = 3;
-    public static final int JOB_STATUS_FAILED = 4;
+    public static final int JOB_STATUS_SUBMITTED = 1;
+    public static final int JOB_STATUS_PENDING = 2;
+    public static final int JOB_STATUS_RUNNING = 3;
+    public static final int JOB_STATUS_COMPLETED = 4;
+    public static final int JOB_STATUS_FAILED = 5;
 }

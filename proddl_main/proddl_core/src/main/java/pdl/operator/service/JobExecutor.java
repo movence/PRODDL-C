@@ -21,6 +21,8 @@
 
 package pdl.operator.service;
 
+import pdl.cloud.StorageServices;
+import pdl.cloud.model.JobDetail;
 import pdl.common.Configuration;
 import pdl.common.StaticValues;
 import pdl.common.ToolPool;
@@ -36,14 +38,14 @@ import java.io.File;
  */
 public class JobExecutor extends Thread {
     private CctoolsOperator cctoolsOperator;
-    private pdl.cloud.model.JobDetail currJob;
+    private JobDetail currJob;
 
-    public JobExecutor(ThreadGroup group, pdl.cloud.model.JobDetail currJob, CctoolsOperator operator) {
+    public JobExecutor(ThreadGroup group, JobDetail currJob, CctoolsOperator operator) {
         super(group, currJob.getJobUUID() + "_job");
         this.cctoolsOperator = operator;
     }
 
-    public JobExecutor(pdl.cloud.model.JobDetail currJob, CctoolsOperator operator) {
+    public JobExecutor(JobDetail currJob, CctoolsOperator operator) {
         this(new ThreadGroup("worker"), currJob, operator);
     }
 
@@ -52,7 +54,6 @@ public class JobExecutor extends Thread {
             if (currJob != null && currJob.getJobUUID() != null) {
                 boolean jobExecuted = executeJob();
                 if (!jobExecuted) {
-
                     throw new Exception(String.format("Job Execution Failed for UUID: '%s'%n", this.toString()));
                 }
             }
@@ -78,7 +79,7 @@ public class JobExecutor extends Thread {
                 String workDirPath = createJobDirectoryIfNotExist(jobID);
                 if (workDirPath != null) {
                     String fileName = validateJobFiles(workDirPath);
-                    //executes universal job script then waits its execution finishes
+                    //executes universal job script then waits until its execution finishes
                     cctoolsOperator.startMakeflow(jobID, fileName, workDirPath);
                 }
             }
@@ -94,7 +95,7 @@ public class JobExecutor extends Thread {
         String storagePath = Configuration.getInstance().getStringProperty("STORAGE_PATH");
         boolean jobAreaExist = false;
 
-        File jobArea = new File(storagePath + File.separator + StaticValues.DIRECTORY_TASK_AREA);
+        File jobArea = new File(storagePath + StaticValues.DIRECTORY_TASK_AREA);
         if (!ToolPool.isDirectoryExist(jobArea.getPath()))
             jobAreaExist = jobArea.mkdir();
         else
@@ -115,7 +116,7 @@ public class JobExecutor extends Thread {
     }
 
     private String validateJobFiles(String workingDirectory) throws Exception {
-        pdl.cloud.StorageServices storageServices = new pdl.cloud.StorageServices();
+        pdl.cloud.StorageServices storageServices = new StorageServices();
 
         String inputFileName = storageServices.getFileNameById(currJob.getInputFileUUID());
         String inputFilePath = workingDirectory + File.separator + inputFileName;

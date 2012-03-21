@@ -211,9 +211,7 @@ public class TableOperator {
     public AbstractTableServiceEntity queryEntityByCondition(
             String tableName, String condition, Class model) {
         AbstractTableServiceEntity entity = null;
-
         List<ITableServiceEntity> entityList;
-
         try {
             entityList = this.queryListByCondition(tableName, condition, model);
 
@@ -229,8 +227,7 @@ public class TableOperator {
         return entity;
     }
 
-    public List<ITableServiceEntity> queryListByCondition(
-            String tableName, String condition, Class model) {
+    public List<ITableServiceEntity> queryListByCondition(String tableName, String condition, Class model) {
         List<ITableServiceEntity> entityList = null;
         ITable table;
 

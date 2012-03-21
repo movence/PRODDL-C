@@ -56,7 +56,7 @@ public class ZipHandler {
                 byte[] buffer = new byte[1024];
                 int bytesRead = 0;
 
-                f = new File(new File(parentPath) + File.separator + entry.getName());
+                f = new File(parentPath + entry.getName());
 
                 if (entry.isDirectory()) {
                     f.mkdirs();
