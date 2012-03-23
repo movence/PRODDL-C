@@ -37,6 +37,7 @@ import pdl.common.Configuration;
 public class UserService {
     private Configuration conf;
     private TableOperator tableOperator;
+    private PasswordEncoder passwordEncoder = new ShaPasswordEncoder();
 
     public UserService() {
         conf = Configuration.getInstance();
@@ -66,7 +67,6 @@ public class UserService {
             } else { //if admin does not exist(in case of fresh start), create one with default password ("pdlAdmin")
 
                 if ("admin".equals(userId)) {
-                    PasswordEncoder passwordEncoder = new ShaPasswordEncoder();
                     String adminPass = passwordEncoder.encodePassword("pdlAdmin", null);
 
                     User admin = new User();
@@ -90,11 +90,10 @@ public class UserService {
 
     public boolean loadUser(User user) throws Exception {
         boolean rtnVal = false;
-
         initializeTableOperator();
 
+        user.setUserpass(passwordEncoder.encodePassword(user.getUserpass(), null));
         rtnVal = tableOperator.insertSingleEntity("user", user);
-
         if (!rtnVal)
             throw new Exception("Failed to load User.");
 
@@ -108,7 +107,6 @@ public class UserService {
             User currUser = this.getUserById(userId);
 
             if (!encrypted) {
-                PasswordEncoder passwordEncoder = new ShaPasswordEncoder();
                 oldPass = passwordEncoder.encodePassword(oldPass, null);
                 newPass = passwordEncoder.encodePassword(newPass, null);
             }

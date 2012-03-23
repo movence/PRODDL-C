@@ -28,6 +28,7 @@ import org.soyatec.windowsazure.table.ITableServiceEntity;
 import pdl.cloud.management.JobManager;
 import pdl.cloud.management.UserService;
 import pdl.cloud.model.JobDetail;
+import pdl.cloud.model.User;
 import pdl.common.QueryTool;
 import pdl.common.StaticValues;
 
@@ -49,48 +50,92 @@ public class JobRequestHandler {
         Map<String, Object> rtnVal = new TreeMap<String, Object> ();
 
         try {
+            String result;
+            boolean succeed;
+
             Map<String, Object> inputInMap = null;
-
-            //check user privilege for special jobs
-            UserService userService = new UserService();
-            boolean isAdminUser = userService.isAdmin(userName);
-            if(StaticValues.ADMIN_ONLY_JOBS.contains(jobName)) {
-                if(!isAdminUser) {
-                    rtnVal.put("message", String.format("'%s' is only allowed for Admin", jobName));
-                    throw new Exception("User requested a job that is only allowed for Admin");
-                }
-
-            }
-
-            JobDetail jobDetail = new JobDetail(jobName);
-            jobDetail.setJobName(jobName);
-            jobDetail.setUserId(userName);
-
-            if (inputInString != null && inputInString.length() > 0) {
-                ObjectMapper mapper = new ObjectMapper();
+            ObjectMapper mapper = new ObjectMapper();
+            if(inputInString!=null && !inputInString.isEmpty()) {
                 TypeReference<TreeMap<String,Object>> typeRef = new TypeReference<TreeMap<String,Object>>() {};
                 inputInMap = mapper.readValue(inputInString, typeRef);
-                inputInMap.put("jobName", jobName);
-                inputInMap.put("username", userName);
+            }
 
-                ObjectWriter writer = mapper.writer();
-                inputInString = writer.writeValueAsString(inputInMap);
-                jobDetail.setInput(inputInString);
+            //check user privilege for jobs
+            UserService userService = new UserService();
+            boolean isAdminUser = userService.isAdmin(userName);
+            List<String> userAllowedJobs = new ArrayList<String>(Arrays.asList(StaticValues.USER_AVAILABLE_JOBS.split(",")));
+            List<String> adminAllowedJobs = new ArrayList<String>(Arrays.asList(StaticValues.ADMIN_ONLY_JOBS.split(",")));
+            adminAllowedJobs.addAll(userAllowedJobs);
+            if(!userAllowedJobs.contains(jobName) || !(isAdminUser && adminAllowedJobs.contains(jobName))) {
+                rtnVal.put("message", String.format("The Job('%s') is not available or you do not have permission.", jobName));
+                throw new Exception("User requested a job that is not allowed to execute.");
+            }
 
-                for (Map.Entry<String, Object> entry : inputInMap.entrySet()) {
-                    if ("inputFileId".equals(entry.getKey()))
-                        jobDetail.setInputFileUUID((String) entry.getValue());
-                    else if ("makeFileId".equals(entry.getKey()))
-                        jobDetail.setMakeflowFileUUID((String) entry.getValue());
+            //add user by admin
+            if(jobName.equals("adduser")) {
+                User user = new User();
+
+                if(!inputInMap.containsKey("id") || !inputInMap.containsKey("password")) {
+                    rtnVal.put("message", "'adduser' requires 'id' and 'password' in input data.");
+                    throw new Exception();
+                }
+
+                String givenUserId = (String)inputInMap.get("id");
+                //check for duplicated user id
+                User dupUser = userService.getUserById(givenUserId);
+                if(dupUser!=null) {
+                    rtnVal.put("message", String.format("There is already existing user with given id '%s'", givenUserId));
+                    throw new Exception();
+                }
+
+                user.setUserid(givenUserId);
+                user.setUserpass((String)inputInMap.get("password"));
+                user.setAdmin(inputInMap.containsKey("admin")?(Integer)inputInMap.get("admin"):0);
+
+                user.setFirstName(inputInMap.containsKey("firstname")?(String)inputInMap.get("fristname"):null);
+                user.setLastName(inputInMap.containsKey("lastname")?(String)inputInMap.get("lastname"):null);
+                user.setEmail(inputInMap.containsKey("email")?(String)inputInMap.get("email"):null);
+                user.setPhone(inputInMap.containsKey("phone")?(String)inputInMap.get("phone"):null);
+
+                succeed = userService.loadUser(user);
+                if(succeed) {
+                    result = String.format("User '%s' has been added", user.getUserid());
+                } else {
+                    result = "Failed to add user.";
+                }
+            } else {
+                JobDetail jobDetail = new JobDetail(jobName);
+                jobDetail.setJobName(jobName);
+                jobDetail.setUserId(userName);
+
+                if (inputInMap!=null) {
+                    inputInMap.put("jobName", jobName);
+                    inputInMap.put("username", userName);
+
+                    ObjectWriter writer = mapper.writer();
+                    inputInString = writer.writeValueAsString(inputInMap);
+                    jobDetail.setInput(inputInString);
+
+                    for (Map.Entry<String, Object> entry : inputInMap.entrySet()) {
+                        if ("inputFileId".equals(entry.getKey()))
+                            jobDetail.setInputFileUUID((String) entry.getValue());
+                        else if ("makeFileId".equals(entry.getKey()))
+                            jobDetail.setMakeflowFileUUID((String) entry.getValue());
+                    }
+                }
+
+                succeed = manager.submitJob(jobDetail);
+
+                if(succeed) {
+                    rtnVal.put("Job ID", jobDetail.getJobUUID());
+                    rtnVal.put("Job Name", jobDetail.getJobName());
+                    result = "Job submitted";
+                } else {
+                    result = "Failed to submit the job.";
                 }
             }
 
-            manager.submitJob(jobDetail);
-
-            rtnVal.put("result", "Job submitted");
-            rtnVal.put("Job ID", jobDetail.getJobUUID());
-            rtnVal.put("Job Name", jobDetail.getJobName());
-            rtnVal.put("User", jobDetail.getUserId());
+            rtnVal.put("result", result);
 
         } catch (Exception ex) {
             ex.printStackTrace();

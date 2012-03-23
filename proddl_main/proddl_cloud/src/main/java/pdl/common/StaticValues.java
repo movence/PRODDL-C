@@ -47,6 +47,6 @@ public class StaticValues {
     public static final int JOB_STATUS_COMPLETED = 4;
     public static final int JOB_STATUS_FAILED = 5;
 
-    public static final String ADMIN_ONLY_JOBS = "makeflow";
-    public static final String USER_AVAILABLE_JOBS = "docking";
+    public static final String ADMIN_ONLY_JOBS = "makeflow,adduser";
+    public static final String USER_AVAILABLE_JOBS = "docking,test";
 }

@@ -63,9 +63,9 @@ public class RestMainController {
      * @param inputInString json formate input
      * @param principal
      * @return job submission result in json format
-     * @format curl <ip address>:<port>/pdl/r/job/<jobname> -d '{"key":"value"}' -u <user id>:<pass>
+     * @format curl <ip address>:<port>/pdl/r/job/<jobname> -d '{"key":"value"}' -u <user id>:<pass> -H "Content-Type: application/json"
      */
-    @RequestMapping(value = "job/{name}", method = {RequestMethod.POST, RequestMethod.GET}, headers = "Accept=application/json")
+    @RequestMapping(value = "job/{name}", method = {RequestMethod.POST, RequestMethod.GET})
     public @ResponseBody Map<String, Object> jobRunner(
             @PathVariable("name") String jobName,
             @RequestBody final String inputInString, //format '{"key":"value"}'
@@ -123,7 +123,7 @@ public class RestMainController {
     @RequestMapping(value = "file/upload", method = {RequestMethod.POST, RequestMethod.PUT})
     public @ResponseBody Map<String, String> fileUpload(
             @RequestParam("file") MultipartFile file, @RequestParam(value = "type", defaultValue = "") String type, Principal principal) {
-
+        //TODO allow admin to upload third-party application to tools container
         FileService fileService = new FileService();
         Map<String, String> rtnJson = fileService.uploadFile(file, type, principal.getName());
         return rtnJson;

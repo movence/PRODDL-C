@@ -67,8 +67,6 @@ public class UserManagementService implements UserDetailsService {
         } catch (Exception e) {
             e.printStackTrace();
             logger.error("Error in retrieving user");
-            //e.printStackTrace();
-            //throw new UsernameNotFoundException("Error in retrieving user");
         }
         return user;
     }
