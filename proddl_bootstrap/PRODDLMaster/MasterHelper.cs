@@ -203,7 +203,7 @@ namespace PRODDLMaster
         {
             String scriptPath = Path.Combine(resourcePath, @"vhd.txt");
             TextWriter tw = new StreamWriter(scriptPath);
-            tw.WriteLine(String.Format("create vdisk file={0} maximum=1024 type=fixed", vhdPath));
+            tw.WriteLine(String.Format("create vdisk file={0} type=fixed maximum={1}", vhdPath, RoleEnvironment.GetConfigurationSettingValue("VHDSize"));
             tw.WriteLine(String.Format("select vdisk file={0}", vhdPath));
             tw.WriteLine("attach vdisk");
             tw.WriteLine("create partition primary");
