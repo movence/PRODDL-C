@@ -21,7 +21,18 @@
 
 package pdl.common;
 
+import org.codehaus.jackson.JsonGenerationException;
+import org.codehaus.jackson.JsonParseException;
+import org.codehaus.jackson.map.JsonMappingException;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.type.TypeReference;
+
 import java.io.File;
+import java.io.IOException;
+import java.io.StringWriter;
+import java.io.Writer;
+import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * Created by IntelliJ IDEA.
@@ -36,8 +47,55 @@ public class ToolPool {
         return dir.exists() && dir.isDirectory();
     }
 
+    public static void createDirectoryIfNotExist(String path) {
+        if(!isDirectoryExist(path)) {
+            File dir = new File(path);
+            dir.mkdir();
+        }
+    }
+
     public static boolean canReadFile(String path) {
         File file = new File(path);
-        return file.exists() && file.canRead();
+        return file.exists() && file.canRead() && file.length()>0;
+    }
+
+    public static Map<String, Object> jsonStringToMap(String value) throws IllegalArgumentException {
+        Map<String, Object> rtnMap = null;
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            if(value!=null && !value.isEmpty()) {
+                TypeReference<TreeMap<String,Object>> typeRef = new TypeReference<TreeMap<String,Object>>() {};
+                rtnMap = mapper.readValue(value, typeRef);
+            }
+        } catch (JsonParseException e) {
+            e.printStackTrace();
+            throw new IllegalArgumentException(e);
+        } catch (JsonMappingException e) {
+            e.printStackTrace();
+            throw new IllegalArgumentException(e);
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new IllegalArgumentException(e);
+        }
+
+        return rtnMap;
+    }
+
+    public static String jsonMapToString(Map jsonMap) throws IllegalArgumentException {
+        ObjectMapper mapper = new ObjectMapper();
+        Writer writer = new StringWriter();
+        try {
+            mapper.writeValue(writer, jsonMap);
+        } catch (JsonGenerationException e) {
+            e.printStackTrace();
+            throw new RuntimeException(e);
+        } catch (JsonMappingException e) {
+            e.printStackTrace();
+            throw new RuntimeException(e);
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new RuntimeException(e);
+        }
+        return writer.toString();
     }
 }

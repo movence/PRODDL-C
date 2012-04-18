@@ -71,6 +71,10 @@
         </listener-class>
     </listener>
 
+    <session-config>
+        <session-timeout>15</session-timeout>
+    </session-config>
+
     <error-page>
         <error-code>404</error-code>
         <location>/error/404.html</location>

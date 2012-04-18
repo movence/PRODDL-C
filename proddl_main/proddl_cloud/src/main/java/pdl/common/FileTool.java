@@ -21,6 +21,7 @@
 
 package pdl.common;
 
+import org.soyatec.windowsazure.table.ITableServiceEntity;
 import pdl.cloud.StorageServices;
 import pdl.cloud.model.DynamicData;
 import pdl.cloud.model.FileInfo;
@@ -39,6 +40,7 @@ public class FileTool {
     Configuration conf;
     StorageServices services;
     String uploadDirectoryPath;
+    String fileTableName;
 
     public FileTool() {
         services = new StorageServices();
@@ -49,33 +51,65 @@ public class FileTool {
         if(conf==null)
             conf = Configuration.getInstance();
 
-        String storagePath = conf.getStringProperty("STORAGE_PATH");
+        fileTableName = conf.getStringProperty("TABLE_NAME_FILES");
 
+        String storagePath = conf.getStringProperty("DATASTORE_PATH");
         if(storagePath==null) {
-            DynamicData storageData = (DynamicData)services.queryEntityBySearchKey(conf.getStringProperty("TABLE_NAME_DYNAMIC_DATA"),
-                    StaticValues.COLUMN_DYNAMIC_DATA_KEY, StaticValues.KEY_DYNAMIC_DATA_STORAGE_PATH, DynamicData.class);
+            DynamicData storageData = (DynamicData)services.queryEntityBySearchKey(
+                    conf.getStringProperty("TABLE_NAME_DYNAMIC_DATA"),
+                    StaticValues.COLUMN_DYNAMIC_DATA_KEY, StaticValues.KEY_DYNAMIC_DATA_DRIVE_PATH,
+                    DynamicData.class);
 
             if(storageData==null)
                 storagePath = System.getProperty("java.io.tmpdir");
             else
                 storagePath = storageData.getDataValue();
-            conf.setProperty("STORAGE_PATH", storagePath);
+
+            if(!storagePath.endsWith(File.separator))
+                storagePath.concat(File.separator);
+            conf.setProperty("DATASTORE_PATH", storagePath);
         }
 
-        uploadDirectoryPath = storagePath + StaticValues.DIRECTORY_FILE_UPLOAD_AREA;
+        uploadDirectoryPath = storagePath + StaticValues.DIRECTORY_FILE_AREA;
         File uploadDir = new File(uploadDirectoryPath);
         if(!uploadDir.exists())
             uploadDir.mkdir();
     }
 
-    public String createFile(String type, InputStream fileIn, String fileName, String fileType, String username) throws Exception{
+    public FileInfo createFileRecord(String username) {
+        FileInfo fileInfo = new FileInfo();
+        fileInfo.setName(fileInfo.getIuuid()+StaticValues.FILE_EXTENSTION);
+        fileInfo.setUserId(username);
+        fileInfo.setStatus(StaticValues.FILE_STATUS_RESERVED);
+
+        int hashedDirectory = Math.abs(fileInfo.getIuuid().hashCode()) % conf.getIntegerProperty("MAX_FILE_COUNT_PER_DIRECTORY");
+        String dirPath = uploadDirectoryPath + File.separator + hashedDirectory + File.separator;
+        ToolPool.createDirectoryIfNotExist(dirPath);
+        fileInfo.setPath(dirPath);
+
+        return fileInfo;
+    }
+
+    public FileInfo getFileInfoById(String fileId) throws Exception{
+        FileInfo fileInfo = null;
+
+        ITableServiceEntity entity = services.queryEntityBySearchKey(fileTableName, StaticValues.COLUMN_ROW_KEY, fileId, FileInfo.class);
+        if(entity!=null)
+            fileInfo = (FileInfo)entity;
+
+        return fileInfo;
+    }
+
+    public String createFile(String type, InputStream fileIn, String username) throws Exception{
         String rtnVal = null;
         try {
-            String newFilePath = uploadDirectoryPath + File.separator + fileName;
+            FileInfo fileInfo = this.createFileRecord(username);
+
+            String newFilePath = fileInfo.getPath() + fileInfo.getName();
             FileOutputStream fileOut = new FileOutputStream(newFilePath);
 
             int readBytes = 0;
-            int readBlockSize = 4 * 1024;
+            int readBlockSize = 4 * 1024 * 1024;
             byte[] buffer = new byte[readBlockSize];
             while ((readBytes = fileIn.read(buffer, 0, readBlockSize)) != -1) {
                 fileOut.write(buffer, 0, readBytes);
@@ -84,33 +118,59 @@ public class FileTool {
             fileOut.close();
             fileIn.close();
 
-            rtnVal = newFilePath;
-
             //TODO It might need to allow files to be uploaded to other blob containers than jobFiles
             if (type!=null && type.equals("blob")) {
-                boolean uploaded = services.uploadFileToBlob(conf.getStringProperty("BLOB_CONTAINER_UPLOADS"), fileName, newFilePath, fileType, false);
-                boolean inserted = false;
-                if(uploaded) {
-                    FileInfo fileInfo = new FileInfo();
-                    fileInfo.setName(fileName);
-                    fileInfo.setType(fileType);
-                    fileInfo.setUserId(username);
+                fileInfo.setContainer(conf.getStringProperty("BLOB_CONTAINER_FILES"));
+                boolean uploaded = services.uploadFileToBlob(fileInfo, newFilePath, false);
 
-                    inserted = services.insertSingleEnttity(conf.getStringProperty("TABLE_NAME_FILES"), fileInfo);
-                    if(inserted)
-                        rtnVal = fileInfo.getIuuid();
-
-                }
-
-                if(!uploaded || !inserted) {
+                if(!uploaded) {
                     File file = new File(newFilePath);
                     if(file.exists())
                         file.delete();
                     throw new Exception("FileTool:Failed to upload file to Blob storage.");
                 }
-
             }
+
+            fileInfo.setStatus(StaticValues.FILE_STATUS_COMMITTED);
+            boolean recordInserted = this.insertFileRecord(fileInfo);
+            if(recordInserted)
+                rtnVal = fileInfo.getIuuid();
         } catch(Exception ex) {
+            throw ex;
+        }
+        return rtnVal;
+    }
+
+    public boolean insertFileRecord(FileInfo fileinfo) throws Exception {
+        boolean rtnVal = false;
+        try {
+            rtnVal = services.insertSingleEnttity(fileTableName, fileinfo);
+        } catch (Exception ex) {
+            throw ex;
+        }
+        return rtnVal;
+    }
+
+    public boolean commitFileRecord(String fileId) throws Exception {
+        boolean rtnVal = false;
+        try {
+            FileInfo fileInfo = getFileInfoById(fileId);
+            if(fileInfo!=null) {
+                fileInfo.setStatus(StaticValues.FILE_STATUS_COMMITTED);
+                rtnVal = services.updateEntity(fileTableName, fileInfo);
+            } else
+                throw new Exception("File does not exist with ID:" + fileId);
+        } catch (Exception ex) {
+            throw ex;
+        }
+        return rtnVal;
+    }
+
+    public boolean deleteFileRecord(String fileId) throws Exception {
+        boolean rtnVal = false;
+        try {
+
+        } catch (Exception ex) {
             throw ex;
         }
         return rtnVal;
@@ -119,23 +179,20 @@ public class FileTool {
     public boolean delete(String fileId, String username) throws Exception {
         boolean rtnVal = false;
         try {
-            String filesTable = conf.getStringProperty("TABLE_NAME_FILES");
-            FileInfo info = (FileInfo)services.queryEntityBySearchKey(
-                    filesTable, StaticValues.COLUMN_ROW_KEY, fileId, FileInfo.class
-            );
+            FileInfo info = (FileInfo)services.queryEntityBySearchKey(fileTableName, StaticValues.COLUMN_ROW_KEY, fileId, FileInfo.class);
 
             if(info!=null) {
                 if(!username.equals(info.getUserId()))
                     throw new Exception("The file belongs to another user");
 
-                services.deleteEntity(filesTable, info);
+                services.deleteEntity(fileTableName, info);
 
                 String filePath = uploadDirectoryPath + File.separator + info.getName();
                 File file = new File(filePath);
                 if(file.exists())
                     file.delete();
 
-                rtnVal = services.deleteBlob(conf.getStringProperty("BLOB_CONTAINER_UPLOADS"), info.getName());
+                rtnVal = services.deleteBlob(conf.getStringProperty("BLOB_CONTAINER_FILES"), info.getName());
             }
         } catch(Exception ex) {
             throw ex;

@@ -37,15 +37,20 @@ public class StaticValues {
     public static final String COLUMN_FILE_INFO_SUUID = "suuid";
 
     public static final String KEY_DYNAMIC_DATA_STORAGE_PATH="StoragePath";
+    public static final String KEY_DYNAMIC_DATA_DRIVE_PATH="MasterDrivePath";
 
     public static final String DIRECTORY_TASK_AREA = "task";
-    public static final String DIRECTORY_FILE_UPLOAD_AREA = "uploads";
+    public static final String DIRECTORY_FILE_AREA = "datastore";
 
     public static final int JOB_STATUS_SUBMITTED = 1;
     public static final int JOB_STATUS_PENDING = 2;
     public static final int JOB_STATUS_RUNNING = 3;
     public static final int JOB_STATUS_COMPLETED = 4;
     public static final int JOB_STATUS_FAILED = 5;
+
+    public static final int FILE_STATUS_RESERVED = 1;
+    public static final int FILE_STATUS_COMMITTED = 2;
+    public static final String FILE_EXTENSTION = ".dat";
 
     public static final String ADMIN_ONLY_JOBS = "makeflow,adduser";
     public static final String USER_AVAILABLE_JOBS = "docking,test";

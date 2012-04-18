@@ -60,45 +60,46 @@ public class JobManager {
             System.err.println("Entering Reordering Submitted Jobs");
             List<ITableServiceEntity> jobs = getJobList(QueryTool.getSingleConditionalStatement("status", "eq", StaticValues.JOB_STATUS_SUBMITTED));
 
-            ArrayList<JobDetail> prioritisedJobList = new ArrayList<JobDetail>();
-            for (ITableServiceEntity job : jobs) {
+            if(jobs!=null && jobs.size()>0) {
+                ArrayList<JobDetail> prioritisedJobList = new ArrayList<JobDetail>();
+                for (ITableServiceEntity job : jobs) {
 
-                JobDetail currJob = (JobDetail) job;
-                prioritisedJobList.add(currJob);
-
-                //TODO needs more sophisticated reordering mechanism
-
-                //simply adds a job if priority list is empty
-                /*if (prioritisedJobList.size() == 0) {
+                    JobDetail currJob = (JobDetail) job;
                     prioritisedJobList.add(currJob);
-                } else {
-                    //appends pending jobs without changing their orders
-                    if (currJob.getStatus() == StaticValues.JOB_STATUS_SUBMITTED) {
-                        int i;
-                        for (i = 0; i < prioritisedJobList.size(); i++) {
 
-                            JobDetail currentJob = prioritisedJobList.get(i);
-                            if (currentJob.getStatus() == StaticValues.JOB_STATUS_SUBMITTED) {
-                                continue;
-                            } else {
-                                break;
-                            }
-                        }
-                        prioritisedJobList.add(i, currJob);
-                    } else if (currJob.getStatus() == StaticValues.JOB_STATUS_RUNNING) {
+                    //TODO needs more sophisticated reordering mechanism
+
+                    //simply adds a job if priority list is empty
+                    /*if (prioritisedJobList.size() == 0) {
                         prioritisedJobList.add(currJob);
-                    }
-                }*/
+                    } else {
+                        //appends pending jobs without changing their orders
+                        if (currJob.getStatus() == StaticValues.JOB_STATUS_SUBMITTED) {
+                            int i;
+                            for (i = 0; i < prioritisedJobList.size(); i++) {
+
+                                JobDetail currentJob = prioritisedJobList.get(i);
+                                if (currentJob.getStatus() == StaticValues.JOB_STATUS_SUBMITTED) {
+                                    continue;
+                                } else {
+                                    break;
+                                }
+                            }
+                            prioritisedJobList.add(i, currJob);
+                        } else if (currJob.getStatus() == StaticValues.JOB_STATUS_RUNNING) {
+                            prioritisedJobList.add(currJob);
+                        }
+                    }*/
+                }
+
+                for (int curr = 0; curr < prioritisedJobList.size(); curr++) {
+                    JobDetail currentJob = prioritisedJobList.get(curr);
+                    currentJob.setPriority(curr + 1);
+                    //currentJob.setStatus(StaticValues.JOB_STATUS_SUBMITTED);
+                }
+
+                tableOperator.updateMultipleEntities(jobDetailTableName, prioritisedJobList);
             }
-
-            for (int curr = 0; curr < prioritisedJobList.size(); curr++) {
-                JobDetail currentJob = prioritisedJobList.get(curr);
-                currentJob.setPriority(curr + 1);
-                //currentJob.setStatus(StaticValues.JOB_STATUS_SUBMITTED);
-            }
-
-            tableOperator.updateMultipleEntities(jobDetailTableName, prioritisedJobList);
-
         } catch (Exception ex) {
             ex.printStackTrace();
             throw ex;
@@ -207,8 +208,11 @@ public class JobManager {
                 );
             }
 
-            if (retrievedJob != null && retrievedJob.getClass() == JobDetail.class)
+            if (retrievedJob != null && retrievedJob.getClass() == JobDetail.class) {
                 job = (JobDetail) retrievedJob;
+                this.updateJobStatus(job.getJobUUID(), StaticValues.JOB_STATUS_PENDING, null);
+                this.reorderSubmittedJobs();
+            }
 
         } catch (Exception ex) {
             throw ex;
@@ -225,7 +229,7 @@ public class JobManager {
      * @return boolean
      * @throws Exception
      */
-    public boolean updateJobStatus(String jobId, int status) throws Exception {
+    public boolean updateJobStatus(String jobId, int status, String resultFileName) throws Exception {
         boolean rtnVal = false;
 
         try {
@@ -233,8 +237,11 @@ public class JobManager {
 
             if (entity != null && entity.getStatus() != status) {
                 entity.setStatus(status);
-                if (status == StaticValues.JOB_STATUS_PENDING)
+                if (status != StaticValues.JOB_STATUS_SUBMITTED)
                     entity.setPriority(0);
+
+                if(resultFileName!=null && !resultFileName.isEmpty())
+                    entity.setResult(resultFileName);
 
                 rtnVal = tableOperator.updateSingleEntity(jobDetailTableName, entity);
             }
@@ -251,7 +258,7 @@ public class JobManager {
 
             for (ITableServiceEntity entity : jobList) {
                 JobDetail currJob = (JobDetail) entity;
-                updateJobStatus(currJob.getJobUUID(), newStatus);
+                updateJobStatus(currJob.getJobUUID(), newStatus, null);
             }
         } catch (Exception ex) {
             throw ex;

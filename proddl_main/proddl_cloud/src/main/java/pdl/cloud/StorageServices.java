@@ -61,13 +61,17 @@ public class StorageServices {
     public String getFileNameById(String fileId) {
         FileInfo currFile = (FileInfo) getTableOperator().queryEntityBySearchKey(
                 conf.getStringProperty("TABLE_NAME_FILES"),
-                StaticValues.COLUMN_FILE_INFO_SUUID, fileId,
+                StaticValues.COLUMN_ROW_KEY, fileId,
                 FileInfo.class);
         return currFile==null?null:currFile.getName();
     }
 
     public ITableServiceEntity queryEntityBySearchKey(String tablename, String column, String key, Class model) {
         return getTableOperator().queryEntityBySearchKey(tablename, column, key, model);
+    }
+
+    public boolean updateEntity(String tablename, ITableServiceEntity entity) {
+        return getTableOperator().updateSingleEntity(tablename, entity);
     }
 
     public void deleteEntity(String tablename, ITableServiceEntity entity) {
@@ -84,8 +88,13 @@ public class StorageServices {
         return blobOperator;
     }
 
-    public boolean uploadFileToBlob(String container, String filename, String path, String fileType, boolean overwrite) {
-        return getBlobOperator().uploadFileToBlob(container, filename, path, fileType, overwrite);
+    public boolean uploadFileToBlob(FileInfo fileInfo, String filePath, boolean overwrite) throws Exception {
+        boolean uploaded = getBlobOperator().uploadFileToBlob(fileInfo.getContainer(), fileInfo.getName(), filePath, fileInfo.getType(), overwrite);
+        boolean inserted = false;
+        if(uploaded) {
+            inserted = this.insertSingleEnttity(conf.getStringProperty("TABLE_NAME_FILES"), fileInfo);
+        }
+        return inserted;
     }
 
     public boolean downloadByName(String container, String name, String path) {
@@ -102,6 +111,10 @@ public class StorageServices {
 
     public boolean downloadUploadedFileByName(String name, String path) {
         return this.downloadByName(conf.getStringProperty("BLOB_CONTAINER_UPLOADS"), name, path);
+    }
+
+    public boolean downloadFilesByName(String name, String path) {
+        return this.downloadByName(conf.getStringProperty("BLOB_CONTAINER_FILES"), name, path);
     }
 
     public boolean deleteBlob(String containerName, String blobName) {

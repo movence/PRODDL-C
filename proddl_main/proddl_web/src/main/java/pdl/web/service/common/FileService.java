@@ -23,6 +23,7 @@ package pdl.web.service.common;
 
 import org.apache.log4j.Logger;
 import org.springframework.web.multipart.MultipartFile;
+import pdl.cloud.model.FileInfo;
 import pdl.common.FileTool;
 
 import java.io.InputStream;
@@ -46,26 +47,53 @@ public class FileService {
     public Map<String, String> uploadFile(MultipartFile theFile, String type, String username) {
         Map<String, String> rtnJson = new TreeMap<String, String>();
         try {
-            if(type.isEmpty())
-                type="blob";
+            //TODO uploads file to Azure drive rather than blob storage
+            /*if(type.isEmpty())
+                type="blob";*/
 
             String fileUid = null;
             if (theFile.getSize() > 0) {
                 InputStream fileIn = theFile.getInputStream();
-                fileUid = fileTool.createFile(type, fileIn, theFile.getOriginalFilename(), theFile.getContentType(), username);
+                fileUid = fileTool.createFile(type, fileIn, username);
             }
 
             if (fileUid == null)
                 throw new Exception();
 
-            rtnJson.put("Name", theFile.getOriginalFilename());
             rtnJson.put("AccessId", fileUid);
-            rtnJson.put("Size", String.valueOf(theFile.getSize()));
-            /*rtnJson.put("User", principal.getName());
-            rtnJson.put("Result", "Succeed");
-            rtnJson.put("Contnet-Type", file.getContentType());*/
         } catch (Exception ex) {
             rtnJson.put("error", "File upload failed for " + theFile.getOriginalFilename());
+            rtnJson.put("message", ex.toString());
+        }
+
+        return rtnJson;
+    }
+
+    public Map<String, String> createFile(String userName) {
+        Map<String, String> rtnJson = new TreeMap<String, String>();
+        try {
+            FileInfo fileInfo = fileTool.createFileRecord(userName);
+            fileTool.insertFileRecord(fileInfo);
+            rtnJson.put("AccessId", fileInfo.getIuuid());
+            rtnJson.put("path", fileInfo.getPath() + fileInfo.getName());
+        } catch (Exception ex) {
+            rtnJson.put("error", "Creating file failed");
+            rtnJson.put("message", ex.toString());
+        }
+
+        return rtnJson;
+    }
+
+    public Map<String, String> commitFile(String fileId, String userName) {
+        Map<String, String> rtnJson = new TreeMap<String, String>();
+        try {
+            boolean committed = fileTool.commitFileRecord(fileId);
+            if(!committed)
+                throw new Exception();
+            rtnJson.put("Result", "file committed");
+        } catch (Exception ex) {
+            rtnJson.put("error", "Committing file failed");
+            rtnJson.put("message", ex.toString());
         }
 
         return rtnJson;

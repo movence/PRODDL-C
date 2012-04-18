@@ -31,14 +31,13 @@ import pdl.operator.app.CctoolsOperator;
 import pdl.operator.app.CygwinOperator;
 import pdl.operator.app.JettyThreadedOperator;
 import pdl.operator.app.PythonOperator;
-import pdl.operator.service.JobExecutor;
-import pdl.operator.service.JobExecutorThreadPool;
-import pdl.operator.service.JobHandler;
-import pdl.operator.service.RejectedJobExecutorHandler;
+import pdl.operator.service.*;
 
 import java.io.File;
 import java.util.Timer;
+import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -81,14 +80,14 @@ public class ServiceOperatorHelper {
             conf.setProperty("STORAGE_PATH", storagePath);
             this.storagePath = storagePath;
 
-            DynamicData storageData = new DynamicData("storage_info");
-            storageData.setDataKey(StaticValues.KEY_DYNAMIC_DATA_STORAGE_PATH);
-            storageData.setDataValue(storagePath);
-            storageServices.insertSingleEnttity(conf.getStringProperty("TABLE_NAME_DYNAMIC_DATA"), storageData);
-
             this.runOperators();
 
             if (isMaster.equals("true")) { //Master Instance
+                DynamicData storageData = new DynamicData("storage_info");
+                storageData.setDataKey(StaticValues.KEY_DYNAMIC_DATA_STORAGE_PATH);
+                storageData.setDataValue(storagePath);
+                storageServices.insertSingleEnttity(conf.getStringProperty("TABLE_NAME_DYNAMIC_DATA"), storageData);
+
                 this.runMaster(jettyPort, masterAddress, catalogServerPort);
             } else { //Job(WorkQ) runner
                 this.runJobRunner();
@@ -137,11 +136,8 @@ public class ServiceOperatorHelper {
         //clear the "being processed" state from all jobs
         jobHandler.rollbackAllRunningJobStatus();
 
-        String tempCatalogServerAddress = cctoolsOperator.getCatalogServerAddress();
-        if (tempCatalogServerAddress == null) {
-            if (!cctoolsOperator.startCatalogServer(masterAddress, catalogServerPort)) {
-                throw new Exception("Failed to start Catalog Server at " + masterAddress + ":" + catalogServerPort);
-            }
+        if (!cctoolsOperator.startCatalogServer(masterAddress, catalogServerPort)) {
+            throw new Exception("Failed to start Catalog Server at " + masterAddress + ":" + catalogServerPort);
         }
 
         //Adds processor time monitor to timer
@@ -180,13 +176,67 @@ public class ServiceOperatorHelper {
     }
 
     private void runJobRunner() throws Exception {
-        while (true) {
+        int maxWorkerCount = conf.getIntegerProperty("MAX_WORKER_INSTANCE_PER_NODE");
 
-            while (cctoolsOperator.getCatalogServerAddress() == null) {
-                Thread.sleep(10000);
+        while (!cctoolsOperator.isCatalogServerInfoAvailable()) {
+            Thread.sleep(10000);
+        }
+
+        final ThreadPoolExecutor workerPool = new ThreadPoolExecutor(
+                maxWorkerCount,
+                maxWorkerCount,
+                conf.getIntegerProperty("MAX_KEEP_ALIVE_VALUE_JOB_EXECUTOR"),
+                conf.getStringProperty("MAX_KEEP_ALIVE_UNIT_JOB_EXECUTOR").equals("min") ? TimeUnit.MINUTES : TimeUnit.SECONDS,
+                new SynchronousQueue<Runnable>(),
+                //new BlockingArrayQueue<Runnable>(5),
+                new RejectedExecutionHandler() {
+                    @Override
+                    public void rejectedExecution(Runnable runnable, ThreadPoolExecutor threadPoolExecutor) {
+                        return;
+                    }
+                }
+        );
+
+        Runtime.getRuntime().addShutdownHook(new Thread() {
+            @Override
+            public void run() {
+                workerPool.shutdownNow();
+            }
+        });
+
+        for(int i=0;i<maxWorkerCount;i++) {
+            WorkerExecutor worker = new WorkerExecutor(cctoolsOperator);
+            workerPool.execute(worker);
+        }
+
+        /*final List<WorkerExecutor> workers = Collections.synchronizedList(new ArrayList<WorkerExecutor>(maxWorkerCount));
+        ArrayList<WorkerExecutor> completedWorkers = new ArrayList<WorkerExecutor>();
+        boolean allWorkersAlive;
+        while (true) {
+            allWorkersAlive = true;
+            if(workers.size() == maxWorkerCount) {
+                for(int i=0;i<maxWorkerCount;i++) {
+                    WorkerExecutor aWorker = workers.get(i);
+                    if(!aWorker.isAlive()) {
+                        allWorkersAlive = false;
+                        completedWorkers.add(aWorker);
+                    }
+                }
+
+                if(allWorkersAlive)
+                    Thread.sleep(conf.getIntegerProperty("MAX_KEEP_ALIVE_VALUE_JOB_EXECUTOR") * 60 * 1000);
+                else {
+                    workers.removeAll(completedWorkers);
+                    completedWorkers.clear();
+                }
             }
 
-            cctoolsOperator.startWorkQ();
-        }
+            if(workers.size() < maxWorkerCount) {
+                WorkerExecutor worker = new WorkerExecutor(cctoolsOperator);
+                workers.add(worker);
+                worker.start();
+                //threadExecutor.execute(worker);
+            }
+        }*/
     }
 }

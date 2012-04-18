@@ -169,7 +169,7 @@ public class BlobOperator {
         return rtnVal;
     }
 
-    public boolean uploadBlob(String containerName, String blobName, String fileName, byte[] fileBytes, String fileType, boolean overWrite) {
+    public boolean uploadBlob(String containerName, String blobName, String fileName, byte[] fileBytes, String fileType, boolean overWrite) throws Exception{
         boolean rtnVal = false;
         try {
             IBlobContainer theContainer = getBlobContainer(containerName);
@@ -203,13 +203,13 @@ public class BlobOperator {
         } catch (IOException ex) {
             ex.printStackTrace();
         } catch (Exception ex) {
-            ex.printStackTrace();
+            throw ex;
         }
 
         return rtnVal;
     }
 
-    public boolean uploadFileToBlob(String container, String blobName, String filePath, String fileType, boolean overWrite) {
+    public boolean uploadFileToBlob(String container, String blobName, String filePath, String fileType, boolean overWrite) throws Exception {
         boolean rtnVal = false;
         try {
             File uploadingFile = new File(filePath);
@@ -225,7 +225,7 @@ public class BlobOperator {
                     fileType,
                     overWrite);
         } catch (Exception ex) {
-            ex.printStackTrace();
+            throw ex;
         }
 
         return rtnVal;

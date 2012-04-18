@@ -21,6 +21,8 @@
 
 package pdl.operator.service;
 
+import pdl.common.StaticValues;
+
 import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadPoolExecutor;
 
@@ -41,6 +43,6 @@ public class RejectedJobExecutorHandler implements RejectedExecutionHandler {
     @Override
     public void rejectedExecution(Runnable runnable, ThreadPoolExecutor executor) {
         JobHandler jobHandler = new JobHandler();
-        jobHandler.updateRejectedJob(runnable.toString());
+        jobHandler.updateJobStatus(runnable.toString(), StaticValues.JOB_STATUS_SUBMITTED, null);
     }
 }

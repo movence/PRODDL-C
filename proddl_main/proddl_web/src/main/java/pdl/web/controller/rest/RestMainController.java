@@ -68,7 +68,7 @@ public class RestMainController {
     @RequestMapping(value = "job/{name}", method = {RequestMethod.POST, RequestMethod.GET})
     public @ResponseBody Map<String, Object> jobRunner(
             @PathVariable("name") String jobName,
-            @RequestBody final String inputInString, //format '{"key":"value"}'
+            @RequestBody final String inputInString, //format '{"key":"value"}': files{"mfile":"<fileID>" - makeflow file, "ifile":"<fileId>" - input file}
             Principal principal) {
 
         Map<String, Object> jobResult = handler.submitJob(jobName, inputInString, principal.getName());
@@ -118,14 +118,39 @@ public class RestMainController {
      * File upload request handler (POST, PUT)
      * @param file MultipartFile data in form
      * @return file information in json format
-     * @format curl <ip address>:<port>/pdl/r/file/upload -u <user id>:<pass> -F file=@<file> -X POST|PUT
+     * @format curl <ip address>:<port>/pdl/r/file/upload -u <user id>:<pass> -F file=@<file> --keepalive-time <seconds> -X POST|PUT
      */
     @RequestMapping(value = "file/upload", method = {RequestMethod.POST, RequestMethod.PUT})
     public @ResponseBody Map<String, String> fileUpload(
             @RequestParam("file") MultipartFile file, @RequestParam(value = "type", defaultValue = "") String type, Principal principal) {
         //TODO allow admin to upload third-party application to tools container
+
         FileService fileService = new FileService();
         Map<String, String> rtnJson = fileService.uploadFile(file, type, principal.getName());
+        return rtnJson;
+    }
+
+    /**
+     * Obtain new File UUID
+     * @return file information (UUID, absolute path) in json format
+     * @format curl <ip address>:<port>/pdl/r/file/new -u <user id>:<pass> -X POST|GET
+     */
+    @RequestMapping(value = "file/new", method = {RequestMethod.POST, RequestMethod.GET})
+    public @ResponseBody Map<String, String> fileCreate(Principal principal) {
+        FileService fileService = new FileService();
+        Map<String, String> rtnJson = fileService.createFile(principal.getName());
+        return rtnJson;
+    }
+
+    /**
+     * Obtain new File UUID
+     * @return file information (UUID, absolute path) in json format
+     * @format curl <ip address>:<port>/pdl/r/file/commit/?id=<file id> -u <user id>:<pass> -X POST|GET
+     */
+    @RequestMapping(value = "file/commit", method = {RequestMethod.POST, RequestMethod.GET})
+    public @ResponseBody Map<String, String> fileCommit(@RequestParam(value = "id", defaultValue = "") String fileId, Principal principal) {
+        FileService fileService = new FileService();
+        Map<String, String> rtnJson = fileService.commitFile(fileId, principal.getName());
         return rtnJson;
     }
 

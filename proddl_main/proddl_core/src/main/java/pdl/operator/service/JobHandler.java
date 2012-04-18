@@ -43,10 +43,6 @@ public class JobHandler {
 
         try {
             singleJob = jobManager.getSingleSubmittedJob();
-
-            if (singleJob != null && singleJob.getJobUUID() != null)
-                jobManager.updateJobStatus(singleJob.getJobUUID(), StaticValues.JOB_STATUS_PENDING);
-
         } catch (Exception ex) {
             ex.printStackTrace();
         }
@@ -59,7 +55,6 @@ public class JobHandler {
 
         try {
             currJob = jobManager.getJobByID(jobUUID);
-
         } catch (Exception ex) {
             ex.printStackTrace();
         }
@@ -67,27 +62,13 @@ public class JobHandler {
         return currJob;
     }
 
-    public boolean updateRejectedJob(String jobUUID) {
+    public boolean updateJobStatus(String jobUUID, int status, String resultFile) {
         boolean rtnVal = false;
-
         try {
-            rtnVal = jobManager.updateJobStatus(jobUUID, StaticValues.JOB_STATUS_SUBMITTED);
+            rtnVal = jobManager.updateJobStatus(jobUUID, status, resultFile);
         } catch (Exception ex) {
             ex.printStackTrace();
         }
-
-        return rtnVal;
-    }
-
-    public boolean updateCompletedJob(String jobUUID) {
-        boolean rtnVal = false;
-
-        try {
-            rtnVal = jobManager.updateJobStatus(jobUUID, StaticValues.JOB_STATUS_COMPLETED);
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
-
         return rtnVal;
     }
 

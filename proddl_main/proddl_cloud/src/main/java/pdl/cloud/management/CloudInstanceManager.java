@@ -161,7 +161,7 @@ public class CloudInstanceManager {
                         int currentInstanceCount = Integer.valueOf(instanceCountElement.getAttribute("count"));
 
                         if ("up".equals(flag)) {
-                            if (currentInstanceCount == Integer.valueOf(conf.getStringProperty("MAX_WORKER_INSTANCE"))) {
+                            if (currentInstanceCount == Integer.valueOf(conf.getStringProperty("MAX_TOTAL_WORKER_INSTANCE"))) {
                                 System.out.println("The maximum allowable number of instances has been reached.");
                                 break;
                             }

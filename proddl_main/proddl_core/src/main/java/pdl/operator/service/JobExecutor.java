@@ -22,6 +22,7 @@
 package pdl.operator.service;
 
 import pdl.cloud.StorageServices;
+import pdl.cloud.model.FileInfo;
 import pdl.cloud.model.JobDetail;
 import pdl.common.Configuration;
 import pdl.common.StaticValues;
@@ -29,6 +30,7 @@ import pdl.common.ToolPool;
 import pdl.operator.app.CctoolsOperator;
 
 import java.io.File;
+import java.util.Map;
 
 /**
  * Created by IntelliJ IDEA.
@@ -42,6 +44,7 @@ public class JobExecutor extends Thread {
 
     public JobExecutor(ThreadGroup group, JobDetail currJob, CctoolsOperator operator) {
         super(group, currJob.getJobUUID() + "_job");
+        this.currJob=currJob;
         this.cctoolsOperator = operator;
     }
 
@@ -78,11 +81,12 @@ public class JobExecutor extends Thread {
 
                 String workDirPath = createJobDirectoryIfNotExist(jobID);
                 if (workDirPath != null) {
-                    //TODO This part should be replaced to python execution code
-                    String fileName = validateJobFiles(workDirPath);
                     //executes universal job script then waits until its execution finishes
-                    cctoolsOperator.startMakeflow(jobID, fileName, workDirPath);
-                }
+                    //TODO This part should be replaced to python execution code
+                    this.tempExecuteJob(workDirPath);
+                    rtnVal = true;
+                } else
+                    throw new Exception("Creating task area failed!");
             }
         } catch (Exception ex) {
             throw ex;
@@ -109,7 +113,8 @@ public class JobExecutor extends Thread {
                     jobDir = currJobDirectory.getPath();
                 else
                     throw new Exception(String.format("Job Executor: Failed to create job(%s) directory", jobUUID));
-            }
+            } else
+                jobDir = currJobDirectory.getPath();
         } else
             throw new Exception(String.format("Job Executor: There is no storage area at '%s'", jobArea.getPath()));
 
@@ -119,15 +124,19 @@ public class JobExecutor extends Thread {
     private String validateJobFiles(String workingDirectory) throws Exception {
         StorageServices storageServices = new StorageServices();
 
+        //TODO confirm default file names
         String inputFileName = storageServices.getFileNameById(currJob.getInputFileUUID());
-        String inputFilePath = workingDirectory + File.separator + inputFileName;
-        if (!ToolPool.canReadFile(inputFilePath))
-            storageServices.downloadJobFileByName(inputFileName, inputFilePath);
-
         String makeflowFileName = storageServices.getFileNameById(currJob.getMakeflowFileUUID());
-        String makeflowFilePath = workingDirectory + File.separator + makeflowFileName;
+        if(inputFileName==null || makeflowFileName==null)
+            throw new Exception("input file or makeflow file ID does not exist.");
+
+        String inputFilePath = workingDirectory + File.separator + "input.json"; //inputFileName;
+        if (!ToolPool.canReadFile(inputFilePath))
+            storageServices.downloadFilesByName(inputFileName, inputFilePath);
+
+        String makeflowFilePath = workingDirectory + File.separator + makeflowFileName; //"makeflow.makeflow";
         if (!ToolPool.canReadFile(makeflowFilePath))
-            storageServices.downloadJobFileByName(makeflowFileName, makeflowFilePath);
+            storageServices.downloadFilesByName(makeflowFileName, makeflowFilePath);
 
         return makeflowFileName;
     }
@@ -139,5 +148,68 @@ public class JobExecutor extends Thread {
          * in case this thread gets rejected by Asynchronous Queue
          */
         return currJob.getJobUUID();
+    }
+
+
+    /*
+     *Temporary methods for big test
+     */
+    //TODO remove this test methods
+    private void tempExecuteJob(String workDir) {
+        try {
+            String mfFile = null;
+            //update job status and result information
+            JobHandler jobHandler = new JobHandler();
+
+            if(currJob.getInput()!=null) {
+                Map<String, Object> inputInMap = ToolPool.jsonStringToMap(currJob.getInput());
+
+                if(currJob.getInputFileUUID()==null || currJob.getMakeflowFileUUID()==null) {
+                    String makeflowFileID = (String)inputInMap.get("mfile");
+                    String inputFileID = (String)inputInMap.get("ifile");
+                    if(makeflowFileID==null || makeflowFileID.isEmpty() || inputFileID==null || inputFileID.isEmpty()) {
+                        throw new Exception("makeflow or input file is NULL!");
+                    }
+                    currJob.setInputFileUUID(inputFileID);
+                    currJob.setMakeflowFileUUID(makeflowFileID);
+                }
+
+                mfFile = validateJobFiles(workDir);
+            }
+            jobHandler.updateJobStatus(currJob.getJobUUID(), StaticValues.JOB_STATUS_RUNNING, null);
+
+            boolean executed = cctoolsOperator.startMakeflow(currJob.getJobUUID(), mfFile, workDir);
+            boolean outputUploaded = false;
+            if(executed) {
+                //upload output file to blob and insert file information to files table
+                String outputFilePath = workDir + File.separator + "output.json";
+                String jobOutputFileName = currJob.getJobUUID() + ".output";
+                File outputFile = new File(outputFilePath);
+                if(outputFile.exists() && outputFile.isFile() && outputFile.length()>0) {
+                    StorageServices storageServices = new StorageServices();
+                    FileInfo fileInfo = new FileInfo("output");
+                    fileInfo.setContainer(Configuration.getInstance().getStringProperty("BLOB_CONTAINER_FILES"));
+                    fileInfo.setName(jobOutputFileName);
+                    fileInfo.setUserId(currJob.getUserId());
+                    fileInfo.setType("application/json");
+
+                    outputUploaded = storageServices.uploadFileToBlob(fileInfo, outputFilePath, false);
+                } else { //output does not exist
+                    outputUploaded = true;
+                }
+
+                if(outputUploaded)
+                    jobHandler.updateJobStatus(currJob.getJobUUID(), StaticValues.JOB_STATUS_COMPLETED, jobOutputFileName);
+            } else { //error while executing makeflow
+                jobHandler.updateJobStatus(currJob.getJobUUID(), StaticValues.JOB_STATUS_FAILED, null);
+            }
+        } catch(Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    private String createMakeflowFile() throws Exception {
+        String mfFilePath = null;
+        return mfFilePath;
     }
 }

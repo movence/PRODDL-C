@@ -21,13 +21,17 @@
 
 package pdl.cloud.storage;
 
+import org.soyatec.windowsazure.blob.IRetryPolicy;
+import org.soyatec.windowsazure.blob.internal.RetryPolicies;
 import org.soyatec.windowsazure.error.StorageException;
+import org.soyatec.windowsazure.internal.util.TimeSpan;
 import org.soyatec.windowsazure.table.*;
 import org.soyatec.windowsazure.table.internal.CloudTableQuery;
 import pdl.common.Configuration;
 
 import java.net.URI;
 import java.util.List;
+import java.util.concurrent.Callable;
 
 /**
  * Created by IntelliJ IDEA.
@@ -69,6 +73,10 @@ public class TableOperator {
                         conf.getStringProperty("AZURE_ACCOUNT_NAME"),
                         conf.getStringProperty("AZURE_ACCOUNT_PKEY")
                 );
+
+            tableStorageClient.setRetryPolicy(RetryPolicies.retryN(3, TimeSpan.fromSeconds(3)));
+            /*IRetryPolicy retryPolicy = new TableRetryPolicy();
+            tableStorageClient.setRetryPolicy(retryPolicy);*/
         } catch (Exception ex) {
             ex.printStackTrace();
         }
@@ -318,4 +326,36 @@ public class TableOperator {
             e.printStackTrace();
         }
     }
+
+    /*
+     * Custom retry policy for azure table client
+     */
+    private class TableRetryPolicy implements IRetryPolicy {
+        private int numberOfTriesLeft;
+        private long timeToWait = 2000;
+
+        @Override
+        public Object execute(Callable callable) throws StorageException {
+            numberOfTriesLeft = 5;
+            while (true) {
+                try {
+                    System.err.println("Trying TableStorage process again after failure.");
+                    return callable.call();
+                }
+                catch (Exception e) {
+                    numberOfTriesLeft--;
+                    if (numberOfTriesLeft == 0) {
+                        throw new StorageException("Ran out of retry attempts!!");
+                    }
+                    try {
+                        Thread.sleep(timeToWait);
+                    } catch(Exception ex) {
+                        throw new StorageException("Exception in TableRetryPolicy!");
+                    }
+                }
+            }
+        }
+    }
 }
+
+

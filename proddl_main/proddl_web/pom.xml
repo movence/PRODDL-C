@@ -48,7 +48,7 @@
                     <target>1.6</target>
                 </configuration>
             </plugin>
-            <plugin>
+            <!--<plugin>
                 <artifactId>maven-shade-plugin</artifactId>
                 <version>1.4</version>
                 <executions>
@@ -71,7 +71,7 @@
                         </configuration>
                     </execution>
                 </executions>
-            </plugin>
+            </plugin>-->
 
             <!-- Jetty plugin for quick local testing of web module only -->
             <plugin>
@@ -153,11 +153,11 @@
             <scope>compile</scope>
         </dependency>
 
-        <dependency>
+        <!--<dependency>
             <groupId>org.codehaus.jackson</groupId>
             <artifactId>jackson-mapper-asl</artifactId>
             <version>1.9.2</version>
-        </dependency>
+        </dependency>-->
 
 
         <!-- Other dependencies -->

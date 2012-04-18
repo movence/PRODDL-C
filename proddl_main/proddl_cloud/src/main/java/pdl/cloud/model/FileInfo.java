@@ -36,6 +36,9 @@ public class FileInfo extends AbstractTableServiceEntity {
     String suuid; //file name
     String content;
     String userId;
+    String container;
+    String path;
+    int status; //reserved:1, committed:2
 
     public FileInfo(String partitionKey, String rowKey) {
         super(partitionKey, rowKey);
@@ -91,5 +94,29 @@ public class FileInfo extends AbstractTableServiceEntity {
 
     public void setUserId(String userId) {
         this.userId = userId;
+    }
+
+    public String getContainer() {
+        return container;
+    }
+
+    public void setContainer(String container) {
+        this.container = container;
+    }
+
+    public String getPath() {
+        return path;
+    }
+
+    public void setPath(String path) {
+        this.path = path;
+    }
+
+    public int getStatus() {
+        return status;
+    }
+
+    public void setStatus(int status) {
+        this.status = status;
     }
 }
