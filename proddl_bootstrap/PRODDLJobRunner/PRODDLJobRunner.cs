@@ -57,10 +57,10 @@ namespace PRODDLJobRunner
                 Trace.TraceError(ex.Message);
             }
 
-            while (true)
-            {
-                Thread.Sleep(10000);
-            }
+            //while (true)
+            //{
+            //   Thread.Sleep(10000);
+            //}
         }
 
         public override bool OnStart()

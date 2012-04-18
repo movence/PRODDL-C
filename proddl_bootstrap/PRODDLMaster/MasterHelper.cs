@@ -44,7 +44,19 @@ namespace PRODDLMaster
         private DynamicDataServiceContext _dynamicDataContext;
         private String localStoragePath;
 
-        private const String DYNAMIC_TABLE_MASTER_DRIVE_KEY_NAME = "MasterDriveIntialized";
+        private const String DYNAMIC_TABLE_DRIVE_KEY_NAME = "MasterDriveIntialized";
+        private const String DYNAMIC_TABLE_DRIVE_PATH = "MasterDrivePath";
+        private const String DYNAMIC_TABLE_CATALOG_ADDRESS = "CatalogServerAddress";
+        private const String DYNAMIC_TABLE_CATALOG_PORT = "CatalogServerPort";
+        private const String DYNAMIC_TABLE_STORAGE_PATH = "StoragePath";
+
+        private String[] DYNAMIC_TABLE_KEYS = 
+        { 
+            DYNAMIC_TABLE_CATALOG_ADDRESS, 
+            DYNAMIC_TABLE_CATALOG_PORT, 
+            DYNAMIC_TABLE_STORAGE_PATH, 
+            DYNAMIC_TABLE_DRIVE_PATH 
+        };
 
         public void OnStop()
         {
@@ -62,17 +74,6 @@ namespace PRODDLMaster
 
         public void Run()
         {
-            //local tracing file to an instance
-            //Trace.Listeners.Clear();
-            //TextWriterTraceListener twtl = new TextWriterTraceListener(RoleEnvironment.GetLocalResource("LocalStorage").RootPath);
-            //twtl.Name = "TextLogger";
-            //twtl.TraceOutputOptions = TraceOptions.ThreadId | TraceOptions.DateTime;
-            //ConsoleTraceListener ctl = new ConsoleTraceListener(false);
-            //ctl.TraceOutputOptions = TraceOptions.DateTime;
-            //Trace.Listeners.Add(twtl);
-            //Trace.Listeners.Add(ctl);
-            //Trace.AutoFlush = true;
-
             DiagnosticMonitorConfiguration dmc = DiagnosticMonitor.GetDefaultInitialConfiguration();
 
             dmc.Logs.ScheduledTransferPeriod = TimeSpan.FromMinutes(3.0);
@@ -81,24 +82,21 @@ namespace PRODDLMaster
             DiagnosticMonitor.AllowInsecureRemoteConnections = true;
             DiagnosticMonitor.Start("DiagnosticConnectionString", dmc);
 
-            Trace.WriteLine("This Trace line would not be printed by Diagnostics API");
 
             LocalResource localStorage = RoleEnvironment.GetLocalResource("LocalStorage");
             localStoragePath = Path.GetPathRoot(localStorage.RootPath);
 
             storageHelper = new StorageService(RoleEnvironment.GetConfigurationSettingValue("StorageConnectionString"));
-
+            
             if (!this.IsMasterDriveExist())
             {
                 String vhdFilePath = createDriveFromCMD();
                 if (!String.IsNullOrEmpty(vhdFilePath))
                 {
-                    //String vhdFilePath = "C:\\master.vhd";
-                    //if (File.Exists(vhdFilePath))
-                    //{
                     if (storageHelper.uploadCloudDrive(vhdFilePath, "tools", RoleEnvironment.GetConfigurationSettingValue("VHDName")))
                     {
-                        this.updateMasterDriveData();
+                        this.updateMasterDriveData(DYNAMIC_TABLE_DRIVE_KEY_NAME, "true");
+                        File.Delete(vhdFilePath);
                     }
                 }
                 else
@@ -112,14 +110,15 @@ namespace PRODDLMaster
             }
 
             String drivePath = storageHelper.getMountedDrivePath(RoleEnvironment.GetConfigurationSettingValue("VHDUri"));
+            this.updateMasterDriveData(DYNAMIC_TABLE_DRIVE_PATH, drivePath);
 
             extractJRE();
             startJavaMainOperator(); //this call never returns, it's on JAVA's hand now
 
-            while (true)
-            {
-                Thread.Sleep(10000);
-            }
+            //while (true)
+            //{
+            //   Thread.Sleep(10000);
+            //}
         }
 
         private void initializeTableContext()
@@ -145,7 +144,7 @@ namespace PRODDLMaster
             if (_dynamicDataContext == null)
                 initializeTableContext();
 
-            DynamicDataModel driveData = _dynamicDataContext.getDynamicData(DYNAMIC_TABLE_MASTER_DRIVE_KEY_NAME);
+            DynamicDataModel driveData = _dynamicDataContext.getDynamicData(DYNAMIC_TABLE_DRIVE_KEY_NAME);
             if (driveData != null && !String.IsNullOrEmpty(driveData.dataValue))
             {
                 if (driveData.dataValue.Equals("true"))
@@ -154,22 +153,22 @@ namespace PRODDLMaster
             return false;
         }
 
-        private void updateMasterDriveData()
+        private void updateMasterDriveData(String key, String value)
         {
             if (_dynamicDataContext == null)
                 initializeTableContext();
-            _dynamicDataContext.insertDynamicData(
-                "dynamicdata_masterdrive", DYNAMIC_TABLE_MASTER_DRIVE_KEY_NAME, DYNAMIC_TABLE_MASTER_DRIVE_KEY_NAME, "true"
-            );
+            _dynamicDataContext.insertDynamicData("dynamicdata_masterdrive", key, value);
         }
 
         private void deleteDynamicData()
         {
             if (_dynamicDataContext == null)
                 initializeTableContext();
-            _dynamicDataContext.deleteDynamicData("CatalogServerAddress");
-            _dynamicDataContext.deleteDynamicData("CatalogServerPort");
-            _dynamicDataContext.deleteDynamicData("StoragePath");
+
+            for (int i = 0; i < DYNAMIC_TABLE_KEYS.Length; i++)
+            {
+                _dynamicDataContext.deleteDynamicData(DYNAMIC_TABLE_KEYS[i]);
+            }
         }
 
         private String createDriveFromCMD()
@@ -181,11 +180,11 @@ namespace PRODDLMaster
 
                 Process proc = new SharedTools().buildCloudProcess(
                     System.Environment.GetEnvironmentVariable("WINDIR") + "\\System32\\diskpart.exe",
-                    "/s" + " " + scriptPath,
+                    "/s " + scriptPath,
                     "createDriveFromCMD()");
 
                 proc.Start();
-                proc.BeginOutputReadLine();
+                //proc.BeginOutputReadLine();
                 proc.BeginErrorReadLine();
                 proc.WaitForExit();
 
@@ -203,7 +202,7 @@ namespace PRODDLMaster
         {
             String scriptPath = Path.Combine(resourcePath, @"vhd.txt");
             TextWriter tw = new StreamWriter(scriptPath);
-            tw.WriteLine(String.Format("create vdisk file={0} type=fixed maximum={1}", vhdPath, RoleEnvironment.GetConfigurationSettingValue("VHDSize"));
+            tw.WriteLine(String.Format("create vdisk file={0} type=fixed maximum={1}", vhdPath, RoleEnvironment.GetConfigurationSettingValue("VHDSize")));
             tw.WriteLine(String.Format("select vdisk file={0}", vhdPath));
             tw.WriteLine("attach vdisk");
             tw.WriteLine("create partition primary");

@@ -48,20 +48,15 @@ namespace CommonTool.data
         {
             return dynamicDataTableName;
         }
-
-        public void insertDynamicData(String partitionKey, String rowKey, String key, String value)
+        
+        public void insertDynamicData(String partitionKey, String key, String value)
         {
-            DynamicDataModel data = new DynamicDataModel(partitionKey, rowKey);
+            DynamicDataModel data = new DynamicDataModel(partitionKey);
             data.dataKey = key;
             data.dataValue = value;
 
             this.AddObject(dynamicDataTableName, data);
             this.SaveChanges();
-        }
-
-        public void insertDynamicData(String key, String value)
-        {
-            this.insertDynamicData(null, null, key, value);
         }
 
         public DynamicDataModel getDynamicData(String key)

@@ -107,7 +107,7 @@ namespace CommonTool
                 CloudBlobContainer cloudBlobContainer = _account.CreateCloudBlobClient().GetContainerReference(blobName);
                 cloudBlobContainer.CreateIfNotExist();
                 CloudPageBlob cloudPageBlob = cloudBlobContainer.GetPageBlobReference(vhdName);
-                //cloudPageBlob.Properties.ContentType = "binary/octet-stream";
+                cloudPageBlob.Properties.ContentType = "binary/octet-stream";
 
                 long blobSize = (vhdFileInfo.Length + PageBlobPageSize - 1) & ~(PageBlobPageSize - 1);
                 cloudPageBlob.Create(blobSize);
@@ -135,8 +135,7 @@ namespace CommonTool
                     // Upload groups of contiguous non-zero page blob pages.  
                     while (offsetInRange <= range.Length)
                     {
-                        if ((offsetInRange == range.Length) ||
-                            IsAllZero(range, offsetInRange, PageBlobPageSize))
+                        if ((offsetInRange == range.Length) || IsAllZero(range, offsetInRange, PageBlobPageSize))
                         {
                             if (offsetToTransfer != -1)
                             {
