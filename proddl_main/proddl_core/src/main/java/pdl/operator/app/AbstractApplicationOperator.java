@@ -78,7 +78,7 @@ public abstract class AbstractApplicationOperator implements IApplicationOperato
 
         ZipHandler zipOperator = new ZipHandler();
         if (zipOperator.unZip(packageFilePath, storagePath)) {
-            if (ToolPool.isDirectoryExist(packagePath) && (new File(packagePath + File.separator + flagFile)).exists())
+            if (ToolPool.isDirectoryExist(packagePath) && (new File(ToolPool.buildFilePath(packagePath, flagFile))).exists())
                 rtnVal = true;
         }
 

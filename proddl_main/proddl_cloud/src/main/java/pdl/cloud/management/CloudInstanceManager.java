@@ -162,7 +162,7 @@ public class CloudInstanceManager {
 
                         if ("up".equals(flag)) {
                             if (currentInstanceCount == Integer.valueOf(conf.getStringProperty("MAX_TOTAL_WORKER_INSTANCE"))) {
-                                System.out.println("The maximum allowable number of instances has been reached.");
+                                //System.out.println("The maximum allowable number of instances has been reached.");
                                 break;
                             }
 
@@ -170,9 +170,7 @@ public class CloudInstanceManager {
                         } else {
                             //prevents instance count becomes 0
                             if (currentInstanceCount == 1) {
-                                System.out.printf(
-                                        "There should be at least one %s instance%n", conf.getStringProperty("CLOUD_ROLE_WORKER_NAME")
-                                );
+                                //System.out.printf("There should be at least one %s instance%n", conf.getStringProperty("CLOUD_ROLE_WORKER_NAME"));
                                 break;
                             }
 

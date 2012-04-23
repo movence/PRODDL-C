@@ -27,6 +27,7 @@ import pdl.cloud.model.DynamicData;
 import pdl.cloud.model.JobDetail;
 import pdl.common.Configuration;
 import pdl.common.StaticValues;
+import pdl.common.ToolPool;
 import pdl.operator.app.CctoolsOperator;
 import pdl.operator.app.CygwinOperator;
 import pdl.operator.app.JettyThreadedOperator;
@@ -73,9 +74,7 @@ public class ServiceOperatorHelper {
     public void run(String isMaster, String storagePath, String masterAddress, String catalogServerPort, String jettyPort) {
         try {
 
-            storagePath = storagePath.replace("/", File.separator);
-            if (!storagePath.endsWith(File.separator))
-                storagePath += File.separator;
+            storagePath = ToolPool.buildFilePath(storagePath.replace("/", File.separator));
 
             conf.setProperty("STORAGE_PATH", storagePath);
             this.storagePath = storagePath;

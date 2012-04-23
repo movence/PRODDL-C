@@ -59,6 +59,22 @@ public class ToolPool {
         return file.exists() && file.canRead() && file.length()>0;
     }
 
+    /**
+     * build path with given parameters
+     * @param path path to begin with
+     * @param dirs series of directory names to append
+     * @return new path with given dirs
+     */
+    public static String buildFilePath(String path, String... dirs) {
+        String newPath = path.endsWith(File.separator)?path:path.concat(File.separator);
+        if(dirs!=null) {
+            for(String dir : dirs) {
+                newPath.concat(dir).concat(File.separator);
+            }
+        }
+        return newPath;
+    }
+
     public static Map<String, Object> jsonStringToMap(String value) throws IllegalArgumentException {
         Map<String, Object> rtnMap = null;
         try {

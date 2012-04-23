@@ -21,6 +21,8 @@
 
 package pdl.operator.app;
 
+import pdl.common.ToolPool;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStreamReader;
@@ -51,9 +53,9 @@ public class JettyOperator extends AbstractApplicationOperator {
             List<String> command = new ArrayList<String>();
             String line;
 
-            command.add(storagePath + "jre" + File.separator + "bin" + File.separator + "java");
+            command.add(ToolPool.buildFilePath(storagePath,"jre","bin","java"));
             command.add("-jar");
-            command.add(packagePath + File.separator + "start.jar");
+            command.add(ToolPool.buildFilePath(packagePath,"start.jar"));
             command.add("-Djetty.port=" + port);
             command.add("-Djetty.home=" + packagePath);
 

@@ -25,6 +25,7 @@ import pdl.cloud.StorageServices;
 import pdl.cloud.model.FileInfo;
 import pdl.cloud.model.JobDetail;
 import pdl.common.Configuration;
+import pdl.common.FileTool;
 import pdl.common.StaticValues;
 import pdl.common.ToolPool;
 import pdl.operator.app.CctoolsOperator;
@@ -107,7 +108,7 @@ public class JobExecutor extends Thread {
             jobAreaExist = true;
 
         if (jobAreaExist) {
-            File currJobDirectory = new File(jobArea.getPath() + File.separatorChar + jobUUID);
+            File currJobDirectory = new File(ToolPool.buildFilePath(jobArea.getPath(),jobUUID));
             if (!ToolPool.isDirectoryExist(currJobDirectory.getPath())) {
                 if (currJobDirectory.mkdir())
                     jobDir = currJobDirectory.getPath();
@@ -118,27 +119,39 @@ public class JobExecutor extends Thread {
         } else
             throw new Exception(String.format("Job Executor: There is no storage area at '%s'", jobArea.getPath()));
 
-        return jobDir;
+        return ToolPool.buildFilePath(jobDir, null);
     }
 
     private String validateJobFiles(String workingDirectory) throws Exception {
-        StorageServices storageServices = new StorageServices();
+        FileTool fileTool = new FileTool();
 
-        //TODO confirm default file names
-        String inputFileName = storageServices.getFileNameById(currJob.getInputFileUUID());
-        String makeflowFileName = storageServices.getFileNameById(currJob.getMakeflowFileUUID());
-        if(inputFileName==null || makeflowFileName==null)
-            throw new Exception("input file or makeflow file ID does not exist.");
+        String makefileName = "make.makeflow";
 
-        String inputFilePath = workingDirectory + File.separator + "input.json"; //inputFileName;
-        if (!ToolPool.canReadFile(inputFilePath))
-            storageServices.downloadFilesByName(inputFileName, inputFilePath);
+        if(currJob.getMakeflowFileUUID()!=null) {
+            FileInfo makeFile = fileTool.getFileInfoById(currJob.getMakeflowFileUUID());
+            if(makeFile!=null) {
+                String currMakeFilePath = ToolPool.buildFilePath(makeFile.getPath(), makeFile.getName());
+                String newMakefilePath = ToolPool.buildFilePath(workingDirectory, makefileName);
+                if(!fileTool.copy(currMakeFilePath, newMakefilePath))
+                    throw new Exception("Copying Makefile failed.");
+            } else {
+                throw new Exception("Makefile does not exit in files table - " + currJob.getMakeflowFileUUID());
+            }
+        }
 
-        String makeflowFilePath = workingDirectory + File.separator + makeflowFileName; //"makeflow.makeflow";
-        if (!ToolPool.canReadFile(makeflowFilePath))
-            storageServices.downloadFilesByName(makeflowFileName, makeflowFilePath);
+        if(currJob.getInputFileUUID()!=null) {
+            FileInfo inputFile = fileTool.getFileInfoById(currJob.getInputFileUUID());
+            if(inputFile!=null) {
+                String currInputFilePath = ToolPool.buildFilePath(inputFile.getPath(), inputFile.getName());
+                String newInputfilePath = ToolPool.buildFilePath(workingDirectory,"input.json");
+                if(!fileTool.copy(currInputFilePath, newInputfilePath))
+                    throw new Exception("Copying input file failed.");
+            } else {
+                throw new Exception("Input file does not exit in files table - " + currJob.getInputFileUUID());
+            }
+        }
 
-        return makeflowFileName;
+        return makefileName;
     }
 
     @Override
@@ -182,7 +195,7 @@ public class JobExecutor extends Thread {
             boolean outputUploaded = false;
             if(executed) {
                 //upload output file to blob and insert file information to files table
-                String outputFilePath = workDir + File.separator + "output.json";
+                String outputFilePath = ToolPool.buildFilePath(workDir, "output.json");
                 String jobOutputFileName = currJob.getJobUUID() + ".output";
                 File outputFile = new File(outputFilePath);
                 if(outputFile.exists() && outputFile.isFile() && outputFile.length()>0) {

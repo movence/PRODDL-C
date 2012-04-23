@@ -33,6 +33,7 @@ import org.soyatec.windowsazure.error.StorageException;
 import org.soyatec.windowsazure.error.StorageServerException;
 import org.soyatec.windowsazure.internal.util.NameValueCollection;
 import pdl.common.Configuration;
+import pdl.common.ToolPool;
 
 import java.io.File;
 import java.io.IOException;
@@ -157,7 +158,7 @@ public class BlobOperator {
     public boolean download(String containerName, String fileName, String storagePath) {
         boolean rtnVal = false;
         try {
-            String filePath = storagePath + File.separator + fileName;
+            String filePath = ToolPool.buildFilePath(storagePath, fileName);
             File file = new File(filePath);
             if (!file.exists() || !file.canRead()) {
                 getBlob(containerName, fileName, filePath, true);

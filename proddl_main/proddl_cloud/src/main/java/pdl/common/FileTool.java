@@ -27,6 +27,7 @@ import pdl.cloud.model.DynamicData;
 import pdl.cloud.model.FileInfo;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 
@@ -65,12 +66,10 @@ public class FileTool {
             else
                 storagePath = storageData.getDataValue();
 
-            if(!storagePath.endsWith(File.separator))
-                storagePath.concat(File.separator);
-            conf.setProperty("DATASTORE_PATH", storagePath);
+            conf.setProperty("DATASTORE_PATH", ToolPool.buildFilePath(storagePath, null));
         }
 
-        uploadDirectoryPath = storagePath + StaticValues.DIRECTORY_FILE_AREA;
+        uploadDirectoryPath = ToolPool.buildFilePath(storagePath, StaticValues.DIRECTORY_FILE_AREA);
         File uploadDir = new File(uploadDirectoryPath);
         if(!uploadDir.exists())
             uploadDir.mkdir();
@@ -83,9 +82,9 @@ public class FileTool {
         fileInfo.setStatus(StaticValues.FILE_STATUS_RESERVED);
 
         int hashedDirectory = Math.abs(fileInfo.getIuuid().hashCode()) % conf.getIntegerProperty("MAX_FILE_COUNT_PER_DIRECTORY");
-        String dirPath = uploadDirectoryPath + File.separator + hashedDirectory + File.separator;
+        String dirPath = uploadDirectoryPath + hashedDirectory;
         ToolPool.createDirectoryIfNotExist(dirPath);
-        fileInfo.setPath(dirPath);
+        fileInfo.setPath(String.valueOf(hashedDirectory));
 
         return fileInfo;
     }
@@ -105,7 +104,7 @@ public class FileTool {
         try {
             FileInfo fileInfo = this.createFileRecord(username);
 
-            String newFilePath = fileInfo.getPath() + fileInfo.getName();
+            String newFilePath = ToolPool.buildFilePath(uploadDirectoryPath, fileInfo.getPath(), fileInfo.getName());
             FileOutputStream fileOut = new FileOutputStream(newFilePath);
 
             int readBytes = 0;
@@ -176,6 +175,32 @@ public class FileTool {
         return rtnVal;
     }
 
+    public boolean copy(String from, String to) throws Exception {
+        boolean rtnVal = false;
+        try {
+            File fromFile = new File(from);
+            if(fromFile.exists() && fromFile.canRead()) {
+                FileInputStream in = new FileInputStream(from);
+                FileOutputStream out = new FileOutputStream(to);
+
+                int readBytes = 0;
+                int readBlockSize = 4 * 1024 * 1024;
+                byte[] buffer = new byte[readBlockSize];
+                while ((readBytes = in.read(buffer, 0, readBlockSize)) != -1) {
+                    out.write(buffer, 0, readBytes);
+                }
+
+                out.close();
+                in.close();
+
+                rtnVal = true;
+            }
+        } catch(Exception ex) {
+            throw ex;
+        }
+        return rtnVal;
+    }
+
     public boolean delete(String fileId, String username) throws Exception {
         boolean rtnVal = false;
         try {
@@ -187,7 +212,7 @@ public class FileTool {
 
                 services.deleteEntity(fileTableName, info);
 
-                String filePath = uploadDirectoryPath + File.separator + info.getName();
+                String filePath = uploadDirectoryPath + info.getName();
                 File file = new File(filePath);
                 if(file.exists())
                     file.delete();

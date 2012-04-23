@@ -62,8 +62,8 @@ public class CctoolsOperator extends AbstractApplicationOperator {
         try {
             conf = Configuration.getInstance();
 
-            cctoolsBinPath = packagePath + File.separator + "bin";
-            cygwinBinPath = storagePath + conf.getProperty("CYGWIN_NAME") + File.separator + "bin";
+            cctoolsBinPath = ToolPool.buildFilePath(packagePath, "bin");
+            cygwinBinPath = ToolPool.buildFilePath(storagePath, conf.getStringProperty("CYGWIN_NAME"), "bin");
 
             processes = new ArrayList<Process>();
 
@@ -122,7 +122,7 @@ public class CctoolsOperator extends AbstractApplicationOperator {
 
             if (taskFileName != null && !taskFileName.isEmpty() && taskDirectory != null && !taskDirectory.isEmpty()) {
                 if (ToolPool.isDirectoryExist(taskDirectory)) {
-                    File currFile = new File(taskDirectory + File.separator + taskFileName);
+                    File currFile = new File(ToolPool.buildFilePath(taskDirectory,taskFileName));
                     if (currFile.exists() || currFile.canRead()) {
                         ProcessBuilder pb = this.buildProcessBuilder(
                                 cctoolsBinPath + File.separator + "makeflow",

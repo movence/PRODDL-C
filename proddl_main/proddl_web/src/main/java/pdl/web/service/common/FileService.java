@@ -47,7 +47,6 @@ public class FileService {
     public Map<String, String> uploadFile(MultipartFile theFile, String type, String username) {
         Map<String, String> rtnJson = new TreeMap<String, String>();
         try {
-            //TODO uploads file to Azure drive rather than blob storage
             /*if(type.isEmpty())
                 type="blob";*/
 

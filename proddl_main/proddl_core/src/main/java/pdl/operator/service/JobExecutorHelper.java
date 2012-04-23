@@ -23,8 +23,6 @@ package pdl.operator.service;
 
 import pdl.cloud.model.JobDetail;
 
-import java.io.File;
-
 /**
  * Created by IntelliJ IDEA.
  * User: hkim
@@ -51,10 +49,5 @@ public class JobExecutorHelper {
     }
 
     public void runJob(JobDetail job, String workDir) {
-        if(!workDir.endsWith(File.separator))
-            workDir += File.separator;
-        this.workDir = workDir;
-
-
     }
 }
