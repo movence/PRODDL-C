@@ -35,15 +35,21 @@ namespace CommonTool
     {
         public Process buildCloudProcess(String fileName, String args, String outputTag)
         {
-            Process proc = new Process();
+            Process proc = this.buildCloudProcessWithError(fileName, args, outputTag);
             proc.StartInfo.RedirectStandardOutput = true;
+            proc.OutputDataReceived += (sender, e) => { if (e.Data != null) Trace.WriteLine(outputTag + ":OUTPUT>> " + e.Data); };
+            return proc;
+        }
+
+        public Process buildCloudProcessWithError(String fileName, String args, String outputTag)
+        {
+            Process proc = new Process();
             proc.StartInfo.RedirectStandardError = true;
             proc.StartInfo.ErrorDialog = false;
             proc.StartInfo.CreateNoWindow = true;
             proc.StartInfo.UseShellExecute = false;
             proc.EnableRaisingEvents = false;
             proc.ErrorDataReceived += (sender, e) => { if (e.Data != null) Trace.WriteLine(outputTag + ":ERROR>> " + e.Data); };
-            proc.OutputDataReceived += (sender, e) => { if (e.Data != null) Trace.WriteLine(outputTag + ":OUTPUT>> " + e.Data); };
 
             proc.StartInfo.FileName = fileName;
             proc.StartInfo.Arguments = args;
