@@ -74,20 +74,13 @@ namespace PRODDLMaster
 
         public void Run()
         {
-            DiagnosticMonitorConfiguration dmc = DiagnosticMonitor.GetDefaultInitialConfiguration();
-
-            dmc.Logs.ScheduledTransferPeriod = TimeSpan.FromMinutes(3.0);
-            dmc.Logs.ScheduledTransferLogLevelFilter = LogLevel.Verbose;
-
-            DiagnosticMonitor.AllowInsecureRemoteConnections = true;
-            DiagnosticMonitor.Start("DiagnosticConnectionString", dmc);
 
 
             LocalResource localStorage = RoleEnvironment.GetLocalResource("LocalStorage");
             localStoragePath = Path.GetPathRoot(localStorage.RootPath);
 
             storageHelper = new StorageService(RoleEnvironment.GetConfigurationSettingValue("StorageConnectionString"));
-            
+
             if (!this.IsMasterDriveExist())
             {
                 String vhdFilePath = createDriveFromCMD();
@@ -178,13 +171,12 @@ namespace PRODDLMaster
                 string vhdFilePath = localStoragePath + @RoleEnvironment.GetConfigurationSettingValue("VHDName");
                 String scriptPath = createVHDScriptFile(localStoragePath, vhdFilePath);
 
-                Process proc = new SharedTools().buildCloudProcess(
+                Process proc = new SharedTools().buildCloudProcessWithError(
                     System.Environment.GetEnvironmentVariable("WINDIR") + "\\System32\\diskpart.exe",
-                    "/s " + scriptPath,
+                    "/s" + " " + scriptPath,
                     "createDriveFromCMD()");
 
                 proc.Start();
-                //proc.BeginOutputReadLine();
                 proc.BeginErrorReadLine();
                 proc.WaitForExit();
 

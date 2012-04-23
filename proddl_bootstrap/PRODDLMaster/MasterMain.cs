@@ -48,8 +48,6 @@ namespace PRODDLMaster
 		{
 			// Set the maximum number of concurrent connections 
 			ServicePointManager.DefaultConnectionLimit = 12;
-
-			//DiagnosticMonitor.Start("DiagnosticsConnectionString");
 			
 			DiagnosticMonitorConfiguration dmc = DiagnosticMonitor.GetDefaultInitialConfiguration();
 
@@ -66,8 +64,7 @@ namespace PRODDLMaster
 				configSetter(RoleEnvironment.GetConfigurationSettingValue(configName));
 				RoleEnvironment.Changed += (sender, arg) =>
 				{
-					if (arg.Changes.OfType<RoleEnvironmentConfigurationSettingChange>()
-						.Any((change) => (change.ConfigurationSettingName == configName)))
+					if (arg.Changes.OfType<RoleEnvironmentConfigurationSettingChange>().Any((change) => (change.ConfigurationSettingName == configName)))
 					{
 						if (!configSetter(RoleEnvironment.GetConfigurationSettingValue(configName)))
 						{
