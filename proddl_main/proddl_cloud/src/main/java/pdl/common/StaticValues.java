@@ -48,8 +48,8 @@ public class StaticValues {
     public static final int JOB_STATUS_COMPLETED = 4;
     public static final int JOB_STATUS_FAILED = 5;
 
-    public static final int FILE_STATUS_RESERVED = 1;
-    public static final int FILE_STATUS_COMMITTED = 2;
+    public static final int FILE_STATUS_RESERVED = 0;
+    public static final int FILE_STATUS_COMMITTED = 1;
     public static final String FILE_EXTENSTION = ".dat";
 
     public static final String ADMIN_ONLY_JOBS = "makeflow,adduser";
