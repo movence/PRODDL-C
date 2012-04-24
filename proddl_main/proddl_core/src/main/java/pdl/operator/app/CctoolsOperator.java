@@ -125,7 +125,7 @@ public class CctoolsOperator extends AbstractApplicationOperator {
                     File currFile = new File(ToolPool.buildFilePath(taskDirectory,taskFileName));
                     if (currFile.exists() || currFile.canRead()) {
                         ProcessBuilder pb = this.buildProcessBuilder(
-                                cctoolsBinPath + File.separator + "makeflow",
+                                ToolPool.buildFilePath(cctoolsBinPath, "makeflow"),
                                 "-T", "wq",
                                 "-C", catalogServerAddress + ":" + catalogServerPort, "-a", //catalog server and advertise makeflow to catalog server
                                 "-p", "-1", //random port
@@ -167,7 +167,7 @@ public class CctoolsOperator extends AbstractApplicationOperator {
             //String taskName = storageOperator.dequeue( StaticValues.QUEUE_JOBQUEUE_NAME, true );
 
             ProcessBuilder pb = this.buildProcessBuilder(
-                    cctoolsBinPath + File.separator + "work_queue_worker",
+                    ToolPool.buildFilePath(cctoolsBinPath, "work_queue_worker"),
                     "-C", catalogServerAddress + ":" + catalogServerPort, "-a", "-s", "-t", "21600");
             //"-N", taskName );
 
@@ -194,7 +194,7 @@ public class CctoolsOperator extends AbstractApplicationOperator {
         try {
             this.setCatalogServerInfo(catalogServerAddress, catalogServerPort);
 
-            ProcessBuilder pb = this.buildProcessBuilder(cctoolsBinPath + File.separator + "catalog_server", "-p", catalogServerPort);
+            ProcessBuilder pb = this.buildProcessBuilder(ToolPool.buildFilePath(cctoolsBinPath, "catalog_server"), "-p", catalogServerPort);
 
             Process process = pb.start();
             processes.add(process);
