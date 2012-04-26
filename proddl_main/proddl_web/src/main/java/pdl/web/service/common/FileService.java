@@ -21,11 +21,15 @@
 
 package pdl.web.service.common;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.springframework.web.multipart.MultipartFile;
 import pdl.cloud.model.FileInfo;
 import pdl.common.FileTool;
+import pdl.common.ToolPool;
 
+import javax.servlet.http.HttpServletResponse;
+import java.io.FileInputStream;
 import java.io.InputStream;
 import java.util.Map;
 import java.util.TreeMap;
@@ -62,6 +66,27 @@ public class FileService {
             rtnJson.put("AccessId", fileUid);
         } catch (Exception ex) {
             rtnJson.put("error", "File upload failed for " + theFile.getOriginalFilename());
+            rtnJson.put("message", ex.toString());
+        }
+
+        return rtnJson;
+    }
+
+    public Map<String, String> downloadFile(String fileId, HttpServletResponse res, String username) {
+        //TODO check user permission for downloading a file
+        Map<String, String> rtnJson = new TreeMap<String, String>();
+        try {
+            String filePath = fileTool.getFilePath(fileId);
+            if(filePath!=null && !filePath.isEmpty() && ToolPool.canReadFile(filePath)) {
+                String fileName = fileId.concat(".json");
+                res.setContentType("application/json");
+                res.setHeader("Content-Disposition", "attachment; filename=\"" + fileName + "\"");
+                IOUtils.copy(new FileInputStream(filePath), res.getOutputStream());
+                res.flushBuffer();
+                rtnJson.put("file name", fileName);
+            }
+        } catch (Exception ex) {
+            rtnJson.put("error", "Downloading file failed");
             rtnJson.put("message", ex.toString());
         }
 

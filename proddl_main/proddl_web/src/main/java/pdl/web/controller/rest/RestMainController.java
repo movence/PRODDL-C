@@ -27,6 +27,7 @@ import org.springframework.web.multipart.MultipartFile;
 import pdl.web.service.JobRequestHandler;
 import pdl.web.service.common.FileService;
 
+import javax.servlet.http.HttpServletResponse;
 import java.security.Principal;
 import java.util.Map;
 
@@ -131,6 +132,18 @@ public class RestMainController {
     }
 
     /**
+     * download file by UUID
+     * @return file information (UUID, absolute path) in json format
+     * @format curl <ip address>:<port>/pdl/r/file/get/?id=<file id> -u <user id>:<pass> -o <filename> -X POST|GET
+     */
+    @RequestMapping(value = "file/get", method = {RequestMethod.POST, RequestMethod.GET})
+    public @ResponseBody Map<String, String> fileDownload(@RequestParam(value = "id", defaultValue = "") String fileId, Principal principal, HttpServletResponse res) {
+        FileService fileService = new FileService();
+        Map<String, String> rtnJson = fileService.downloadFile(fileId, res, principal.getName());
+        return rtnJson;
+    }
+
+    /**
      * Obtain new File UUID
      * @return file information (UUID, absolute path) in json format
      * @format curl <ip address>:<port>/pdl/r/file/new -u <user id>:<pass> -X POST|GET
@@ -143,7 +156,7 @@ public class RestMainController {
     }
 
     /**
-     * Obtain new File UUID
+     * update file record as file operation finishes
      * @return file information (UUID, absolute path) in json format
      * @format curl <ip address>:<port>/pdl/r/file/commit/?id=<file id> -u <user id>:<pass> -X POST|GET
      */

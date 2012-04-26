@@ -46,9 +46,9 @@ public class JobRequestHandler {
 
     public Map<String, Object> submitJob(String jobName, String inputInString, String userName) {
         Map<String, Object> rtnVal = new TreeMap<String, Object> ();
+        String result = null;
 
         try {
-            String result;
             boolean succeed;
 
             if(inputInString!=null && !inputInString.isEmpty()) {
@@ -58,10 +58,9 @@ public class JobRequestHandler {
                 UserService userService = new UserService();
                 boolean isAdminUser = userService.isAdmin(userName);
                 List<String> adminAllowedJobs = new ArrayList<String>(Arrays.asList(StaticValues.ADMIN_ONLY_JOBS.split(",")));
-                if(!isAdminUser && adminAllowedJobs.contains(jobName)) {
-                    rtnVal.put("message", String.format("The Job('%s') is not available or you do not have permission.", jobName));
-                    throw new Exception("User requested a job that is not allowed to execute.");
-                }
+                if(!isAdminUser && adminAllowedJobs.contains(jobName))
+                    throw new Exception(String.format("The Job('%s') is not available or you do not have permission.", jobName));
+
                 /*List<String> userAllowedJobs = new ArrayList<String>(Arrays.asList(StaticValues.USER_AVAILABLE_JOBS.split(",")));
                 List<String> adminAllowedJobs = new ArrayList<String>(Arrays.asList(StaticValues.ADMIN_ONLY_JOBS.split(",")));
                 adminAllowedJobs.addAll(userAllowedJobs);
@@ -72,36 +71,11 @@ public class JobRequestHandler {
 
                 //add user by admin
                 if(jobName.equals("adduser")) {
-                    User user = new User();
-
-                    if(!inputInMap.containsKey("id") || !inputInMap.containsKey("password")) {
-                        rtnVal.put("message", "'adduser' requires 'id' and 'password' in input data.");
-                        throw new Exception();
-                    }
-
-                    String givenUserId = (String)inputInMap.get("id");
-                    //check for duplicated user id
-                    User dupUser = userService.getUserById(givenUserId);
-                    if(dupUser!=null) {
-                        rtnVal.put("message", String.format("There is already existing user with given id '%s'", givenUserId));
-                        throw new Exception();
-                    }
-
-                    user.setUserid(givenUserId);
-                    user.setUserpass((String)inputInMap.get("password"));
-                    user.setAdmin(inputInMap.containsKey("admin")?(Integer)inputInMap.get("admin"):0);
-
-                    user.setFirstName(inputInMap.containsKey("firstname")?(String)inputInMap.get("fristname"):null);
-                    user.setLastName(inputInMap.containsKey("lastname")?(String)inputInMap.get("lastname"):null);
-                    user.setEmail(inputInMap.containsKey("email")?(String)inputInMap.get("email"):null);
-                    user.setPhone(inputInMap.containsKey("phone")?(String)inputInMap.get("phone"):null);
-
-                    succeed = userService.loadUser(user);
-                    if(succeed) {
-                        result = String.format("User '%s' has been added", user.getUserid());
-                    } else {
+                    succeed = this.addUser(inputInMap, userService);
+                    if(succeed)
+                        result = "User '%s' has been added.";
+                    else
                         result = "Failed to add user.";
-                    }
                 } else {
                     JobDetail jobDetail = new JobDetail(jobName);
                     jobDetail.setJobName(jobName);
@@ -112,17 +86,9 @@ public class JobRequestHandler {
                         inputInMap.put("username", userName);
 
                         jobDetail.setInput(ToolPool.jsonMapToString(inputInMap));
-
-                        /*for (Map.Entry<String, Object> entry : inputInMap.entrySet()) {
-                            if ("inputFileId".equals(entry.getKey()))
-                                jobDetail.setInputFileUUID((String) entry.getValue());
-                            else if ("makeFileId".equals(entry.getKey()))
-                                jobDetail.setMakeflowFileUUID((String) entry.getValue());
-                        }*/
                     }
 
                     succeed = manager.submitJob(jobDetail);
-
                     if(succeed) {
                         rtnVal.put("Job ID", jobDetail.getJobUUID());
                         rtnVal.put("Job Name", jobDetail.getJobName());
@@ -135,11 +101,35 @@ public class JobRequestHandler {
                 rtnVal.put("result", result);
             }
         } catch (Exception ex) {
-            ex.printStackTrace();
+            rtnVal.put("message", result==null?ex.toString():result);
             rtnVal.put("error", "Failed to submit a job");
         }
 
         return rtnVal;
+    }
+
+    private boolean addUser(Map<String, Object> inputInMap, UserService userService) throws Exception {
+        User user = new User();
+
+        if(!inputInMap.containsKey("id") || !inputInMap.containsKey("password"))
+            throw new Exception("'adduser' requires 'id' and 'password' in input data.");
+
+        String givenUserId = (String)inputInMap.get("id");
+        //check for duplicated user id
+        User dupUser = userService.getUserById(givenUserId);
+        if(dupUser!=null)
+            throw new Exception(String.format("There is already existing user with given id '%s'", givenUserId));
+
+        user.setUserid(givenUserId);
+        user.setUserpass((String)inputInMap.get("password"));
+        user.setAdmin(inputInMap.containsKey("admin")?(Integer)inputInMap.get("admin"):0);
+
+        user.setFirstName(inputInMap.containsKey("firstname")?(String)inputInMap.get("fristname"):null);
+        user.setLastName(inputInMap.containsKey("lastname")?(String)inputInMap.get("lastname"):null);
+        user.setEmail(inputInMap.containsKey("email")?(String)inputInMap.get("email"):null);
+        user.setPhone(inputInMap.containsKey("phone")?(String)inputInMap.get("phone"):null);
+
+        return userService.loadUser(user);
     }
 
     public Map<String , Object> getJobInfo(String jobId) {
