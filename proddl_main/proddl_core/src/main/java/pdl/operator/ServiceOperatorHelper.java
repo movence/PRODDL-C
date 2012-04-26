@@ -21,6 +21,7 @@
 
 package pdl.operator;
 
+import org.soyatec.windowsazure.table.ITableServiceEntity;
 import pdl.cloud.StorageServices;
 import pdl.cloud.management.ScheduledInstanceMonitor;
 import pdl.cloud.model.DynamicData;
@@ -82,10 +83,22 @@ public class ServiceOperatorHelper {
             this.runOperators();
 
             if (isMaster.equals("true")) { //Master Instance
+                String dynamicTable = conf.getStringProperty("TABLE_NAME_DYNAMIC_DATA");
+
+                //remove odl storage path data in dynamic table
+                ITableServiceEntity oldPath = storageServices.queryEntityBySearchKey(
+                        dynamicTable,
+                        StaticValues.COLUMN_DYNAMIC_DATA_KEY,
+                        StaticValues.KEY_DYNAMIC_DATA_STORAGE_PATH,
+                        DynamicData.class);
+                if(oldPath!=null) {
+                    storageServices.deleteEntity(dynamicTable, oldPath);
+                }
+
                 DynamicData storageData = new DynamicData("storage_info");
                 storageData.setDataKey(StaticValues.KEY_DYNAMIC_DATA_STORAGE_PATH);
                 storageData.setDataValue(storagePath);
-                storageServices.insertSingleEnttity(conf.getStringProperty("TABLE_NAME_DYNAMIC_DATA"), storageData);
+                storageServices.insertSingleEnttity(dynamicTable, storageData);
 
                 this.runMaster(jettyPort, masterAddress, catalogServerPort);
             } else { //Job(WorkQ) runner

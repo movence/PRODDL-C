@@ -101,7 +101,7 @@ public class JobExecutor extends Thread {
         String storagePath = Configuration.getInstance().getStringProperty("STORAGE_PATH");
         boolean jobAreaExist = false;
 
-        File jobArea = new File(storagePath + StaticValues.DIRECTORY_TASK_AREA);
+        File jobArea = new File(ToolPool.buildFilePath(storagePath + StaticValues.DIRECTORY_TASK_AREA));
         if (!ToolPool.isDirectoryExist(jobArea.getPath()))
             jobAreaExist = jobArea.mkdir();
         else
@@ -124,7 +124,6 @@ public class JobExecutor extends Thread {
 
     private String validateJobFiles(String workingDirectory) throws Exception {
         FileTool fileTool = new FileTool();
-
         String makefileName = "make.makeflow";
 
         if(currJob.getMakeflowFileUUID()!=null) {
@@ -132,7 +131,7 @@ public class JobExecutor extends Thread {
             if(makeFile!=null) {
                 String currMakeFilePath = ToolPool.buildFilePath(makeFile.getPath(), makeFile.getName());
                 String newMakefilePath = ToolPool.buildFilePath(workingDirectory, makefileName);
-                if(!fileTool.copy(currMakeFilePath, newMakefilePath))
+                if(!fileTool.copyFromDatastore(currMakeFilePath, newMakefilePath))
                     throw new Exception("Copying Makefile failed.");
             } else {
                 throw new Exception("Makefile does not exit in files table - " + currJob.getMakeflowFileUUID());
@@ -144,7 +143,7 @@ public class JobExecutor extends Thread {
             if(inputFile!=null) {
                 String currInputFilePath = ToolPool.buildFilePath(inputFile.getPath(), inputFile.getName());
                 String newInputfilePath = ToolPool.buildFilePath(workingDirectory,"input.json");
-                if(!fileTool.copy(currInputFilePath, newInputfilePath))
+                if(!fileTool.copyFromDatastore(currInputFilePath, newInputfilePath))
                     throw new Exception("Copying input file failed.");
             } else {
                 throw new Exception("Input file does not exit in files table - " + currJob.getInputFileUUID());
@@ -169,10 +168,11 @@ public class JobExecutor extends Thread {
      */
     //TODO remove this test methods
     private void tempExecuteJob(String workDir) {
+        //update job status and result information
+        JobHandler jobHandler = new JobHandler();
+
         try {
             String mfFile = null;
-            //update job status and result information
-            JobHandler jobHandler = new JobHandler();
 
             if(currJob.getInput()!=null) {
                 Map<String, Object> inputInMap = ToolPool.jsonStringToMap(currJob.getInput());
@@ -214,10 +214,11 @@ public class JobExecutor extends Thread {
                 if(outputUploaded)
                     jobHandler.updateJobStatus(currJob.getJobUUID(), StaticValues.JOB_STATUS_COMPLETED, jobOutputFileName);
             } else { //error while executing makeflow
-                jobHandler.updateJobStatus(currJob.getJobUUID(), StaticValues.JOB_STATUS_FAILED, null);
+                throw new Exception("Job Execution Failed");
             }
         } catch(Exception ex) {
             ex.printStackTrace();
+            jobHandler.updateJobStatus(currJob.getJobUUID(), StaticValues.JOB_STATUS_FAILED, null);
         }
     }
 
