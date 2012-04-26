@@ -50,7 +50,7 @@ public class StaticValues {
 
     public static final int FILE_STATUS_RESERVED = 0;
     public static final int FILE_STATUS_COMMITTED = 1;
-    public static final String FILE_EXTENSTION = ".dat";
+    public static final String FILE_EXTENSION = ".dat";
 
     public static final String ADMIN_ONLY_JOBS = "makeflow,adduser";
     public static final String USER_AVAILABLE_JOBS = "docking,test";

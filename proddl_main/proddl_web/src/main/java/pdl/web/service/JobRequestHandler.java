@@ -76,6 +76,8 @@ public class JobRequestHandler {
                         result = "User '%s' has been added.";
                     else
                         result = "Failed to add user.";
+                } else if(jobName.equals("makeflow")) {
+
                 } else {
                     JobDetail jobDetail = new JobDetail(jobName);
                     jobDetail.setJobName(jobName);

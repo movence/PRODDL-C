@@ -77,7 +77,7 @@ public class FileTool {
 
     public FileInfo createFileRecord(String username) {
         FileInfo fileInfo = new FileInfo();
-        fileInfo.setName(fileInfo.getIuuid()+StaticValues.FILE_EXTENSTION);
+        fileInfo.setName(fileInfo.getIuuid()+StaticValues.FILE_EXTENSION);
         fileInfo.setUserId(username);
         fileInfo.setStatus(StaticValues.FILE_STATUS_RESERVED);
 

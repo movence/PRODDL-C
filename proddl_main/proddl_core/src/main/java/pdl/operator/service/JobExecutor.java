@@ -21,7 +21,6 @@
 
 package pdl.operator.service;
 
-import pdl.cloud.StorageServices;
 import pdl.cloud.model.FileInfo;
 import pdl.cloud.model.JobDetail;
 import pdl.common.Configuration;
@@ -31,6 +30,7 @@ import pdl.common.ToolPool;
 import pdl.operator.app.CctoolsOperator;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.util.Map;
 
 /**
@@ -194,25 +194,13 @@ public class JobExecutor extends Thread {
             boolean executed = cctoolsOperator.startMakeflow(currJob.getJobUUID(), mfFile, workDir);
             boolean outputUploaded = false;
             if(executed) {
-                //upload output file to blob and insert file information to files table
                 String outputFilePath = ToolPool.buildFilePath(workDir, "output.json");
-                String jobOutputFileName = currJob.getJobUUID() + ".output";
-                File outputFile = new File(outputFilePath);
-                if(outputFile.exists() && outputFile.isFile() && outputFile.length()>0) {
-                    StorageServices storageServices = new StorageServices();
-                    FileInfo fileInfo = new FileInfo("output");
-                    fileInfo.setContainer(Configuration.getInstance().getStringProperty("BLOB_CONTAINER_FILES"));
-                    fileInfo.setName(jobOutputFileName);
-                    fileInfo.setUserId(currJob.getUserId());
-                    fileInfo.setType("application/json");
 
-                    outputUploaded = storageServices.uploadFileToBlob(fileInfo, outputFilePath, false);
-                } else { //output does not exist
-                    outputUploaded = true;
-                }
+                FileTool fileTool = new FileTool();
+                String outputFileId = fileTool.createFile(null, new FileInputStream(outputFilePath),currJob.getUserId());
 
-                if(outputUploaded)
-                    jobHandler.updateJobStatus(currJob.getJobUUID(), StaticValues.JOB_STATUS_COMPLETED, jobOutputFileName);
+                if(outputFileId!=null && !outputFileId.isEmpty())
+                    jobHandler.updateJobStatus(currJob.getJobUUID(), StaticValues.JOB_STATUS_COMPLETED, outputFileId);
             } else { //error while executing makeflow
                 throw new Exception("Job Execution Failed");
             }
