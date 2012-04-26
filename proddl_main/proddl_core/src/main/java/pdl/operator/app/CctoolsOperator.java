@@ -131,19 +131,19 @@ public class CctoolsOperator extends AbstractApplicationOperator {
                                 "-p", "-1", //random port
                                 "-N", taskName,
                                 currFile.getPath());
-
+                        pb.directory(new File(taskDirectory));
                         Process process = pb.start();
                         processes.add(process);
 
                         boolean mfSucceded = true;
-                        /*BufferedReader ireader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+                        BufferedReader ireader = new BufferedReader(new InputStreamReader(process.getInputStream()));
                         String line;
                         //storageOperator.enqueue( StaticValues.QUEUE_JOBQUEUE_NAME, taskName );
                         while ((line = ireader.readLine()) != null) {
                             if(line.toLowerCase().contains("workflow failed")) //makeflow fails
                                 mfSucceded = false;
                             System.out.println("MAKEFLOW OUTPUT: " + line);
-                        }*/
+                        }
 
                         System.out.printf("Makeflow process for job(%s) has been completed.%n", taskName);
 
