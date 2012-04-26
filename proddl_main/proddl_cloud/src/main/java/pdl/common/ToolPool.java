@@ -69,7 +69,7 @@ public class ToolPool {
         String newPath = path.endsWith(File.separator)?path:path.concat(File.separator);
         if(dirs!=null) {
             for(String dir : dirs) {
-                newPath += dir.concat(File.separator);
+                newPath += dir.concat(dir.endsWith(File.separator)?"":File.separator);
             }
         }
         return newPath;

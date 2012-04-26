@@ -201,6 +201,21 @@ public class FileTool {
         return rtnVal;
     }
 
+    public boolean copyFromDatastore(String path, String to) throws Exception {
+        return this.copy(ToolPool.buildFilePath(uploadDirectoryPath, path), to);
+    }
+
+    public String getFilePath(String fileId) throws Exception {
+        String filePath;
+        FileInfo fileInfo = this.getFileInfoById(fileId);
+        if(fileInfo==null)
+            throw new Exception("File record does not exist!");
+        else
+            filePath = ToolPool.buildFilePath(uploadDirectoryPath, fileInfo.getPath(), fileInfo.getName());
+
+        return filePath;
+    }
+
     public boolean delete(String fileId, String username) throws Exception {
         boolean rtnVal = false;
         try {
