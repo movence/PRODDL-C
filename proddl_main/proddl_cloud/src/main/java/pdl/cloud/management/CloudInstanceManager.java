@@ -21,9 +21,6 @@
 
 package pdl.cloud.management;
 
-import pdl.cloud.model.PerformanceData;
-import pdl.cloud.storage.BlobOperator;
-import pdl.cloud.storage.TableOperator;
 import com.sun.org.apache.xerces.internal.parsers.DOMParser;
 import com.sun.org.apache.xml.internal.serialize.OutputFormat;
 import com.sun.org.apache.xml.internal.serialize.XMLSerializer;
@@ -38,6 +35,9 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
+import pdl.cloud.model.PerformanceData;
+import pdl.cloud.storage.BlobOperator;
+import pdl.cloud.storage.TableOperator;
 import pdl.common.Configuration;
 
 import java.io.ByteArrayInputStream;
@@ -222,9 +222,9 @@ public class CloudInstanceManager {
 
                 processorTimeFactor /= entityList.size();
 
-                if (processorTimeFactor > 90) {
+                if (processorTimeFactor > conf.getIntegerProperty("MAXIMUM_AVERAGE_CPU_USAGE")) {
                     this.scaleUp();
-                } else if (processorTimeFactor < 30) {
+                } else if (processorTimeFactor < conf.getIntegerProperty("MINIMUM_AVERAGE_CPU_USAGE")) {
                     this.scaleDown();
                 }
             }

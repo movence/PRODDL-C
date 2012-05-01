@@ -142,7 +142,7 @@ public class JobExecutor extends Thread {
             FileInfo inputFile = fileTool.getFileInfoById(currJob.getInputFileUUID());
             if(inputFile!=null) {
                 String currInputFilePath = ToolPool.buildFilePath(inputFile.getPath(), inputFile.getName());
-                String newInputfilePath = ToolPool.buildFilePath(workingDirectory,"input.json");
+                String newInputfilePath = ToolPool.buildFilePath(workingDirectory, "input" + StaticValues.FILE_EXTENSION);
                 if(!fileTool.copyFromDatastore(currInputFilePath, newInputfilePath))
                     throw new Exception("Copying input file failed.");
             } else {
@@ -194,7 +194,7 @@ public class JobExecutor extends Thread {
             boolean executed = cctoolsOperator.startMakeflow(currJob.getJobUUID(), mfFile, workDir);
             boolean outputUploaded = false;
             if(executed) {
-                String outputFilePath = ToolPool.buildFilePath(workDir, "output.json");
+                String outputFilePath = ToolPool.buildFilePath(workDir, "output" + StaticValues.FILE_EXTENSION);
 
                 FileTool fileTool = new FileTool();
                 String outputFileId = fileTool.createFile(null, new FileInputStream(outputFilePath),currJob.getUserId());

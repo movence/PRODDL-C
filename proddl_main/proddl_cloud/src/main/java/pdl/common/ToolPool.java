@@ -21,14 +21,10 @@
 
 package pdl.common;
 
-import org.codehaus.jackson.JsonGenerationException;
-import org.codehaus.jackson.JsonParseException;
-import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.type.TypeReference;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.util.Map;
@@ -75,42 +71,31 @@ public class ToolPool {
         return newPath;
     }
 
-    public static Map<String, Object> jsonStringToMap(String value) throws IllegalArgumentException {
+    public static Map<String, Object> jsonStringToMap(String value) throws Exception {
         Map<String, Object> rtnMap = null;
         try {
             ObjectMapper mapper = new ObjectMapper();
             if(value!=null && !value.isEmpty()) {
                 TypeReference<TreeMap<String,Object>> typeRef = new TypeReference<TreeMap<String,Object>>() {};
                 rtnMap = mapper.readValue(value, typeRef);
-            }
-        } catch (JsonParseException e) {
-            e.printStackTrace();
-            throw new IllegalArgumentException(e);
-        } catch (JsonMappingException e) {
-            e.printStackTrace();
-            throw new IllegalArgumentException(e);
-        } catch (IOException e) {
-            e.printStackTrace();
-            throw new IllegalArgumentException(e);
+            } else
+                throw new Exception("json data is empty or null!");
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            throw ex;
         }
 
         return rtnMap;
     }
 
-    public static String jsonMapToString(Map jsonMap) throws IllegalArgumentException {
+    public static String jsonMapToString(Map jsonMap) throws Exception {
         ObjectMapper mapper = new ObjectMapper();
         Writer writer = new StringWriter();
         try {
             mapper.writeValue(writer, jsonMap);
-        } catch (JsonGenerationException e) {
-            e.printStackTrace();
-            throw new RuntimeException(e);
-        } catch (JsonMappingException e) {
-            e.printStackTrace();
-            throw new RuntimeException(e);
-        } catch (IOException e) {
-            e.printStackTrace();
-            throw new RuntimeException(e);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            throw ex;
         }
         return writer.toString();
     }

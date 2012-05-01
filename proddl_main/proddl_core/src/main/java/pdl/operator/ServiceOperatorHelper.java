@@ -153,7 +153,7 @@ public class ServiceOperatorHelper {
         }
 
         //Adds processor time monitor to timer
-        int timeInterval = 180000;
+        int timeInterval = conf.getIntegerProperty("WORKER_INSTANCE_MONITORING_INTERVAL");
         ScheduledInstanceMonitor instanceMonitor = new ScheduledInstanceMonitor();
         Timer instanceMonitorTimer = new Timer();
         instanceMonitorTimer.scheduleAtFixedRate(instanceMonitor, timeInterval, timeInterval);
