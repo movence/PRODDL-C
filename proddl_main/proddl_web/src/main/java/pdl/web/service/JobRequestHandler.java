@@ -22,10 +22,12 @@
 package pdl.web.service;
 
 import org.soyatec.windowsazure.table.ITableServiceEntity;
+import pdl.cloud.management.CloudInstanceManager;
 import pdl.cloud.management.JobManager;
 import pdl.cloud.management.UserService;
 import pdl.cloud.model.JobDetail;
 import pdl.cloud.model.User;
+import pdl.common.Configuration;
 import pdl.common.QueryTool;
 import pdl.common.StaticValues;
 import pdl.common.ToolPool;
@@ -40,8 +42,11 @@ import java.util.*;
  */
 public class JobRequestHandler {
     JobManager manager;
+    ArrayList<String> adminJobs;
+
     public JobRequestHandler() {
         manager = new JobManager();
+        adminJobs = null;
     }
 
     public Map<String, Object> submitJob(String jobName, String inputInString, String userName) {
@@ -50,24 +55,19 @@ public class JobRequestHandler {
 
         try {
             boolean succeed;
+            UserService userService = new UserService();
 
-            if(inputInString!=null && !inputInString.isEmpty()) {
+            //check user privilege for jobs
+            this.checkJobPrivilege(jobName, userName, userService);
+
+            if(jobName.equals("scaleup") || jobName.equals("scaledown")) {
+                CloudInstanceManager instanceManager = new CloudInstanceManager();
+                if(jobName.equals("scaleup"))
+                    instanceManager.scaleUp();
+                else
+                    instanceManager.scaleDown();
+            } else {
                 Map<String, Object> inputInMap = ToolPool.jsonStringToMap(inputInString);
-
-                //check user privilege for jobs
-                UserService userService = new UserService();
-                boolean isAdminUser = userService.isAdmin(userName);
-                List<String> adminAllowedJobs = new ArrayList<String>(Arrays.asList(StaticValues.ADMIN_ONLY_JOBS.split(",")));
-                if(!isAdminUser && adminAllowedJobs.contains(jobName))
-                    throw new Exception(String.format("The Job('%s') is not available or you do not have permission.", jobName));
-
-                /*List<String> userAllowedJobs = new ArrayList<String>(Arrays.asList(StaticValues.USER_AVAILABLE_JOBS.split(",")));
-                List<String> adminAllowedJobs = new ArrayList<String>(Arrays.asList(StaticValues.ADMIN_ONLY_JOBS.split(",")));
-                adminAllowedJobs.addAll(userAllowedJobs);
-                if(!userAllowedJobs.contains(jobName) || !(isAdminUser && adminAllowedJobs.contains(jobName))) {
-                    rtnVal.put("message", String.format("The Job('%s') is not available or you do not have permission.", jobName));
-                    throw new Exception("User requested a job that is not allowed to execute.");
-                }*/
 
                 //add user by admin
                 if(jobName.equals("adduser")) {
@@ -108,6 +108,25 @@ public class JobRequestHandler {
         }
 
         return rtnVal;
+    }
+
+    private void checkJobPrivilege(String jobName, String userName, UserService userService) throws Exception {
+        if(adminJobs==null) {
+            adminJobs = new ArrayList<String>(Arrays.asList(Configuration.getInstance().getStringProperty("ADMIN_ONLY_JOBS").split(",")));
+        }
+
+        boolean isAdminUser = userService.isAdmin(userName);
+
+        if(!isAdminUser && adminJobs.contains(jobName))
+            throw new Exception(String.format("The Job('%s') is not available or you do not have permission.", jobName));
+
+        /*List<String> userAllowedJobs = new ArrayList<String>(Arrays.asList(StaticValues.USER_AVAILABLE_JOBS.split(",")));
+        List<String> adminAllowedJobs = new ArrayList<String>(Arrays.asList(StaticValues.ADMIN_ONLY_JOBS.split(",")));
+        adminAllowedJobs.addAll(userAllowedJobs);
+        if(!userAllowedJobs.contains(jobName) || !(isAdminUser && adminAllowedJobs.contains(jobName))) {
+            rtnVal.put("message", String.format("The Job('%s') is not available or you do not have permission.", jobName));
+            throw new Exception("User requested a job that is not allowed to execute.");
+        }*/
     }
 
     private boolean addUser(Map<String, Object> inputInMap, UserService userService) throws Exception {
