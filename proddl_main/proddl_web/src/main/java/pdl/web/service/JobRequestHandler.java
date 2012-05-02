@@ -63,9 +63,11 @@ public class JobRequestHandler {
             if(jobName.equals("scaleup") || jobName.equals("scaledown")) {
                 CloudInstanceManager instanceManager = new CloudInstanceManager();
                 if(jobName.equals("scaleup"))
-                    instanceManager.scaleUp();
+                    succeed = instanceManager.scaleUp();
                 else
-                    instanceManager.scaleDown();
+                    succeed = instanceManager.scaleDown();
+
+                result = String.format("'%s' job has been %s.", jobName, succeed?"completed":"failed");
             } else {
                 Map<String, Object> inputInMap = ToolPool.jsonStringToMap(inputInString);
 
@@ -99,9 +101,8 @@ public class JobRequestHandler {
                         result = "Failed to submit the job.";
                     }
                 }
-
-                rtnVal.put("result", result);
             }
+            rtnVal.put("result", result);
         } catch (Exception ex) {
             rtnVal.put("message", result==null?ex.toString():result);
             rtnVal.put("error", "Failed to submit a job");

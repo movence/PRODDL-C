@@ -64,15 +64,29 @@ public class RestMainController {
      * @param inputInString json formate input
      * @param principal
      * @return job submission result in json format
-     * @format curl <ip address>:<port>/pdl/r/job/<jobname> -d '{"key":"value"}' -u <user id>:<pass> -H "Content-Type: application/json"
+     * @format curl <ip address>:<port>/pdl/r/job/<jobname> -d '{"key":"value"}' -u <user id>:<pass> -H "Content-Type: application/json" -X POST
      */
-    @RequestMapping(value = "job/{name}", method = {RequestMethod.POST, RequestMethod.GET})
+    @RequestMapping(value = "job/{name}", method = RequestMethod.POST)
     public @ResponseBody Map<String, Object> jobRunner(
             @PathVariable("name") String jobName,
-            @RequestBody final String inputInString, //format '{"key":"value"}': files{"mfile":"<fileID>" - makeflow file, "ifile":"<fileId>" - input file}
+            @RequestBody() final String inputInString, //format '{"key":"value"}': files{"mfile":"<fileID>" - makeflow file, "ifile":"<fileId>" - input file}
             Principal principal) {
 
         Map<String, Object> jobResult = handler.submitJob(jobName, inputInString, principal.getName());
+        return jobResult;
+    }
+
+    /**
+     * submit a job
+     * @param jobName
+     * @param principal
+     * @return job submission result in json format
+     * @format curl <ip address>:<port>/pdl/r/job/<jobname> -u <user id>:<pass>
+     */
+    @RequestMapping(value = "job/{name}", method = RequestMethod.GET)
+    public @ResponseBody Map<String, Object> jobRunner(@PathVariable("name") String jobName, Principal principal) {
+
+        Map<String, Object> jobResult = handler.submitJob(jobName, null, principal.getName());
         return jobResult;
     }
 
