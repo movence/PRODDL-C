@@ -100,6 +100,22 @@ public class ServiceOperatorHelper {
                 storageData.setDataValue(storagePath);
                 storageServices.insertSingleEnttity(dynamicTable, storageData);
 
+                //file storage space
+                String datasotrePath = conf.getStringProperty("DATASTORE_PATH");
+                if(datasotrePath==null) {
+                    storageData = (DynamicData)storageServices.queryEntityBySearchKey(
+                            conf.getStringProperty("TABLE_NAME_DYNAMIC_DATA"),
+                            StaticValues.COLUMN_DYNAMIC_DATA_KEY, StaticValues.KEY_DYNAMIC_DATA_DRIVE_PATH,
+                            DynamicData.class);
+
+                    if(storageData==null)
+                        datasotrePath = System.getProperty("java.io.tmpdir");
+                    else
+                        datasotrePath = storageData.getDataValue();
+
+                    conf.setProperty("DATASTORE_PATH", ToolPool.buildFilePath(datasotrePath, null));
+                }
+
                 this.runMaster(jettyPort, masterAddress, catalogServerPort);
             } else { //Job(WorkQ) runner
                 this.runJobRunner();
