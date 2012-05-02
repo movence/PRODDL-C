@@ -23,7 +23,6 @@ package pdl.common;
 
 import org.soyatec.windowsazure.table.ITableServiceEntity;
 import pdl.cloud.StorageServices;
-import pdl.cloud.model.DynamicData;
 import pdl.cloud.model.FileInfo;
 
 import java.io.File;
@@ -55,19 +54,6 @@ public class FileTool {
         fileTableName = conf.getStringProperty("TABLE_NAME_FILES");
 
         String storagePath = conf.getStringProperty("DATASTORE_PATH");
-        if(storagePath==null) {
-            DynamicData storageData = (DynamicData)services.queryEntityBySearchKey(
-                    conf.getStringProperty("TABLE_NAME_DYNAMIC_DATA"),
-                    StaticValues.COLUMN_DYNAMIC_DATA_KEY, StaticValues.KEY_DYNAMIC_DATA_DRIVE_PATH,
-                    DynamicData.class);
-
-            if(storageData==null)
-                storagePath = System.getProperty("java.io.tmpdir");
-            else
-                storagePath = storageData.getDataValue();
-
-            conf.setProperty("DATASTORE_PATH", ToolPool.buildFilePath(storagePath, null));
-        }
 
         uploadDirectoryPath = ToolPool.buildFilePath(storagePath, StaticValues.DIRECTORY_FILE_AREA);
         File uploadDir = new File(uploadDirectoryPath);

@@ -107,39 +107,50 @@ public class CloudInstanceManager {
         }
     }
 
-    public String getHostedServiceName() {
+    public String getHostedServiceName() throws Exception {
+        String serviceName = null;
         try {
+            //TODO should handle multiple hosted services
             List<HostedService> hostedServices = manager.listHostedServices();
-            if (hostedServices != null && hostedServices.size() == 1) {
-                return hostedServiceName = hostedServices.get(0).getName();
+            if (hostedServices != null) { // && hostedServices.size() == 1) {
+                serviceName = hostedServices.get(0).getName();
+            }
+        } catch (Exception e) {
+            //TODO remove exception stack trace
+            e.printStackTrace();
+            throw new Exception("Failed to get hosted service name!");
+        }
+        return serviceName;
+    }
+
+    private List<Deployment> getDeploymentList() throws Exception {
+        List<Deployment> deploymentList = null;
+        try {
+            hostedServiceName = getHostedServiceName();
+
+            if(hostedServiceName != null) {
+                HostedServiceProperties serviceProperties = manager.getHostedServiceProperties(hostedServiceName, true);
+                deploymentList = serviceProperties.getDeployments();
             }
         } catch (Exception e) {
             e.printStackTrace();
+            throw new Exception("Failed to get list of deployments!");
         }
-        return null;
-    }
-
-    private List<Deployment> getDeploymentList() {
-        try {
-            if (hostedServiceName == null)
-                hostedServiceName = getHostedServiceName();
-            HostedServiceProperties servicePropertieses = manager.getHostedServiceProperties(hostedServiceName, true);
-            return servicePropertieses.getDeployments();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return null;
+        return deploymentList;
     }
 
     private boolean scaleService(String flag, String deploymentName) {
+        boolean rtnVal = false;
         try {
             List<Deployment> deployments = getDeploymentList();
             if (deployments == null || deployments.size() == 0)
                 throw new Exception("scaleService threw Exception: There is no deployed service");
 
             for (Deployment deployment : deployments) {
-                if (deploymentName != null && !deploymentName.equals(deployment.getName()))
-                    continue; //skips deployments by given name
+
+                //skips deployments by given name or status
+                if ((deploymentName != null && !deploymentName.equals(deployment.getName())) || (deployment.getStatus()!=null && deployment.getStatus().equals("RunningTransitioning")))
+                    continue;
 
                 InputSource is = new InputSource();
                 is.setCharacterStream(new StringReader(deployment.getConfiguration()));
@@ -185,16 +196,16 @@ public class CloudInstanceManager {
                         BlobStream blobFileStream = new BlobMemoryStream(new ByteArrayInputStream(out.toString().getBytes("UTF-8")));
                         manager.changeDeploymentConfiguration(hostedServiceName, deployment.getName(), blobFileStream, null);
 
+
+                        rtnVal = true;
                         break;
                     }
                 }
             }
-
-            return true;
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return false;
+        return rtnVal;
     }
 
     public boolean scaleUp() {
