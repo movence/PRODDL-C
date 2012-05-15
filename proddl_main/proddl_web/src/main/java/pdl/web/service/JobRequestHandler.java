@@ -67,7 +67,7 @@ public class JobRequestHandler {
                 else
                     succeed = instanceManager.scaleDown();
 
-                result = String.format("'%s' job has been %s.", jobName, succeed?"completed":"failed");
+                result = String.format("'%s' job has been %s.", jobName, succeed?"submitted":"failed");
             } else {
                 Map<String, Object> inputInMap = ToolPool.jsonStringToMap(inputInString);
 
