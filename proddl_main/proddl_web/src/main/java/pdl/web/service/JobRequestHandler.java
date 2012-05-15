@@ -44,6 +44,8 @@ public class JobRequestHandler {
     JobManager manager;
     ArrayList<String> adminJobs;
 
+    private static final String JOB_TYPE_SCALE_UP = "scaleup";
+
     public JobRequestHandler() {
         manager = new JobManager();
         adminJobs = null;
@@ -167,13 +169,14 @@ public class JobRequestHandler {
             if(job!=null) {
                 Map<String, Object> jobInfoMap = new TreeMap<String, Object>();
                 //jobInfoMap.put("Job ID", job.getJobUUID());
-                jobInfoMap.put("Name", job.getJobName());
-                jobInfoMap.put("Status", job.getStatusInString());
-                jobInfoMap.put("User", job.getUserId());
-                jobInfoMap.put("Input", job.getInput());
+                jobInfoMap.put("name", job.getJobName());
+                jobInfoMap.put("status", job.getStatusInString());
+                jobInfoMap.put("user", job.getUserId());
+                jobInfoMap.put("input", job.getInput());
 
-                if(job.getStatus()== StaticValues.JOB_STATUS_COMPLETED)
-                    jobInfoMap.put("result", this.getJobResult(jobId));
+                if(job.getStatus()== StaticValues.JOB_STATUS_COMPLETED) //get job result
+                    jobInfoMap.putAll(this.getJobResult(jobId));
+
                 jobInfo = jobInfoMap;
             } else {
                 jobInfo = String.format("There is no existing job with given ID(%s)", jobId);
@@ -192,6 +195,7 @@ public class JobRequestHandler {
 
         try {
             JobDetail job = manager.getJobByID(jobId);
+            rtnVal.put("status", job.getStatusInString());
 
             String result="";
             if(job!=null) {
@@ -200,7 +204,7 @@ public class JobRequestHandler {
                 else
                     result = job.getResult();
             }
-            rtnVal.put("Result", result);
+            rtnVal.put("result", result);
         } catch (Exception ex) {
             ex.printStackTrace();
             rtnVal.put("error", String.format("Failed to get job result for ID(%s)", jobId));
