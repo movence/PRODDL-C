@@ -98,7 +98,7 @@ public class JobExecutor extends Thread {
 
     private String createJobDirectoryIfNotExist(String jobUUID) throws Exception {
         String jobDir = null;
-        String storagePath = Configuration.getInstance().getStringProperty("STORAGE_PATH");
+        String storagePath = Configuration.getInstance().getStringProperty("DATASTORE_PATH");
         boolean jobAreaExist = false;
 
         File jobArea = new File(ToolPool.buildFilePath(storagePath + StaticValues.DIRECTORY_TASK_AREA));
@@ -191,13 +191,13 @@ public class JobExecutor extends Thread {
             }
             jobHandler.updateJobStatus(currJob.getJobUUID(), StaticValues.JOB_STATUS_RUNNING, null);
 
-            boolean executed = cctoolsOperator.startMakeflow(currJob.getJobUUID(), mfFile, workDir);
+            boolean executed = cctoolsOperator.startMakeflow(false, currJob.getJobUUID(), mfFile, workDir);
             boolean outputUploaded = false;
             if(executed) {
                 String outputFilePath = ToolPool.buildFilePath(workDir, "output" + StaticValues.FILE_EXTENSION);
 
                 FileTool fileTool = new FileTool();
-                String outputFileId = fileTool.createFile(null, new FileInputStream(outputFilePath),currJob.getUserId());
+                String outputFileId = fileTool.createFile(null, new FileInputStream(outputFilePath), currJob.getUserId());
 
                 if(outputFileId!=null && !outputFileId.isEmpty())
                     jobHandler.updateJobStatus(currJob.getJobUUID(), StaticValues.JOB_STATUS_COMPLETED, outputFileId);

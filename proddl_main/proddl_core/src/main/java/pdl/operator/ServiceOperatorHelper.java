@@ -100,7 +100,7 @@ public class ServiceOperatorHelper {
                 storageData.setDataValue(storagePath);
                 storageServices.insertSingleEnttity(dynamicTable, storageData);
 
-                //file storage space
+                //file storage space, provided by c# bootstrap application
                 String datasotrePath = conf.getStringProperty("DATASTORE_PATH");
                 if(datasotrePath==null) {
                     storageData = (DynamicData)storageServices.queryEntityBySearchKey(
@@ -109,7 +109,7 @@ public class ServiceOperatorHelper {
                             DynamicData.class);
 
                     if(storageData==null)
-                        datasotrePath = System.getProperty("java.io.tmpdir");
+                        datasotrePath = storagePath; //System.getProperty("java.io.tmpdir");
                     else
                         datasotrePath = storageData.getDataValue();
 
