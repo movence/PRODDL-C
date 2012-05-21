@@ -76,8 +76,7 @@ public class ServiceOperatorHelper {
         try {
 
             storagePath = ToolPool.buildFilePath(storagePath.replace("/", File.separator));
-
-            conf.setProperty("STORAGE_PATH", storagePath);
+            conf.setProperty(StaticValues.CONFIG_KEY_STORAGE_PATH, storagePath);
             this.storagePath = storagePath;
 
             this.runOperators();
@@ -101,7 +100,7 @@ public class ServiceOperatorHelper {
                 storageServices.insertSingleEnttity(dynamicTable, storageData);
 
                 //file storage space, provided by c# bootstrap application
-                String datasotrePath = conf.getStringProperty("DATASTORE_PATH");
+                String datasotrePath = conf.getStringProperty(StaticValues.CONFIG_KEY_DATASTORE_PATH);
                 if(datasotrePath==null) {
                     storageData = (DynamicData)storageServices.queryEntityBySearchKey(
                             conf.getStringProperty("TABLE_NAME_DYNAMIC_DATA"),
@@ -113,7 +112,7 @@ public class ServiceOperatorHelper {
                     else
                         datasotrePath = storageData.getDataValue();
 
-                    conf.setProperty("DATASTORE_PATH", ToolPool.buildFilePath(datasotrePath, null));
+                    conf.setProperty(StaticValues.CONFIG_KEY_DATASTORE_PATH, ToolPool.buildFilePath(datasotrePath, null));
                 }
 
                 this.runMaster(jettyPort, masterAddress, catalogServerPort);

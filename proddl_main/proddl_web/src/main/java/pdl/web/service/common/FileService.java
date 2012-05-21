@@ -72,11 +72,15 @@ public class FileService {
         return rtnJson;
     }
 
+    public String getFilePathById(String fileId) throws Exception {
+        return fileTool.getFilePath(fileId);
+    }
+
     public Map<String, String> downloadFile(String fileId, HttpServletResponse res, String username) {
         //TODO check user permission for downloading a file
         Map<String, String> rtnJson = new TreeMap<String, String>();
         try {
-            String filePath = fileTool.getFilePath(fileId);
+            String filePath = this.getFilePathById(fileId);
             if(filePath!=null && !filePath.isEmpty() && ToolPool.canReadFile(filePath)) {
                 String fileName = fileId.concat(".json");
                 res.setContentType("application/json");

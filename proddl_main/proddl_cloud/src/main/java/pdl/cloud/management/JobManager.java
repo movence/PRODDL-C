@@ -226,6 +226,7 @@ public class JobManager {
      *
      * @param jobId  UUID of a job
      * @param status integer value of job status (defined in StaticValues object)
+     * @param resultFileName uid of result output file
      * @return boolean
      * @throws Exception
      */

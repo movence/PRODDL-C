@@ -42,6 +42,9 @@ public class StaticValues {
     public static final String DIRECTORY_TASK_AREA = "task";
     public static final String DIRECTORY_FILE_AREA = "datastore";
 
+    public static final String CONFIG_KEY_DATASTORE_PATH = "DATASTORE_PATH";
+    public static final String CONFIG_KEY_STORAGE_PATH = "STORAGE_PATH";
+
     public static final int JOB_STATUS_SUBMITTED = 1;
     public static final int JOB_STATUS_PENDING = 2;
     public static final int JOB_STATUS_RUNNING = 3;

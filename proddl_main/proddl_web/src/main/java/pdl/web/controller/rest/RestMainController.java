@@ -24,8 +24,8 @@ package pdl.web.controller.rest;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import pdl.common.StaticValues;
 import pdl.web.service.JobRequestHandler;
-import pdl.web.service.common.FileService;
 
 import javax.servlet.http.HttpServletResponse;
 import java.security.Principal;
@@ -107,9 +107,9 @@ public class RestMainController {
      * get job result
      * @param jobId
      * @return job result in json format
-     * @format curl <ip address>:<port>/pdl/r/job/result/?jid=<jobid> -u <user id>:<pass>
+     * @format curl <ip address>:<port>/pdl/r/result/?jid=<jobid> -u <user id>:<pass>
      */
-    @RequestMapping(value = "job/result", method = {RequestMethod.POST, RequestMethod.GET})
+    @RequestMapping(value = "result", method = {RequestMethod.POST, RequestMethod.GET})
     public @ResponseBody Map<String, String> getJobResult(@RequestParam(value = "jid", defaultValue = "") String jobId) {
 
         Map<String, String> jsonResult = handler.getJobResult(jobId);
@@ -117,12 +117,39 @@ public class RestMainController {
     }
 
     /**
+     * update job status to completed
+     * @param jobId
+     * @return result in json format
+     * @format curl <ip address>:<port>/pdl/r/status/complete?jid=<jobid>  -u <user id>:<pass> -X POST|GET
+     */
+    @RequestMapping(value = "status/complete", method = {RequestMethod.POST, RequestMethod.GET})
+    public @ResponseBody Map<String, String> setJobComplete(
+            @RequestParam(value = "jid", defaultValue = "") String jobId,
+            @RequestParam(value = "result", defaultValue = "") String resultFileId,
+            Principal principal) {
+        Map<String, String> jsonResult = handler.updateJob(jobId, StaticValues.JOB_STATUS_COMPLETED, resultFileId, principal.getName());
+        return jsonResult;
+    }
+
+    /**
+     * update job status to failed
+     * @param jobId
+     * @return result in json format
+     * @format curl <ip address>:<port>/pdl/r/status/complete?jid=<jobid>  -u <user id>:<pass> -X POST|GET
+     */
+    @RequestMapping(value = "status/fail", method = {RequestMethod.POST, RequestMethod.GET})
+    public @ResponseBody Map<String, String> setJobFail(@RequestParam(value = "jid", defaultValue = "") String jobId, Principal principal) {
+        Map<String, String> jsonResult = handler.updateJob(jobId, StaticValues.JOB_STATUS_FAILED, null, principal.getName());
+        return jsonResult;
+    }
+
+    /**
      * kills a job
      * @param jobId
      * @return result in json format
-     * @format curl <ip address>:<port>/pdl/r/job/kill/?jid=<jobid> -u <user id>:<pass> -X POST|GET
+     * @format curl <ip address>:<port>/pdl/r/kill/?jid=<jobid> -u <user id>:<pass> -X POST|GET
      */
-    @RequestMapping(value = "job/kill", method = {RequestMethod.POST, RequestMethod.GET})
+    @RequestMapping(value = "kill", method = {RequestMethod.POST, RequestMethod.GET})
     public @ResponseBody Map<String, String> killJob(@RequestParam(value = "jid", defaultValue = "") String jobId) {
 
         Map<String, String> jsonResult = null;
@@ -140,8 +167,7 @@ public class RestMainController {
             @RequestParam("file") MultipartFile file, @RequestParam(value = "type", defaultValue = "") String type, Principal principal) {
         //TODO allow admin to upload third-party application to tools container
 
-        FileService fileService = new FileService();
-        Map<String, String> rtnJson = fileService.uploadFile(file, type, principal.getName());
+        Map<String, String> rtnJson = handler.uploadFile(file, type, principal.getName());
         return rtnJson;
     }
 
@@ -151,9 +177,12 @@ public class RestMainController {
      * @format curl <ip address>:<port>/pdl/r/file/get/?id=<file id> -u <user id>:<pass> -o <filename> -X POST|GET
      */
     @RequestMapping(value = "file/get", method = {RequestMethod.POST, RequestMethod.GET})
-    public @ResponseBody Map<String, String> fileDownload(@RequestParam(value = "id", defaultValue = "") String fileId, Principal principal, HttpServletResponse res) {
-        FileService fileService = new FileService();
-        Map<String, String> rtnJson = fileService.downloadFile(fileId, res, principal.getName());
+    public @ResponseBody Map<String, String> fileDownload(
+            @RequestParam(value = "id", defaultValue = "") String fileId,
+            Principal principal,
+            HttpServletResponse res) {
+
+        Map<String, String> rtnJson = handler.downloadFile(fileId, res, principal.getName());
         return rtnJson;
     }
 
@@ -164,8 +193,8 @@ public class RestMainController {
      */
     @RequestMapping(value = "file/new", method = {RequestMethod.POST, RequestMethod.GET})
     public @ResponseBody Map<String, String> fileCreate(Principal principal) {
-        FileService fileService = new FileService();
-        Map<String, String> rtnJson = fileService.createFile(principal.getName());
+
+        Map<String, String> rtnJson = handler.createFile(principal.getName());
         return rtnJson;
     }
 
@@ -176,8 +205,8 @@ public class RestMainController {
      */
     @RequestMapping(value = "file/commit", method = {RequestMethod.POST, RequestMethod.GET})
     public @ResponseBody Map<String, String> fileCommit(@RequestParam(value = "id", defaultValue = "") String fileId, Principal principal) {
-        FileService fileService = new FileService();
-        Map<String, String> rtnJson = fileService.commitFile(fileId, principal.getName());
+
+        Map<String, String> rtnJson = handler.commitFile(fileId, principal.getName());
         return rtnJson;
     }
 
@@ -190,8 +219,7 @@ public class RestMainController {
     @RequestMapping(value = "file/delete", method = RequestMethod.POST)
     public @ResponseBody Map<String, String> fileDelete(@RequestParam("fileId") String fileId, Principal principal) {
 
-        FileService fileService = new FileService();
-        Map<String, String> rtnJson = fileService.deleteFile(fileId, principal.getName());
+        Map<String, String> rtnJson = handler.deleteFile(fileId, principal.getName());
         return rtnJson;
     }
 }

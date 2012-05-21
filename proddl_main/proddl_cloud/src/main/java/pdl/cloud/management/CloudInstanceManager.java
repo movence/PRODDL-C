@@ -39,6 +39,7 @@ import pdl.cloud.model.PerformanceData;
 import pdl.cloud.storage.BlobOperator;
 import pdl.cloud.storage.TableOperator;
 import pdl.common.Configuration;
+import pdl.common.StaticValues;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -72,7 +73,7 @@ public class CloudInstanceManager {
 
     private void initializeManager(Configuration conf) {
         try {
-            this.storagePath = conf.getStringProperty("STORAGE_PATH");
+            this.storagePath = conf.getStringProperty(StaticValues.CONFIG_KEY_STORAGE_PATH);
 
             tableOperator = new TableOperator(conf);
             tableOperator.initDiagnosticsTableClient();

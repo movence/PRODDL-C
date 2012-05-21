@@ -98,7 +98,7 @@ public class JobExecutor extends Thread {
 
     private String createJobDirectoryIfNotExist(String jobUUID) throws Exception {
         String jobDir = null;
-        String storagePath = Configuration.getInstance().getStringProperty("DATASTORE_PATH");
+        String storagePath = Configuration.getInstance().getStringProperty(StaticValues.CONFIG_KEY_DATASTORE_PATH);
         boolean jobAreaExist = false;
 
         File jobArea = new File(ToolPool.buildFilePath(storagePath + StaticValues.DIRECTORY_TASK_AREA));

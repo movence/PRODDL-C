@@ -22,6 +22,7 @@
 package pdl.web.service;
 
 import org.soyatec.windowsazure.table.ITableServiceEntity;
+import org.springframework.web.multipart.MultipartFile;
 import pdl.cloud.management.CloudInstanceManager;
 import pdl.cloud.management.JobManager;
 import pdl.cloud.management.UserService;
@@ -31,7 +32,9 @@ import pdl.common.Configuration;
 import pdl.common.QueryTool;
 import pdl.common.StaticValues;
 import pdl.common.ToolPool;
+import pdl.web.service.common.FileService;
 
+import javax.servlet.http.HttpServletResponse;
 import java.util.*;
 
 /**
@@ -42,12 +45,16 @@ import java.util.*;
  */
 public class JobRequestHandler {
     JobManager manager;
+    UserService userService;
+    FileService fileService;
     ArrayList<String> adminJobs;
 
     private static final String JOB_TYPE_SCALE_UP = "scaleup";
 
     public JobRequestHandler() {
         manager = new JobManager();
+        userService = new UserService();
+        fileService = new FileService();
         adminJobs = null;
     }
 
@@ -60,7 +67,7 @@ public class JobRequestHandler {
             UserService userService = new UserService();
 
             //check user privilege for jobs
-            this.checkJobPrivilege(jobName, userName, userService);
+            this.checkJobPrivilege(jobName, userName);
 
             if(jobName.equals("scaleup") || jobName.equals("scaledown")) {
                 CloudInstanceManager instanceManager = new CloudInstanceManager();
@@ -113,12 +120,16 @@ public class JobRequestHandler {
         return rtnVal;
     }
 
-    private void checkJobPrivilege(String jobName, String userName, UserService userService) throws Exception {
+    private boolean isUserAdmin(String userName) throws Exception {
+        return userService.isAdmin(userName);
+    }
+
+    private void checkJobPrivilege(String jobName, String userName) throws Exception {
         if(adminJobs==null) {
             adminJobs = new ArrayList<String>(Arrays.asList(Configuration.getInstance().getStringProperty("ADMIN_ONLY_JOBS").split(",")));
         }
 
-        boolean isAdminUser = userService.isAdmin(userName);
+        boolean isAdminUser = this.isUserAdmin(userName);
 
         if(!isAdminUser && adminJobs.contains(jobName))
             throw new Exception(String.format("The Job('%s') is not available or you do not have permission.", jobName));
@@ -175,13 +186,13 @@ public class JobRequestHandler {
                 jobInfoMap.put("input", job.getInput());
 
                 if(job.getStatus()== StaticValues.JOB_STATUS_COMPLETED) //get job result
-                    jobInfoMap.putAll(this.getJobResult(jobId));
+                    jobInfoMap.put("result", job.getResult());
 
                 jobInfo = jobInfoMap;
             } else {
                 jobInfo = String.format("There is no existing job with given ID(%s)", jobId);
             }
-            rtnVal.put("Job Info", jobInfo);
+            rtnVal.put("info", jobInfo);
 
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -195,14 +206,20 @@ public class JobRequestHandler {
 
         try {
             JobDetail job = manager.getJobByID(jobId);
-            rtnVal.put("status", job.getStatusInString());
+            /*rtnVal.put("status", job.getStatusInString());*/
 
             String result="";
             if(job!=null) {
-                if(job.getStatus()!=StaticValues.JOB_STATUS_COMPLETED)
-                    result = String.format("Job has not been completed. Current Status is '%s'", job.getStatusInString());
-                else
-                    result = job.getResult();
+                switch(job.getStatus()) {
+                    case StaticValues.JOB_STATUS_COMPLETED:
+                        result = job.getResult();
+                        break;
+                    case StaticValues.JOB_STATUS_FAILED:
+                        result = "Job Failed.";
+                        break;
+                    default:
+                        result = String.format("Job has not been completed. Current Status is '%s'", job.getStatusInString());
+                }
             }
             rtnVal.put("result", result);
         } catch (Exception ex) {
@@ -232,6 +249,84 @@ public class JobRequestHandler {
             rtnVal.put("error", "Failed to retrieve Job list for " + userName);
         }
 
+        return rtnVal;
+    }
+
+    public Map<String, String> updateJob(String jobId, int status, String resultFileId, String userName) {
+        Map<String, String> rtnVal = new HashMap<String, String>();
+        try {
+            if(!this.isUserAdmin(userName))
+                throw new Exception("You need Admin privilege to update job status manually.");
+
+            fileService.getFilePathById(resultFileId);
+
+            boolean result = manager.updateJobStatus(jobId, status, resultFileId);
+            rtnVal.put("result", ""+(result?1:0));
+
+        } catch(Exception ex) {
+            ex.printStackTrace();
+            rtnVal.put("error", ex.toString());
+        }
+
+        return rtnVal;
+    }
+
+
+    /*
+    *    File handlers
+    */
+    public Map<String, String> uploadFile(MultipartFile file, String type, String userName) {
+        Map<String, String> rtnVal = new HashMap<String, String>();
+        try {
+            rtnVal = fileService.uploadFile(file, type, userName);
+        } catch(Exception ex) {
+            ex.printStackTrace();
+            rtnVal.put("error", ex.toString());
+        }
+        return rtnVal;
+    }
+
+    public Map<String, String> downloadFile(String fileId, HttpServletResponse res, String userName) {
+        Map<String, String> rtnVal = new HashMap<String, String>();
+        try {
+            rtnVal = fileService.downloadFile(fileId, res, userName);
+        } catch(Exception ex) {
+            ex.printStackTrace();
+            rtnVal.put("error", ex.toString());
+        }
+        return rtnVal;
+    }
+
+    public Map<String, String> createFile(String userName) {
+        Map<String, String> rtnVal = new HashMap<String, String>();
+        try {
+            rtnVal = fileService.createFile(userName);
+        } catch(Exception ex) {
+            ex.printStackTrace();
+            rtnVal.put("error", ex.toString());
+        }
+        return rtnVal;
+    }
+
+    public Map<String, String> commitFile(String fileId, String userName) {
+        Map<String, String> rtnVal = new HashMap<String, String>();
+        try {
+            rtnVal = fileService.commitFile(fileId, userName);
+        } catch(Exception ex) {
+            ex.printStackTrace();
+            rtnVal.put("error", ex.toString());
+        }
+        return rtnVal;
+    }
+
+    public Map<String, String> deleteFile(String fileId, String userName) {
+        Map<String, String> rtnVal = new HashMap<String, String>();
+        try {
+            rtnVal = fileService.deleteFile(fileId, userName);
+        } catch(Exception ex) {
+            ex.printStackTrace();
+            rtnVal.put("error", ex.toString());
+        }
         return rtnVal;
     }
 }
