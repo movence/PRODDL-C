@@ -54,4 +54,7 @@ public class StaticValues {
     public static final int FILE_STATUS_RESERVED = 0;
     public static final int FILE_STATUS_COMMITTED = 1;
     public static final String FILE_EXTENSION = ".dat";
+    public static final String FILE_JOB_INPUT = "input.json";
+
+    public static final String SPECIAL_EXECUTION_JOB = "execute";
 }

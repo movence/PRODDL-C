@@ -55,9 +55,8 @@ public class JobManager {
      *
      * @throws Exception
      */
-    private void reorderSubmittedJobs() throws Exception {
+    private synchronized void reorderSubmittedJobs() throws Exception {
         try {
-            System.err.println("Entering Reordering Submitted Jobs");
             List<ITableServiceEntity> jobs = getJobList(QueryTool.getSingleConditionalStatement("status", "eq", StaticValues.JOB_STATUS_SUBMITTED));
 
             if(jobs!=null && jobs.size()>0) {
@@ -120,10 +119,10 @@ public class JobManager {
             jobDetail.setStatus(StaticValues.JOB_STATUS_SUBMITTED);
             jobDetail.setPriority(0);
             rtnVal = tableOperator.insertSingleEntity(jobDetailTableName, jobDetail);
-            if( rtnVal )
+            /*if( rtnVal )
                 this.reorderSubmittedJobs();
             else
-                throw new Exception("Adding job to Azure table failed.");
+                throw new Exception("Adding job to Azure table failed.");*/
 
         } catch (Exception ex) {
             throw ex;
@@ -173,7 +172,7 @@ public class JobManager {
      * @return JobDetail
      * @throws Exception
      */
-    public JobDetail getSingleSubmittedJob() throws Exception {
+    public synchronized JobDetail getSingleSubmittedJob() throws Exception {
         JobDetail job = null;
 
         try {

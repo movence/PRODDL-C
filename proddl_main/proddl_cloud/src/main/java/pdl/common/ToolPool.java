@@ -99,4 +99,16 @@ public class ToolPool {
         }
         return writer.toString();
     }
+
+    public static boolean isProcessRunning(Process p) {
+        boolean rtnVal = false;
+        try {
+            p.exitValue();
+            rtnVal = false;
+        } catch (IllegalThreadStateException ex) {
+            rtnVal = true;
+        }
+
+        return rtnVal;
+    }
 }

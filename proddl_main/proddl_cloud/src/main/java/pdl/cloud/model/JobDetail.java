@@ -35,7 +35,7 @@ import pdl.common.StaticValues;
 public class JobDetail extends AbstractTableServiceEntity {
     private String jobName;
     private String inputFileUUID;
-    private String makeflowFileUUID;
+    private String scriptFileUUID;
     private String userId;
     private int status;
     private int priority;
@@ -76,12 +76,12 @@ public class JobDetail extends AbstractTableServiceEntity {
         this.inputFileUUID = inputFileUUID;
     }
 
-    public String getMakeflowFileUUID() {
-        return makeflowFileUUID;
+    public String getScriptFileUUID() {
+        return scriptFileUUID;
     }
 
-    public void setMakeflowFileUUID(String makeflowFileUUID) {
-        this.makeflowFileUUID = makeflowFileUUID;
+    public void setScriptFileUUID(String scriptFileUUID) {
+        this.scriptFileUUID = scriptFileUUID;
     }
 
     public String getUserId() {

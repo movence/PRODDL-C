@@ -159,9 +159,7 @@ public class TableOperator {
         AbstractTableServiceEntity entity = null;
 
         try {
-            List<ITableServiceEntity> entityList = this.queryListBySearchKey(
-                    tableName, searchColumn, searchKey, null, null, model
-            );
+            List<ITableServiceEntity> entityList = this.queryListBySearchKey(tableName, searchColumn, searchKey, null, null, model);
 
             if (entityList != null && entityList.size() > 0) {
                 /*if( entityList.size() > 1 )

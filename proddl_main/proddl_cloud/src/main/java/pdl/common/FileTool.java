@@ -21,12 +21,12 @@
 
 package pdl.common;
 
+import org.apache.commons.io.FileUtils;
 import org.soyatec.windowsazure.table.ITableServiceEntity;
 import pdl.cloud.StorageServices;
 import pdl.cloud.model.FileInfo;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 
@@ -166,7 +166,9 @@ public class FileTool {
         try {
             File fromFile = new File(from);
             if(fromFile.exists() && fromFile.canRead()) {
-                FileInputStream in = new FileInputStream(from);
+                FileUtils.copyFile(fromFile, new File(to));
+
+                /*FileInputStream in = new FileInputStream(from);
                 FileOutputStream out = new FileOutputStream(to);
 
                 int readBytes = 0;
@@ -177,7 +179,7 @@ public class FileTool {
                 }
 
                 out.close();
-                in.close();
+                in.close();*/
 
                 rtnVal = true;
             }
