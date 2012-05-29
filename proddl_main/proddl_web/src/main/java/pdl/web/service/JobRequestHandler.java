@@ -93,6 +93,7 @@ public class JobRequestHandler {
                     JobDetail jobDetail = new JobDetail(jobName);
                     jobDetail.setJobName(jobName);
                     jobDetail.setUserId(userName);
+                    jobDetail.setStatus(StaticValues.JOB_STATUS_SUBMITTED);
 
                     if (inputInMap!=null) {
                         inputInMap.put("job", jobName);

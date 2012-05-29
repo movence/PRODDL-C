@@ -69,7 +69,8 @@ public class RestMainController {
     @RequestMapping(value = "job/{name}", method = RequestMethod.POST)
     public @ResponseBody Map<String, Object> jobRunner(
             @PathVariable("name") String jobName,
-            @RequestBody() final String inputInString, //format '{"key":"value"}': files{"mfile":"<fileID>" - makeflow file, "ifile":"<fileId>" - input file}
+            //format '{"key":"value"}': {"interpreter":<name>, "script":<id>, "input":<id>, ...}
+            @RequestBody() final String inputInString,
             Principal principal) {
 
         Map<String, Object> jobResult = handler.submitJob(jobName, inputInString, principal.getName());

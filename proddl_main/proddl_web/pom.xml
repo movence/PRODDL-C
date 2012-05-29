@@ -92,6 +92,8 @@
                 <version>2.12</version>
                 <configuration>
                     <skipTests>true</skipTests>
+                    <useFile>false</useFile>
+                    <debugForkedProcess>true</debugForkedProcess>
                 </configuration>
             </plugin>
         </plugins>
