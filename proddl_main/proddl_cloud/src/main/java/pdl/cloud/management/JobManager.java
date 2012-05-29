@@ -119,10 +119,10 @@ public class JobManager {
             jobDetail.setStatus(StaticValues.JOB_STATUS_SUBMITTED);
             jobDetail.setPriority(0);
             rtnVal = tableOperator.insertSingleEntity(jobDetailTableName, jobDetail);
-            /*if( rtnVal )
+            if( rtnVal )
                 this.reorderSubmittedJobs();
             else
-                throw new Exception("Adding job to Azure table failed.");*/
+                throw new Exception("Adding job to Azure table failed.");
 
         } catch (Exception ex) {
             throw ex;
