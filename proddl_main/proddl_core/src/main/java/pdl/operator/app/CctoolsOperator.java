@@ -57,17 +57,17 @@ public class CctoolsOperator extends AbstractApplicationOperator {
     private String catalogServerPort;
 
     private final static String[] makeflowArgs =
-        {
-            "-T", "wq", //batch system
-            "-p", "-1", //random port
-            "-C", LOOKUP_KEY_CATALOGSERVER_INFO, "-a", //catalog server and advertise makeflow to catalog server
-            "-N", LOOKUP_KEY_TASK_NAME //project name
-        };
+            {
+                    "-T", "wq", //batch system
+                    "-p", "-1", //random port
+                    "-C", LOOKUP_KEY_CATALOGSERVER_INFO, "-a", //catalog server and advertise makeflow to catalog server
+                    "-N", LOOKUP_KEY_TASK_NAME //project name
+            };
 
     private final static String[] workerArgs = {
-        "-s", "-t", "21600", //max idle time
-        "-C", LOOKUP_KEY_CATALOGSERVER_INFO, "-a", //catalog server and advertise makeflow to catalog server
-        //"-N", taskName
+            "-s", "-t", "21600", //max idle time
+            "-C", LOOKUP_KEY_CATALOGSERVER_INFO, "-a", //catalog server and advertise makeflow to catalog server
+            //"-N", taskName
     };
 
     public CctoolsOperator(String storagePath, String packageName, String flagFile, String param) {
@@ -102,14 +102,17 @@ public class CctoolsOperator extends AbstractApplicationOperator {
         return true;
     }
 
-    private ProcessBuilder buildProcessBuilder(List<String> args) {
+    public ProcessBuilder buildProcessBuilder(String taskDir, List<String> args) {
         boolean isEnvironmentVarialbeSet = false;
 
         if (cygwinBinPath == null || cctoolsBinPath == null)
             this.setPaths();
 
         ProcessBuilder pb = new ProcessBuilder(args);
-        pb.directory(new File(cctoolsBinPath));
+        if(taskDir==null)
+            pb.directory(new File(cctoolsBinPath));
+        else
+            pb.directory(new File(taskDir));
         pb.redirectErrorStream(true);
 
         if (!isEnvironmentVarialbeSet) {
@@ -133,6 +136,7 @@ public class CctoolsOperator extends AbstractApplicationOperator {
 
     public boolean startMakeflow(boolean isClean, String taskName, String taskFileName, String taskDirectory) {
         boolean rtnVal = false;
+        Process process = null;
 
         try {
             this.isCatalogServerInfoAvailable();
@@ -154,38 +158,53 @@ public class CctoolsOperator extends AbstractApplicationOperator {
                         }
                         processArgs.add(currFile.getPath());
 
-                        ProcessBuilder pb = this.buildProcessBuilder(processArgs);
-                        pb.directory(new File(taskDirectory));
-                        Process process = pb.start();
+                        ProcessBuilder pb = this.buildProcessBuilder(taskDirectory, processArgs);
+                        Map<String, String> env = pb.environment();
+                        for (String key : env.keySet()) {
+                            if(key.toLowerCase().equals("path"))
+                                System.err.println("ProcessBuilder Path:" + env.get(key));
+                        }
+
+                        process = pb.start();
                         processes.add(process);
 
                         boolean mfSucceded = true;
-                        BufferedReader ireader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+                        /*BufferedReader ireader = new BufferedReader(new InputStreamReader(process.getInputStream()));
                         String line;
                         //storageOperator.enqueue( StaticValues.QUEUE_JOBQUEUE_NAME, taskName );
                         while ((line = ireader.readLine()) != null) {
                             if(line.toLowerCase().contains("workflow failed")) //makeflow fails
                                 mfSucceded = false;
                             System.out.println("MAKEFLOW OUTPUT: " + line);
-                        }
+                        }*/
+                        LogStreamReader errorGobbler = new LogStreamReader(process.getErrorStream(), "MAKEFLOW ERROR");
+                        LogStreamReader outputGobbler = new LogStreamReader(process.getInputStream(), "MAKEFLOW OUTPUT");
+                        errorGobbler.start();
+                        outputGobbler.start();
+
+                        mfSucceded = process.waitFor()==0;
 
                         System.out.printf("Makeflow process for job(%s) has been completed.%n", taskName);
 
                         rtnVal = mfSucceded;
                     } else
                         throw new Exception("CCTOOLS-startMakeflow(): Makeflow(task) file does not exist!");
-
                 } else
                     throw new Exception("CCTOOLS-startMakeflow(): Task directory does not exist!");
             }
         } catch (Exception e) {
             e.printStackTrace();
+        } finally {
+            if(processes!=null && processes.contains(process))
+                processes.remove(process);
         }
         return rtnVal;
     }
 
     public boolean startWorkQ() {
         boolean rtnVal = false;
+        Process process = null;
+
         try {
             this.isCatalogServerInfoAvailable();
             //String taskName = storageOperator.dequeue( StaticValues.QUEUE_JOBQUEUE_NAME, true );
@@ -195,20 +214,23 @@ public class CctoolsOperator extends AbstractApplicationOperator {
             processArgs.addAll(Arrays.asList(workerArgs));
             processArgs.set(processArgs.indexOf(LOOKUP_KEY_CATALOGSERVER_INFO), catalogServerAddress + ":" + catalogServerPort);
 
-            ProcessBuilder pb = this.buildProcessBuilder(processArgs);
-            Process process = pb.start();
+            ProcessBuilder pb = this.buildProcessBuilder(null, processArgs);
+            process = pb.start();
             processes.add(process);
 
-            LogStreamReader lsr = new LogStreamReader(process.getInputStream());
-            Thread thread = new Thread(lsr, "LogStreamReader");
-            thread.start();
+            LogStreamReader errorGobbler = new LogStreamReader(process.getErrorStream(), "WORKER ERROR");
+            LogStreamReader outputGobbler = new LogStreamReader(process.getInputStream(), "WORKER OUTPUT");
+            errorGobbler.start();
+            outputGobbler.start();
 
             process.waitFor();
+            rtnVal = process.waitFor()==0;
             System.out.println("worker process has been completed.");
-
-            rtnVal = true;
         } catch (Exception e) {
             e.printStackTrace();
+        } finally {
+            if(processes!=null && processes.contains(process))
+                processes.remove(process);
         }
         return rtnVal;
     }
@@ -224,7 +246,7 @@ public class CctoolsOperator extends AbstractApplicationOperator {
             processArgs.add("-p");
             processArgs.add(catalogServerPort);
 
-            ProcessBuilder pb = this.buildProcessBuilder(processArgs);
+            ProcessBuilder pb = this.buildProcessBuilder(null, processArgs);
             Process process = pb.start();
             processes.add(process);
 
@@ -303,24 +325,77 @@ public class CctoolsOperator extends AbstractApplicationOperator {
         return catalogServerInfo;
     }
 
-    public class LogStreamReader implements Runnable {
-        private BufferedReader reader;
-        public LogStreamReader(InputStream is) {
-            this.reader = new BufferedReader(new InputStreamReader(is));
+    public boolean startBash(String taskFileName, String taskDirectory) {
+        boolean rtnVal = false;
+        Process process = null;
+        try {
+            File currFile = new File(ToolPool.buildFilePath(taskDirectory,taskFileName));
+            if (currFile.exists() || currFile.canRead()) {
+
+                List<String> processArgs = new ArrayList<String>();
+                processArgs.add(ToolPool.buildFilePath(cygwinBinPath, "bash"));
+                processArgs.add(currFile.getPath());
+
+                ProcessBuilder pb = this.buildProcessBuilder(taskDirectory, processArgs);
+                process = pb.start();
+                processes.add(process);
+
+                LogStreamReader errorGobbler = new LogStreamReader(process.getErrorStream(), "BASH ERROR");
+                LogStreamReader outputGobbler = new LogStreamReader(process.getInputStream(), "BASH OUTPUT");
+                errorGobbler.start();
+                outputGobbler.start();
+
+                rtnVal = process.waitFor()==0;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            if(processes!=null && processes.contains(process))
+                processes.remove(process);
+        }
+        return rtnVal;
+    }
+
+    public boolean startExe(String taskFileName, String taskDirectory) {
+        boolean rtnVal = false;
+        try {
+            File currFile = new File(ToolPool.buildFilePath(taskDirectory,taskFileName));
+            if (currFile.exists() || currFile.canRead()) {
+                Process process = Runtime.getRuntime().exec(taskFileName);
+
+                LogStreamReader errorGobbler = new LogStreamReader(process.getErrorStream(), "EXE ERROR");
+                LogStreamReader outputGobbler = new LogStreamReader(process.getInputStream(), "EXE OUTPUT");
+                errorGobbler.start();
+                outputGobbler.start();
+
+                rtnVal = process.waitFor()==0;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+        }
+        return rtnVal;
+    }
+
+    class LogStreamReader extends Thread {
+        InputStream is;
+        String type;
+
+        LogStreamReader(InputStream is, String type) {
+            this.is = is;
+            this.type = type;
         }
 
         public void run() {
             try {
-                String line = reader.readLine();
-                while (line != null) {
-                    System.out.println(line);
-                    line = reader.readLine();
-                }
-                reader.close();
-            } catch (IOException e) {
-                e.printStackTrace();
+                InputStreamReader isr = new InputStreamReader(is);
+                BufferedReader br = new BufferedReader(isr);
+                String line=null;
+                while ( (line = br.readLine()) != null)
+                    System.out.println(type + ">" + line);
+            } catch (IOException ioe) {
+                ioe.printStackTrace();
             }
         }
     }
-
 }

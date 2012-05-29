@@ -21,6 +21,7 @@
 
 package pdl.operator.service;
 
+import org.apache.commons.io.FileUtils;
 import pdl.cloud.model.FileInfo;
 import pdl.cloud.model.JobDetail;
 import pdl.common.Configuration;
@@ -53,22 +54,25 @@ public class JobExecutor extends Thread {
         this(new ThreadGroup("worker"), currJob, operator);
     }
 
-    public void run() {
-        try {
-            if (currJob != null && currJob.getJobUUID() != null) {
-                boolean jobExecuted = executeJob();
-                if (!jobExecuted) {
-                    throw new Exception(String.format("Job Execution Failed for UUID: '%s'%n", this.toString()));
-                }
-            }
-
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
-
+    @Override
+    public String toString() {
+        /**
+         * This method overrides toString() in order to provide job ID to RejectedJobExecutorHandler
+         * in case this thread gets rejected by Asynchronous Queue
+         */
+        return currJob.getJobUUID();
     }
 
-    private boolean executeJob() throws Exception {
+    public void run() {
+        if (currJob != null && currJob.getJobUUID() != null) {
+            boolean jobExecuted = executeJob();
+            if (!jobExecuted) {
+                System.err.printf("Job Execution Failed for UUID: '%s'%n", this.toString());
+            }
+        }
+    }
+
+    private boolean executeJob() {
         boolean rtnVal = false;
 
         try {
@@ -82,15 +86,22 @@ public class JobExecutor extends Thread {
 
                 String workDirPath = createJobDirectoryIfNotExist(jobID);
                 if (workDirPath != null) {
-                    //executes universal job script then waits until its execution finishes
-                    //TODO This part should be replaced to python execution code
-                    this.tempExecuteJob(workDirPath);
+                    if(currJob.getInput()!=null)
+                        this.createInputJsonFile(workDirPath);
+
+                    String jobName = currJob.getJobName();
+                    if(jobName.equals(StaticValues.SPECIAL_EXECUTION_JOB))
+                        this.genericJobExecution(workDirPath);
+                    else
+                        //executes universal job script then waits until its execution finishes
+                        //TODO This part should be replaced to python execution code
+                        this.tempExecuteJob(workDirPath);
                     rtnVal = true;
                 } else
                     throw new Exception("Creating task area failed!");
             }
         } catch (Exception ex) {
-            throw ex;
+            ex.printStackTrace();
         }
 
         return rtnVal;
@@ -122,46 +133,81 @@ public class JobExecutor extends Thread {
         return ToolPool.buildFilePath(jobDir, null);
     }
 
-    private String validateJobFiles(String workingDirectory) throws Exception {
-        FileTool fileTool = new FileTool();
-        String makefileName = "make.makeflow";
+    private boolean createInputJsonFile(String workDir) throws Exception {
+        boolean rtnVal;
 
-        if(currJob.getMakeflowFileUUID()!=null) {
-            FileInfo makeFile = fileTool.getFileInfoById(currJob.getMakeflowFileUUID());
-            if(makeFile!=null) {
-                String currMakeFilePath = ToolPool.buildFilePath(makeFile.getPath(), makeFile.getName());
-                String newMakefilePath = ToolPool.buildFilePath(workingDirectory, makefileName);
-                if(!fileTool.copyFromDatastore(currMakeFilePath, newMakefilePath))
-                    throw new Exception("Copying Makefile failed.");
-            } else {
-                throw new Exception("Makefile does not exit in files table - " + currJob.getMakeflowFileUUID());
-            }
+        try {
+            String jsonInputPath = ToolPool.buildFilePath(workDir, StaticValues.FILE_JOB_INPUT);
+            FileUtils.writeStringToFile(new File(jsonInputPath), currJob.getInput());
+
+            rtnVal = ToolPool.canReadFile(jsonInputPath);
+        } catch(Exception ex) {
+            throw ex;
         }
 
-        if(currJob.getInputFileUUID()!=null) {
-            FileInfo inputFile = fileTool.getFileInfoById(currJob.getInputFileUUID());
-            if(inputFile!=null) {
-                String currInputFilePath = ToolPool.buildFilePath(inputFile.getPath(), inputFile.getName());
-                String newInputfilePath = ToolPool.buildFilePath(workingDirectory, "input" + StaticValues.FILE_EXTENSION);
-                if(!fileTool.copyFromDatastore(currInputFilePath, newInputfilePath))
-                    throw new Exception("Copying input file failed.");
-            } else {
-                throw new Exception("Input file does not exit in files table - " + currJob.getInputFileUUID());
-            }
+        return rtnVal;
+    }
+
+    private void genericJobExecution(String workDir) throws Exception {
+        JobHandler jobHandler = new JobHandler();
+
+        try {
+            if(currJob.getInput()!=null) {
+                Map<String, Object> inputInMap = ToolPool.jsonStringToMap(currJob.getInput());
+                String interpreter = null;
+
+                Object mapObject = inputInMap.get("interpreter");
+                if(mapObject!=null)
+                    interpreter = (String)mapObject;
+
+                mapObject = inputInMap.get("script");
+                if(mapObject!=null) {
+                    String scriptID = (String)mapObject;
+                    if(scriptID.trim().isEmpty())
+                        throw new Exception("script is not given!");
+                    currJob.setScriptFileUUID(scriptID);
+                }
+                mapObject = inputInMap.get("input");
+                if(mapObject!=null) {
+                    String inputID = (String)mapObject;
+                    if(!inputID.trim().isEmpty())
+                        currJob.setInputFileUUID(inputID);
+                }
+
+                String fileExtension = interpreter==null||interpreter.isEmpty()?"exe":"sh";
+                String scriptFile = this.validateJobFiles(workDir, fileExtension);
+
+                jobHandler.updateJobStatus(currJob.getJobUUID(), StaticValues.JOB_STATUS_RUNNING, null);
+
+                boolean executed = false;
+                if(interpreter!=null) {
+                    if(interpreter.equals("makeflow"))
+                        executed = cctoolsOperator.startMakeflow(false, currJob.getJobUUID(), scriptFile, workDir);
+                } else if(interpreter.equals("bash")) {
+                    executed = cctoolsOperator.startBash(scriptFile, workDir);
+                } else {
+
+                }
+
+                boolean outputUploaded = false;
+                if(executed) {
+                    String outputFilePath = ToolPool.buildFilePath(workDir, "output" + StaticValues.FILE_EXTENSION);
+
+                    FileTool fileTool = new FileTool();
+                    String outputFileId = fileTool.createFile(null, new FileInputStream(outputFilePath), currJob.getUserId());
+
+                    if(outputFileId!=null && !outputFileId.isEmpty())
+                        jobHandler.updateJobStatus(currJob.getJobUUID(), StaticValues.JOB_STATUS_COMPLETED, outputFileId);
+                } else { //error while executing makeflow
+                    throw new Exception("Job Execution Failed");
+                }
+            } else
+                throw new Exception("input data is empty.");
+        } catch (Exception ex) {
+            jobHandler.updateJobStatus(currJob.getJobUUID(), StaticValues.JOB_STATUS_FAILED, null);
+            ex.printStackTrace();
         }
-
-        return makefileName;
     }
-
-    @Override
-    public String toString() {
-        /**
-         * This method overrides toString() in order to provide job ID to RejectedJobExecutorHandler
-         * in case this thread gets rejected by Asynchronous Queue
-         */
-        return currJob.getJobUUID();
-    }
-
 
     /*
      *Temporary methods for big test
@@ -177,17 +223,18 @@ public class JobExecutor extends Thread {
             if(currJob.getInput()!=null) {
                 Map<String, Object> inputInMap = ToolPool.jsonStringToMap(currJob.getInput());
 
-                if(currJob.getInputFileUUID()==null || currJob.getMakeflowFileUUID()==null) {
-                    String makeflowFileID = (String)inputInMap.get("mfile");
-                    String inputFileID = (String)inputInMap.get("ifile");
-                    if(makeflowFileID==null || makeflowFileID.isEmpty() || inputFileID==null || inputFileID.isEmpty()) {
-                        throw new Exception("makeflow or input file is NULL!");
-                    }
-                    currJob.setInputFileUUID(inputFileID);
-                    currJob.setMakeflowFileUUID(makeflowFileID);
+                if(currJob.getInputFileUUID()==null || currJob.getScriptFileUUID()==null) {
+                    String scriptID = (String)inputInMap.get("script");
+                    if(scriptID==null || scriptID.isEmpty())
+                        throw new Exception("script is not given!");
+                    currJob.setScriptFileUUID(scriptID);
+
+                    String inputID = (String)inputInMap.get("input");
+                    if(inputID!=null && inputID.isEmpty())
+                        currJob.setInputFileUUID(inputID);
                 }
 
-                mfFile = validateJobFiles(workDir);
+                mfFile = validateJobFiles(workDir, "sh");
             }
             jobHandler.updateJobStatus(currJob.getJobUUID(), StaticValues.JOB_STATUS_RUNNING, null);
 
@@ -209,9 +256,34 @@ public class JobExecutor extends Thread {
             jobHandler.updateJobStatus(currJob.getJobUUID(), StaticValues.JOB_STATUS_FAILED, null);
         }
     }
+    private String validateJobFiles(String workingDirectory, String fileExt) throws Exception {
+        FileTool fileTool = new FileTool();
+        String scriptFileName = "script." + fileExt;
 
-    private String createMakeflowFile() throws Exception {
-        String mfFilePath = null;
-        return mfFilePath;
+        if(currJob.getScriptFileUUID()!=null) {
+            FileInfo scriptFile = fileTool.getFileInfoById(currJob.getScriptFileUUID());
+            if(scriptFile!=null) {
+                if(!fileTool.copyFromDatastore(
+                        ToolPool.buildFilePath(scriptFile.getPath(), scriptFile.getName()),
+                        ToolPool.buildFilePath(workingDirectory, scriptFileName)))
+                    throw new Exception("Copying script file failed.");
+            } else {
+                throw new Exception("script file record does not exit - " + currJob.getScriptFileUUID());
+            }
+        }
+
+        if(currJob.getInputFileUUID()!=null) {
+            FileInfo inputFile = fileTool.getFileInfoById(currJob.getInputFileUUID());
+            if(inputFile!=null) {
+                if(!fileTool.copyFromDatastore(
+                        ToolPool.buildFilePath(inputFile.getPath(), inputFile.getName()),
+                        ToolPool.buildFilePath(workingDirectory, "input" + StaticValues.FILE_EXTENSION)))
+                    throw new Exception("Copying input file failed.");
+            } else {
+                throw new Exception("Input file record does not exit - " + currJob.getInputFileUUID());
+            }
+        }
+
+        return scriptFileName;
     }
 }
