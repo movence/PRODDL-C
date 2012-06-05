@@ -209,7 +209,7 @@ public class JobManager {
 
             if (retrievedJob != null && retrievedJob.getClass() == JobDetail.class) {
                 job = (JobDetail) retrievedJob;
-                this.updateJobStatus(job.getJobUUID(), StaticValues.JOB_STATUS_PENDING, null);
+                this.updateJobStatus(job.getJobUUID(), StaticValues.JOB_STATUS_PENDING, null, null);
                 this.reorderSubmittedJobs();
             }
 
@@ -229,7 +229,7 @@ public class JobManager {
      * @return boolean
      * @throws Exception
      */
-    public boolean updateJobStatus(String jobId, int status, String resultFileName) throws Exception {
+    public boolean updateJobStatus(String jobId, int status, String resultFileName, String logFile) throws Exception {
         boolean rtnVal = false;
 
         try {
@@ -242,6 +242,8 @@ public class JobManager {
 
                 if(resultFileName!=null && !resultFileName.isEmpty())
                     entity.setResult(resultFileName);
+                if(logFile!=null && !logFile.isEmpty())
+                    entity.setLog(logFile);
 
                 rtnVal = tableOperator.updateSingleEntity(jobDetailTableName, entity);
             }
@@ -258,7 +260,7 @@ public class JobManager {
 
             for (ITableServiceEntity entity : jobList) {
                 JobDetail currJob = (JobDetail) entity;
-                updateJobStatus(currJob.getJobUUID(), newStatus, null);
+                updateJobStatus(currJob.getJobUUID(), newStatus, null, null);
             }
         } catch (Exception ex) {
             throw ex;

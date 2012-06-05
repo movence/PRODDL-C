@@ -41,6 +41,7 @@ public class JobDetail extends AbstractTableServiceEntity {
     private int priority;
     private String input;
     private String result;
+    private String log;
     private String jobDirectory;
 
     public JobDetail(String partitionKey, String rowKey) {
@@ -141,5 +142,13 @@ public class JobDetail extends AbstractTableServiceEntity {
 
     public void setJobDirectory(String jobDirectory) {
         this.jobDirectory = jobDirectory;
+    }
+
+    public String getLog() {
+        return log;
+    }
+
+    public void setLog(String log) {
+        this.log = log;
     }
 }
