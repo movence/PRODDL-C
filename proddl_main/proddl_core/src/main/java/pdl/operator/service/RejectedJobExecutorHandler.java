@@ -43,6 +43,6 @@ public class RejectedJobExecutorHandler implements RejectedExecutionHandler {
     @Override
     public void rejectedExecution(Runnable runnable, ThreadPoolExecutor executor) {
         JobHandler jobHandler = new JobHandler();
-        jobHandler.updateJobStatus(runnable.toString(), StaticValues.JOB_STATUS_SUBMITTED, null);
+        jobHandler.updateJobStatus(runnable.toString(), StaticValues.JOB_STATUS_SUBMITTED, null, null);
     }
 }

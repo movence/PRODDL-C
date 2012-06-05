@@ -196,7 +196,6 @@ public class ServiceOperatorHelper {
         while (true) {
             JobDetail submittedJob = jobHandler.getSubmmittedJob();
             if (submittedJob != null) {
-                System.err.println(submittedJob.getJobUUID());
                 JobExecutor jobExecutor = new JobExecutor(threadGroup, submittedJob, cctoolsOperator);
                 threadExecutor.execute(jobExecutor);
             }

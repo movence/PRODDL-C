@@ -62,10 +62,10 @@ public class JobHandler {
         return currJob;
     }
 
-    public boolean updateJobStatus(String jobUUID, int status, String resultFile) {
+    public boolean updateJobStatus(String jobUUID, int status, String resultFile, String logFile) {
         boolean rtnVal = false;
         try {
-            rtnVal = jobManager.updateJobStatus(jobUUID, status, resultFile);
+            rtnVal = jobManager.updateJobStatus(jobUUID, status, resultFile, logFile);
         } catch (Exception ex) {
             ex.printStackTrace();
         }

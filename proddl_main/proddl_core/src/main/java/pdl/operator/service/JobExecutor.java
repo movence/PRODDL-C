@@ -177,7 +177,7 @@ public class JobExecutor extends Thread {
                 String fileExtension = interpreter==null||interpreter.isEmpty()?"exe":"sh";
                 String scriptFile = this.validateJobFiles(workDir, fileExtension);
 
-                jobHandler.updateJobStatus(currJob.getJobUUID(), StaticValues.JOB_STATUS_RUNNING, null);
+                jobHandler.updateJobStatus(currJob.getJobUUID(), StaticValues.JOB_STATUS_RUNNING, null, null);
 
                 boolean executed = false;
                 if(interpreter!=null) {
@@ -191,20 +191,27 @@ public class JobExecutor extends Thread {
 
                 boolean outputUploaded = false;
                 if(executed) {
-                    String outputFilePath = ToolPool.buildFilePath(workDir, "output" + StaticValues.FILE_EXTENSION);
-
                     FileTool fileTool = new FileTool();
-                    String outputFileId = fileTool.createFile(null, new FileInputStream(outputFilePath), currJob.getUserId());
+                    //task output
+                    String outputFileId = null;
+                    String outputFilePath = ToolPool.buildFilePath(workDir, "output" + StaticValues.FILE_EXTENSION);
+                    if(ToolPool.canReadFile(outputFilePath))
+                        outputFileId = fileTool.createFile(null, new FileInputStream(outputFilePath), currJob.getUserId());
+                    //log file
+                    String logFilePath = ToolPool.buildFilePath(workDir, "final.log");
+                    String logFileId = null;
+                    if(ToolPool.canReadFile(logFilePath))
+                        logFileId = fileTool.createFile(null, new FileInputStream(ToolPool.buildFilePath(workDir, "final.log")), currJob.getUserId());
 
-                    if(outputFileId!=null && !outputFileId.isEmpty())
-                        jobHandler.updateJobStatus(currJob.getJobUUID(), StaticValues.JOB_STATUS_COMPLETED, outputFileId);
+                    //if(outputFileId!=null && !outputFileId.isEmpty())
+                    jobHandler.updateJobStatus(currJob.getJobUUID(), StaticValues.JOB_STATUS_COMPLETED, outputFileId, logFileId);
                 } else { //error while executing makeflow
                     throw new Exception("Job Execution Failed");
                 }
             } else
                 throw new Exception("input data is empty.");
         } catch (Exception ex) {
-            jobHandler.updateJobStatus(currJob.getJobUUID(), StaticValues.JOB_STATUS_FAILED, null);
+            jobHandler.updateJobStatus(currJob.getJobUUID(), StaticValues.JOB_STATUS_FAILED, null, null);
             ex.printStackTrace();
         }
     }
@@ -236,24 +243,28 @@ public class JobExecutor extends Thread {
 
                 mfFile = validateJobFiles(workDir, "sh");
             }
-            jobHandler.updateJobStatus(currJob.getJobUUID(), StaticValues.JOB_STATUS_RUNNING, null);
+            jobHandler.updateJobStatus(currJob.getJobUUID(), StaticValues.JOB_STATUS_RUNNING, null, null);
 
             boolean executed = cctoolsOperator.startMakeflow(false, currJob.getJobUUID(), mfFile, workDir);
-            boolean outputUploaded = false;
             if(executed) {
                 String outputFilePath = ToolPool.buildFilePath(workDir, "output" + StaticValues.FILE_EXTENSION);
 
                 FileTool fileTool = new FileTool();
                 String outputFileId = fileTool.createFile(null, new FileInputStream(outputFilePath), currJob.getUserId());
+                //log file
+                String logFileId = null;
+                String logFilePath = ToolPool.buildFilePath(workDir, "final.log");
+                if(ToolPool.canReadFile(logFilePath))
+                    logFileId = fileTool.createFile(null, new FileInputStream(ToolPool.buildFilePath(workDir, "final.log")), currJob.getUserId());
 
-                if(outputFileId!=null && !outputFileId.isEmpty())
-                    jobHandler.updateJobStatus(currJob.getJobUUID(), StaticValues.JOB_STATUS_COMPLETED, outputFileId);
+                //if(outputFileId!=null && !outputFileId.isEmpty())
+                jobHandler.updateJobStatus(currJob.getJobUUID(), StaticValues.JOB_STATUS_COMPLETED, outputFileId, logFileId);
             } else { //error while executing makeflow
                 throw new Exception("Job Execution Failed");
             }
         } catch(Exception ex) {
             ex.printStackTrace();
-            jobHandler.updateJobStatus(currJob.getJobUUID(), StaticValues.JOB_STATUS_FAILED, null);
+            jobHandler.updateJobStatus(currJob.getJobUUID(), StaticValues.JOB_STATUS_FAILED, null, null);
         }
     }
     private String validateJobFiles(String workingDirectory, String fileExt) throws Exception {

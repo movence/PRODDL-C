@@ -115,22 +115,20 @@ public class CctoolsOperator extends AbstractApplicationOperator {
             pb.directory(new File(taskDir));
         pb.redirectErrorStream(true);
 
-        if (!isEnvironmentVarialbeSet) {
-            Map<String, String> env = pb.environment();
-            for (String key : env.keySet()) {
-                if (key.toLowerCase().equals("path")) {
-                    env.put(key, cygwinBinPath + File.pathSeparator + cctoolsBinPath + File.pathSeparator + env.get(key));
-                    isEnvironmentVarialbeSet = true;
-                    break;
-                }
-            }
-
-            //If no Path variable found in environment, add it
-            if(!isEnvironmentVarialbeSet) {
-                env.put("path", cygwinBinPath + File.pathSeparator + cctoolsBinPath);
+        Map<String, String> env = pb.environment();
+        for (String key : env.keySet()) {
+            if (key.toLowerCase().equals("path")) {
+                env.put(key, cygwinBinPath + File.pathSeparator + cctoolsBinPath + File.pathSeparator + env.get(key));
                 isEnvironmentVarialbeSet = true;
+                break;
             }
         }
+
+        //If no Path variable found in environment, add it
+        if(!isEnvironmentVarialbeSet) {
+            env.put("path", cygwinBinPath + File.pathSeparator + cctoolsBinPath);
+        }
+
         return pb;
     }
 
@@ -159,16 +157,9 @@ public class CctoolsOperator extends AbstractApplicationOperator {
                         processArgs.add(currFile.getPath());
 
                         ProcessBuilder pb = this.buildProcessBuilder(taskDirectory, processArgs);
-                        Map<String, String> env = pb.environment();
-                        for (String key : env.keySet()) {
-                            if(key.toLowerCase().equals("path"))
-                                System.err.println("ProcessBuilder Path:" + env.get(key));
-                        }
-
                         process = pb.start();
                         processes.add(process);
 
-                        boolean mfSucceded = true;
                         /*BufferedReader ireader = new BufferedReader(new InputStreamReader(process.getInputStream()));
                         String line;
                         //storageOperator.enqueue( StaticValues.QUEUE_JOBQUEUE_NAME, taskName );
@@ -182,11 +173,8 @@ public class CctoolsOperator extends AbstractApplicationOperator {
                         errorGobbler.start();
                         outputGobbler.start();
 
-                        mfSucceded = process.waitFor()==0;
-
+                        rtnVal = process.waitFor()==0;
                         System.out.printf("Makeflow process for job(%s) has been completed.%n", taskName);
-
-                        rtnVal = mfSucceded;
                     } else
                         throw new Exception("CCTOOLS-startMakeflow(): Makeflow(task) file does not exist!");
                 } else
@@ -223,9 +211,7 @@ public class CctoolsOperator extends AbstractApplicationOperator {
             errorGobbler.start();
             outputGobbler.start();
 
-            process.waitFor();
             rtnVal = process.waitFor()==0;
-            System.out.println("worker process has been completed.");
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
