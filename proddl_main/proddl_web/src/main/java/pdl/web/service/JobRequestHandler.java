@@ -87,8 +87,6 @@ public class JobRequestHandler {
                         result = "User '%s' has been added.";
                     else
                         result = "Failed to add user.";
-                } else if(jobName.equals("makeflow")) {
-
                 } else {
                     JobDetail jobDetail = new JobDetail(jobName);
                     jobDetail.setJobName(jobName);
@@ -97,7 +95,7 @@ public class JobRequestHandler {
 
                     if (inputInMap!=null) {
                         inputInMap.put("job", jobName);
-                        inputInMap.put("username", userName);
+                        inputInMap.put("user", userName);
 
                         jobDetail.setInput(ToolPool.jsonMapToString(inputInMap));
                     }
@@ -261,7 +259,7 @@ public class JobRequestHandler {
 
             fileService.getFilePathById(resultFileId);
 
-            boolean result = manager.updateJobStatus(jobId, status, resultFileId);
+            boolean result = manager.updateJobStatus(jobId, status, resultFileId, null);
             rtnVal.put("result", ""+(result?1:0));
 
         } catch(Exception ex) {

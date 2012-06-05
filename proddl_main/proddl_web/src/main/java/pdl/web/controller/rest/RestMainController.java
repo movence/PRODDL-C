@@ -178,13 +178,13 @@ public class RestMainController {
      * @format curl <ip address>:<port>/pdl/r/file/get/?id=<file id> -u <user id>:<pass> -o <filename> -X POST|GET
      */
     @RequestMapping(value = "file/get", method = {RequestMethod.POST, RequestMethod.GET})
-    public @ResponseBody Map<String, String> fileDownload(
+    public void fileDownload(
             @RequestParam(value = "id", defaultValue = "") String fileId,
             Principal principal,
             HttpServletResponse res) {
 
-        Map<String, String> rtnJson = handler.downloadFile(fileId, res, principal.getName());
-        return rtnJson;
+        handler.downloadFile(fileId, res, principal.getName());
+        return;
     }
 
     /**
