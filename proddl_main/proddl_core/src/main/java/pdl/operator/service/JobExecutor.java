@@ -183,8 +183,8 @@ public class JobExecutor extends Thread {
                 if(interpreter!=null) {
                     if(interpreter.equals("makeflow"))
                         executed = cctoolsOperator.startMakeflow(false, currJob.getJobUUID(), scriptFile, workDir);
-                } else if(interpreter.equals("bash")) {
-                    executed = cctoolsOperator.startBash(scriptFile, workDir);
+                    else if(interpreter.equals("bash"))
+                        executed = cctoolsOperator.startBash(scriptFile, workDir);
                 } else {
 
                 }
@@ -217,8 +217,8 @@ public class JobExecutor extends Thread {
     }
 
     /*
-     *Temporary methods for big test
-     */
+    *Temporary methods for big test
+    */
     //TODO remove this test methods
     private void tempExecuteJob(String workDir) {
         //update job status and result information
