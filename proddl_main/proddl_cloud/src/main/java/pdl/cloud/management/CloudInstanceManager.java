@@ -186,7 +186,9 @@ public class CloudInstanceManager {
                                 break;
                             }
 
-                            currentInstanceCount--;
+                            //currentInstanceCount--;
+                            //reduce number of instances by half
+                            currentInstanceCount/=2;
                         }
                         instanceCountElement.setAttribute("count", currentInstanceCount + "");
 

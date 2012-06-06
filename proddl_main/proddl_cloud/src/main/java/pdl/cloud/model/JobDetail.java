@@ -99,6 +99,7 @@ public class JobDetail extends AbstractTableServiceEntity {
      */
     public String getStatusInString() {
         return status==StaticValues.JOB_STATUS_SUBMITTED?"submitted"
+                :status==StaticValues.JOB_STATUS_PENDING?"pending"
                 :status==StaticValues.JOB_STATUS_RUNNING?"running"
                 :status==StaticValues.JOB_STATUS_COMPLETED?"finished"
                 :"failed";
