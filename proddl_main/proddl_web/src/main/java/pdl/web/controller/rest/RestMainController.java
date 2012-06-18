@@ -84,12 +84,12 @@ public class RestMainController {
      * @return job submission result in json format
      * @format curl <ip address>:<port>/pdl/r/job/<jobname> -u <user id>:<pass>
      */
-    @RequestMapping(value = "job/{name}", method = RequestMethod.GET)
+    /*@RequestMapping(value = "job/{name}", method = RequestMethod.GET)
     public @ResponseBody Map<String, Object> jobRunner(@PathVariable("name") String jobName, Principal principal) {
 
         Map<String, Object> jobResult = handler.submitJob(jobName, null, principal.getName());
         return jobResult;
-    }
+    }*/
 
     /**
      * queries job status with given job id
