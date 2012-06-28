@@ -45,6 +45,9 @@ public class CctoolsOperator extends AbstractApplicationOperator {
     private static final String KEY_DYNAMIC_DATA_CATALOGSERVERPORT = "CatalogServerPort";
     private static final String LOOKUP_KEY_CATALOGSERVER_INFO = "$catalogServer";
     private static final String LOOKUP_KEY_TASK_NAME = "$taskName";
+    private static final String LOOKUP_KEY_PORT = "$port";
+
+    private static final String GENERIC_TASK_NAME = "proddl";
 
     private Configuration conf;
 
@@ -56,18 +59,23 @@ public class CctoolsOperator extends AbstractApplicationOperator {
     private String catalogServerAddress;
     private String catalogServerPort;
 
-    private final static String[] makeflowArgs =
-            {
-                    "-T", "wq", //batch system
-                    "-p", "-1", //random port
-                    "-C", LOOKUP_KEY_CATALOGSERVER_INFO, "-a", //catalog server and advertise makeflow to catalog server
-                    "-N", LOOKUP_KEY_TASK_NAME //project name
-            };
+    private int makeflowPort = 10000;
+
+    private final static String[] makeflowArgs = {
+            "-T", "wq", //batch system
+            "-p", LOOKUP_KEY_PORT, //random port
+            "-C", LOOKUP_KEY_CATALOGSERVER_INFO, "-a", //catalog server and advertise makeflow to catalog server
+            "-N", LOOKUP_KEY_TASK_NAME, //LOOKUP_KEY_TASK_NAME, //project name
+            "-r", "3" //retry
+
+    };
 
     private final static String[] workerArgs = {
-            "-s", "-t", "21600", //max idle time
+            "-t", "21600", //max idle time
             "-C", LOOKUP_KEY_CATALOGSERVER_INFO, "-a", //catalog server and advertise makeflow to catalog server
-            //"-N", taskName
+            "-z", "1024", //available disk space in MB
+            "-i", "3", //initial back-off time to connection failure to master
+            "-N", LOOKUP_KEY_TASK_NAME
     };
 
     public CctoolsOperator(String storagePath, String packageName, String flagFile, String param) {
@@ -99,6 +107,10 @@ public class CctoolsOperator extends AbstractApplicationOperator {
     }
 
     public boolean start(String param) {
+        //create /tmp directory under cctools
+        File tmpDir = new File(ToolPool.buildFilePath(packagePath, "tmp"));
+        if(!tmpDir.exists() || !tmpDir.isDirectory())
+            tmpDir.mkdir();
         return true;
     }
 
@@ -145,14 +157,16 @@ public class CctoolsOperator extends AbstractApplicationOperator {
                     if (currFile.exists() || currFile.canRead()) {
 
                         List<String> processArgs = new ArrayList<String>();
-                        processArgs.add(ToolPool.buildFilePath(cctoolsBinPath, "makeflow"));
+                        processArgs.add(cctoolsBinPath+"makeflow");
 
                         if(isClean)
                             processArgs.add("-c"); //clean up log files and all targets
                         else {
                             processArgs.addAll(Arrays.asList(makeflowArgs));
                             processArgs.set(processArgs.indexOf(LOOKUP_KEY_CATALOGSERVER_INFO), catalogServerAddress + ":" + catalogServerPort);
-                            processArgs.set(processArgs.indexOf(LOOKUP_KEY_TASK_NAME), taskName);
+                            //processArgs.set(processArgs.indexOf(LOOKUP_KEY_TASK_NAME), taskName);
+                            processArgs.set(processArgs.indexOf(LOOKUP_KEY_TASK_NAME), GENERIC_TASK_NAME);
+                            processArgs.set(processArgs.indexOf(LOOKUP_KEY_PORT), String.valueOf(makeflowPort++));
                         }
                         processArgs.add(currFile.getPath());
 
@@ -160,14 +174,6 @@ public class CctoolsOperator extends AbstractApplicationOperator {
                         process = pb.start();
                         processes.add(process);
 
-                        /*BufferedReader ireader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-                        String line;
-                        //storageOperator.enqueue( StaticValues.QUEUE_JOBQUEUE_NAME, taskName );
-                        while ((line = ireader.readLine()) != null) {
-                            if(line.toLowerCase().contains("workflow failed")) //makeflow fails
-                                mfSucceded = false;
-                            System.out.println("MAKEFLOW OUTPUT: " + line);
-                        }*/
                         LogStreamReader errorGobbler = new LogStreamReader(process.getErrorStream(), "MAKEFLOW ERROR");
                         LogStreamReader outputGobbler = new LogStreamReader(process.getInputStream(), "MAKEFLOW OUTPUT");
                         errorGobbler.start();
@@ -185,6 +191,8 @@ public class CctoolsOperator extends AbstractApplicationOperator {
         } finally {
             if(processes!=null && processes.contains(process))
                 processes.remove(process);
+            if(process!=null)
+                process.destroy();
         }
         return rtnVal;
     }
@@ -198,9 +206,10 @@ public class CctoolsOperator extends AbstractApplicationOperator {
             //String taskName = storageOperator.dequeue( StaticValues.QUEUE_JOBQUEUE_NAME, true );
 
             List<String> processArgs = new ArrayList<String>();
-            processArgs.add(ToolPool.buildFilePath(cctoolsBinPath, "work_queue_worker"));
+            processArgs.add(cctoolsBinPath+"work_queue_worker");
             processArgs.addAll(Arrays.asList(workerArgs));
             processArgs.set(processArgs.indexOf(LOOKUP_KEY_CATALOGSERVER_INFO), catalogServerAddress + ":" + catalogServerPort);
+            processArgs.set(processArgs.indexOf(LOOKUP_KEY_TASK_NAME), GENERIC_TASK_NAME);
 
             ProcessBuilder pb = this.buildProcessBuilder(null, processArgs);
             process = pb.start();
@@ -217,30 +226,44 @@ public class CctoolsOperator extends AbstractApplicationOperator {
         } finally {
             if(processes!=null && processes.contains(process))
                 processes.remove(process);
+            if(process!=null)
+                process.destroy();
         }
         return rtnVal;
     }
 
     public boolean startCatalogServer(String catalogServerAddress, String catalogServerPort) {
+        Process process = null;
         boolean rtnVal = false;
 
         try {
             this.setCatalogServerInfo(catalogServerAddress, catalogServerPort);
 
             List<String> processArgs = new ArrayList<String>();
-            processArgs.add(ToolPool.buildFilePath(cctoolsBinPath, "catalog_server"));
+            processArgs.add(cctoolsBinPath+"catalog_server");
             processArgs.add("-p");
             processArgs.add(catalogServerPort);
 
             ProcessBuilder pb = this.buildProcessBuilder(null, processArgs);
-            Process process = pb.start();
-            processes.add(process);
+            process = pb.start();
+            /*process = Runtime.getRuntime().exec(cctoolsBinPath+"catalog_server" + " -p " + catalogServerPort);
+            processes.add(process);*/
 
-            rtnVal = true;
+            /*LogStreamReader errorGobbler = new LogStreamReader(process.getErrorStream(), "CS ERROR");
+            LogStreamReader outputGobbler = new LogStreamReader(process.getInputStream(), "CS OUTPUT");
+            errorGobbler.start();
+            outputGobbler.start();*/
 
             System.out.println("CctoolsOperator : STARTING CATALOG_SERVER DONE");
+            rtnVal = true;
         } catch (Exception e) {
             e.printStackTrace();
+            if(processes!=null && processes.contains(process))
+                processes.remove(process);
+
+            if(process!=null)
+                process.destroy();
+        } finally {
         }
         return rtnVal;
     }

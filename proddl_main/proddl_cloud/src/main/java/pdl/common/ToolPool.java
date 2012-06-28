@@ -78,8 +78,8 @@ public class ToolPool {
             if(value!=null && !value.isEmpty()) {
                 TypeReference<TreeMap<String,Object>> typeRef = new TypeReference<TreeMap<String,Object>>() {};
                 rtnMap = mapper.readValue(value, typeRef);
-            } else
-                throw new Exception("json data is empty or null!");
+            } /*else
+                throw new Exception("json data is empty or null!");*/
         } catch (Exception ex) {
             ex.printStackTrace();
             throw ex;

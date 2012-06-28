@@ -58,7 +58,6 @@ namespace PRODDLMaster
 			DiagnosticMonitor.Start("DiagnosticConnectionString", dmc);
 
 			RoleEnvironment.Changing += RoleEnvironmentChanging;
-
 			CloudStorageAccount.SetConfigurationSettingPublisher((configName, configSetter) =>
 			{
 				configSetter(RoleEnvironment.GetConfigurationSettingValue(configName));

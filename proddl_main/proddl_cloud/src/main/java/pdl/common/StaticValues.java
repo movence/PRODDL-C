@@ -57,4 +57,7 @@ public class StaticValues {
     public static final String FILE_JOB_INPUT = "input.json";
 
     public static final String SPECIAL_EXECUTION_JOB = "execute";
+
+
+    //ERROR CODE
 }

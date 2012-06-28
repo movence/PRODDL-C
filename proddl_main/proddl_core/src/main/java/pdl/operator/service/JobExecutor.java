@@ -22,6 +22,7 @@
 package pdl.operator.service;
 
 import org.apache.commons.io.FileUtils;
+import pdl.cloud.management.CloudInstanceManager;
 import pdl.cloud.model.FileInfo;
 import pdl.cloud.model.JobDetail;
 import pdl.common.Configuration;
@@ -41,6 +42,7 @@ import java.util.Map;
  * Time: 10:19 AM
  */
 public class JobExecutor extends Thread {
+    private static final String WORKER_INSTANCE_COUNT_KEY = "n_worker";
     private CctoolsOperator cctoolsOperator;
     private JobDetail currJob;
 
@@ -78,27 +80,31 @@ public class JobExecutor extends Thread {
         try {
             if (currJob != null) {
                 String jobID = currJob.getJobUUID();
+                String jobName = currJob.getJobName();
 
                 System.out.printf(
                         "Job Executor('%s') is processing a job - UUID: '%s' JobName: '%s'%n",
-                        Thread.currentThread().getName(), jobID, currJob.getJobName()
+                        Thread.currentThread().getName(), jobID, jobName
                 );
 
-                String workDirPath = createJobDirectoryIfNotExist(jobID);
-                if (workDirPath != null) {
-                    if(currJob.getInput()!=null)
-                        this.createInputJsonFile(workDirPath);
+                if(jobName.equals("scaleup") || jobName.equals("scaledown")) {
+                    rtnVal = this.executeScaleJob(currJob);
+                } else {
+                    String workDirPath = createJobDirectoryIfNotExist(jobID);
+                    if (workDirPath != null) {
+                        if(currJob.getInput()!=null)
+                            this.createInputJsonFile(workDirPath);
 
-                    String jobName = currJob.getJobName();
-                    if(jobName.equals(StaticValues.SPECIAL_EXECUTION_JOB))
-                        this.genericJobExecution(workDirPath);
-                    else
-                        //executes universal job script then waits until its execution finishes
-                        //TODO This part should be replaced to python execution code
-                        this.tempExecuteJob(workDirPath);
-                    rtnVal = true;
-                } else
-                    throw new Exception("Creating task area failed!");
+                        if(jobName.equals(StaticValues.SPECIAL_EXECUTION_JOB))
+                            this.genericJobExecution(workDirPath);
+                        else
+                            //executes universal job script then waits until its execution finishes
+                            //TODO This part should be replaced to python execution code
+                            this.tempExecuteJob(workDirPath);
+                        rtnVal = true;
+                    } else
+                        throw new Exception("Creating task area failed!");
+                }
             }
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -144,6 +150,41 @@ public class JobExecutor extends Thread {
         } catch(Exception ex) {
             throw ex;
         }
+
+        return rtnVal;
+    }
+
+    private void updateJobStatus() {
+    }
+
+    private boolean executeScaleJob(JobDetail job) throws Exception {
+        boolean rtnVal = false;
+        Map<String, Object> inputInMap = null;
+        int workerCount = -1;
+
+        if(currJob.getInput()!=null) {
+            System.err.println(currJob.getInput());
+            inputInMap = ToolPool.jsonStringToMap(currJob.getInput());
+            if(inputInMap.containsKey(WORKER_INSTANCE_COUNT_KEY)) {
+                String strCount = (String)inputInMap.get(WORKER_INSTANCE_COUNT_KEY);
+                System.err.println(strCount);
+                if(!strCount.equals("0"))
+                    workerCount = Integer.parseInt(strCount);
+            }
+        }
+
+        if(workerCount>0) {
+            CloudInstanceManager instanceManager = new CloudInstanceManager();
+            if(job.getJobName().equals("scaleup"))
+                rtnVal = instanceManager.scaleUp(workerCount);
+            else
+                rtnVal = instanceManager.scaleDown(workerCount);
+        } else {
+            rtnVal = false;
+        }
+
+        JobHandler jobHandler = new JobHandler();
+        jobHandler.updateJobStatus(currJob.getJobUUID(), rtnVal?StaticValues.JOB_STATUS_COMPLETED:StaticValues.JOB_STATUS_FAILED, null, null);
 
         return rtnVal;
     }

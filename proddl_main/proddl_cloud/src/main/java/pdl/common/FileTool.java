@@ -87,11 +87,12 @@ public class FileTool {
 
     public String createFile(String type, InputStream fileIn, String username) throws Exception{
         String rtnVal = null;
+        FileOutputStream fileOut = null;
         try {
             FileInfo fileInfo = this.createFileRecord(username);
 
             String newFilePath = ToolPool.buildFilePath(uploadDirectoryPath, fileInfo.getPath(), fileInfo.getName());
-            FileOutputStream fileOut = new FileOutputStream(newFilePath);
+            fileOut = new FileOutputStream(newFilePath);
 
             int readBytes = 0;
             int readBlockSize = 4 * 1024 * 1024;
@@ -101,7 +102,9 @@ public class FileTool {
             }
 
             fileOut.close();
+            fileOut = null;
             fileIn.close();
+            fileIn = null;
 
             //TODO It might need to allow files to be uploaded to other blob containers than jobFiles
             if (type!=null && type.equals("blob")) {
@@ -122,6 +125,11 @@ public class FileTool {
                 rtnVal = fileInfo.getIuuid();
         } catch(Exception ex) {
             throw ex;
+        } finally {
+            if(fileIn!=null)
+                fileIn.close();
+            if(fileOut!=null)
+                fileOut.close();
         }
         return rtnVal;
     }

@@ -23,7 +23,6 @@ package pdl.operator;
 
 import org.soyatec.windowsazure.table.ITableServiceEntity;
 import pdl.cloud.StorageServices;
-import pdl.cloud.management.ScheduledInstanceMonitor;
 import pdl.cloud.model.DynamicData;
 import pdl.cloud.model.JobDetail;
 import pdl.common.Configuration;
@@ -36,7 +35,6 @@ import pdl.operator.app.PythonOperator;
 import pdl.operator.service.*;
 
 import java.io.File;
-import java.util.Timer;
 import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -108,7 +106,7 @@ public class ServiceOperatorHelper {
                             DynamicData.class);
 
                     if(storageData==null)
-                        datasotrePath = storagePath; //System.getProperty("java.io.tmpdir");
+                        datasotrePath = storagePath;
                     else
                         datasotrePath = storageData.getDataValue();
 
@@ -152,10 +150,6 @@ public class ServiceOperatorHelper {
     }
 
     private void runMaster(String jettyPort, String masterAddress, String catalogServerPort) throws Exception {
-        /*JettyOperator jettyOperator = new JettyOperator( storagePath, prop.getProperty( "JETTY_NAME" ) );
-        if( jettyOperator.download( blobOperator, prop.getProperty( "JETTY_FLAG_FILE" ) ) ) {
-            jettyOperator.start( jettyPort );
-        }*/
         JettyThreadedOperator jettyOperator = new JettyThreadedOperator(jettyPort);
         jettyOperator.start();
 
@@ -168,10 +162,15 @@ public class ServiceOperatorHelper {
         }
 
         //Adds processor time monitor to timer
+        /*
+        * Removed instance monitor for manual instance management through REST
+        * by hkim 6/26/12
+        *
         int timeInterval = conf.getIntegerProperty("WORKER_INSTANCE_MONITORING_INTERVAL");
         ScheduledInstanceMonitor instanceMonitor = new ScheduledInstanceMonitor();
         Timer instanceMonitorTimer = new Timer();
         instanceMonitorTimer.scheduleAtFixedRate(instanceMonitor, timeInterval, timeInterval);
+        */
 
         //Job running threads pool
         final JobExecutorThreadPool threadExecutor = new JobExecutorThreadPool(

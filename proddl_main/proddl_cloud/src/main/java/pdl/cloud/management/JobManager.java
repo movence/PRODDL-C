@@ -61,10 +61,14 @@ public class JobManager {
 
             if(jobs!=null && jobs.size()>0) {
                 ArrayList<JobDetail> prioritisedJobList = new ArrayList<JobDetail>();
+                int scaleJobCount = 0;
                 for (ITableServiceEntity job : jobs) {
 
                     JobDetail currJob = (JobDetail) job;
-                    prioritisedJobList.add(currJob);
+                    if(currJob.getJobName().contains("scale")) //set highest priority for scaling jobs
+                        prioritisedJobList.add(scaleJobCount++, currJob);
+                    else
+                        prioritisedJobList.add(currJob);
 
                     //TODO needs more sophisticated reordering mechanism
 
@@ -119,7 +123,7 @@ public class JobManager {
             jobDetail.setStatus(StaticValues.JOB_STATUS_SUBMITTED);
             jobDetail.setPriority(0);
             rtnVal = tableOperator.insertSingleEntity(jobDetailTableName, jobDetail);
-            if( rtnVal )
+            if(rtnVal)
                 this.reorderSubmittedJobs();
             else
                 throw new Exception("Adding job to Azure table failed.");

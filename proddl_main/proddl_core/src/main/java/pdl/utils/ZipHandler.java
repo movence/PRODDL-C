@@ -71,6 +71,8 @@ public class ZipHandler {
                 while ((bytesRead = eis.read(buffer)) != -1) {
                     fos.write(buffer, 0, bytesRead);
                 }
+                fos.close();
+                fos = null;
             }
             System.out.println("ZipHandler - unZip DONE: " + filePath);
 

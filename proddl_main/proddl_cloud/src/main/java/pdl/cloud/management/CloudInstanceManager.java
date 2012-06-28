@@ -140,7 +140,7 @@ public class CloudInstanceManager {
         return deploymentList;
     }
 
-    private boolean scaleService(String flag, String deploymentName) {
+    private boolean scaleService(String flag, String deploymentName, int count) {
         boolean rtnVal = false;
         try {
             List<Deployment> deployments = getDeploymentList();
@@ -190,7 +190,7 @@ public class CloudInstanceManager {
                             //reduce number of instances by half
                             currentInstanceCount/=2;
                         }
-                        instanceCountElement.setAttribute("count", currentInstanceCount + "");
+                        instanceCountElement.setAttribute("count", (count!=0?count:currentInstanceCount)+"");
 
                         StringWriter out = new StringWriter();
                         XMLSerializer serializer = new XMLSerializer(out, new OutputFormat(doc));
@@ -211,14 +211,14 @@ public class CloudInstanceManager {
         return rtnVal;
     }
 
-    public boolean scaleUp() {
+    public boolean scaleUp(int count) {
         System.out.println("CloudInstanceManager - Scale Up Worker instance.");
-        return scaleService("up", null);
+        return scaleService("up", null, count);
     }
 
-    public boolean scaleDown() {
+    public boolean scaleDown(int count) {
         System.out.println("CloudInstanceManager - Scale Down Worker instance.");
-        return scaleService("down", null);
+        return scaleService("down", null, count);
     }
 
     public void executeScalingByProcessorTime() {
@@ -237,9 +237,9 @@ public class CloudInstanceManager {
                 processorTimeFactor /= entityList.size();
 
                 if (processorTimeFactor > conf.getIntegerProperty("MAXIMUM_AVERAGE_CPU_USAGE")) {
-                    this.scaleUp();
+                    this.scaleUp(0);
                 } else if (processorTimeFactor < conf.getIntegerProperty("MINIMUM_AVERAGE_CPU_USAGE")) {
-                    this.scaleDown();
+                    this.scaleDown(0);
                 }
             }
         } catch (Exception ex) {
