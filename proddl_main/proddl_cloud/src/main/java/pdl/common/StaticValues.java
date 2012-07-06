@@ -44,6 +44,7 @@ public class StaticValues {
 
     public static final String CONFIG_KEY_DATASTORE_PATH = "DATASTORE_PATH";
     public static final String CONFIG_KEY_STORAGE_PATH = "STORAGE_PATH";
+    public static final String CONFIG_KEY_DEPLOYMENT_ID = "DEPLOYMENT_ID";
 
     public static final int JOB_STATUS_SUBMITTED = 1;
     public static final int JOB_STATUS_PENDING = 2;

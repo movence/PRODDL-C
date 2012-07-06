@@ -51,7 +51,7 @@ public class FileTool {
         if(conf==null)
             conf = Configuration.getInstance();
 
-        fileTableName = conf.getStringProperty("TABLE_NAME_FILES");
+        fileTableName = conf.getStringProperty("TABLE_NAME_FILES")+conf.getStringProperty("DEPLOYMENT_TYPE");
 
         String storagePath = conf.getStringProperty(StaticValues.CONFIG_KEY_DATASTORE_PATH);
 
@@ -212,6 +212,7 @@ public class FileTool {
         return filePath;
     }
 
+    //TODO files are stored in Azure drive: provide a way to delete file either in blob storage or drive
     public boolean delete(String fileId, String username) throws Exception {
         boolean rtnVal = false;
         try {

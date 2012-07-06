@@ -68,10 +68,10 @@ public class CloudInstanceManager {
 
     public CloudInstanceManager() {
         conf = Configuration.getInstance();
-        initializeManager(conf);
+        initializeManager();
     }
 
-    private void initializeManager(Configuration conf) {
+    private void initializeManager() {
         try {
             this.storagePath = conf.getStringProperty(StaticValues.CONFIG_KEY_STORAGE_PATH);
 
@@ -148,9 +148,12 @@ public class CloudInstanceManager {
                 throw new Exception("scaleService threw Exception: There is no deployed service");
 
             for (Deployment deployment : deployments) {
+                System.err.printf("****Scaling Service Log: %s, %s", deployment.getName(), deployment.getStatus());
 
                 //skips deployments by given name or status
-                if ((deploymentName != null && !deploymentName.equals(deployment.getName())) || (deployment.getStatus()!=null && deployment.getStatus().equals("RunningTransitioning")))
+                if ((deploymentName != null && !deploymentName.equals(deployment.getName()))
+                        || (deployment.getStatus()!=null && deployment.getStatus().equals("RunningTransitioning"))
+                        || !conf.getStringProperty(StaticValues.CONFIG_KEY_DEPLOYMENT_ID).equals(deployment.getPrivateId()))
                     continue;
 
                 InputSource is = new InputSource();

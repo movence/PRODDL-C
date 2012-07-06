@@ -70,17 +70,18 @@ public class ServiceOperatorHelper {
      * @param catalogServerPort
      * @param jettyPort
      */
-    public void run(String isMaster, String storagePath, String masterAddress, String catalogServerPort, String jettyPort) {
+    public void run(String isMaster, String storagePath, String masterAddress, String catalogServerPort, String jettyPort, String deploymentId) {
         try {
 
             storagePath = ToolPool.buildFilePath(storagePath.replace("/", File.separator));
             conf.setProperty(StaticValues.CONFIG_KEY_STORAGE_PATH, storagePath);
+            conf.setProperty(StaticValues.CONFIG_KEY_DEPLOYMENT_ID, deploymentId);
             this.storagePath = storagePath;
 
             this.runOperators();
 
             if (isMaster.equals("true")) { //Master Instance
-                String dynamicTable = conf.getStringProperty("TABLE_NAME_DYNAMIC_DATA");
+                String dynamicTable = conf.getStringProperty("TABLE_NAME_DYNAMIC_DATA")+conf.getStringProperty("DEPLOYMENT_TYPE");
 
                 //remove odl storage path data in dynamic table
                 ITableServiceEntity oldPath = storageServices.queryEntityBySearchKey(
@@ -101,7 +102,7 @@ public class ServiceOperatorHelper {
                 String datasotrePath = conf.getStringProperty(StaticValues.CONFIG_KEY_DATASTORE_PATH);
                 if(datasotrePath==null) {
                     storageData = (DynamicData)storageServices.queryEntityBySearchKey(
-                            conf.getStringProperty("TABLE_NAME_DYNAMIC_DATA"),
+                            dynamicTable,
                             StaticValues.COLUMN_DYNAMIC_DATA_KEY, StaticValues.KEY_DYNAMIC_DATA_DRIVE_PATH,
                             DynamicData.class);
 

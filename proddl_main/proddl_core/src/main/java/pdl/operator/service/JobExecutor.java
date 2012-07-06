@@ -163,11 +163,9 @@ public class JobExecutor extends Thread {
         int workerCount = -1;
 
         if(currJob.getInput()!=null) {
-            System.err.println(currJob.getInput());
             inputInMap = ToolPool.jsonStringToMap(currJob.getInput());
             if(inputInMap.containsKey(WORKER_INSTANCE_COUNT_KEY)) {
                 String strCount = (String)inputInMap.get(WORKER_INSTANCE_COUNT_KEY);
-                System.err.println(strCount);
                 if(!strCount.equals("0"))
                     workerCount = Integer.parseInt(strCount);
             }

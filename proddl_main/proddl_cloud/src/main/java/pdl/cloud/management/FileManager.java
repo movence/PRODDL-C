@@ -39,7 +39,7 @@ public class FileManager {
     public FileManager() {
         conf = Configuration.getInstance();
         tableOperator = new TableOperator(conf);
-        filesTableName = conf.getStringProperty("TABLE_NAME_FILES");
+        filesTableName = conf.getStringProperty("TABLE_NAME_FILES")+conf.getStringProperty("DEPLOYMENT_TYPE");
     }
 
     public boolean submitJob(FileInfo fileInfo) throws Exception {

@@ -63,8 +63,8 @@ public class TableOperator {
                 tableStorageClient = TableStorageClient.create(
                         URI.create(conf.getStringProperty("TABLE_HOST_NAME")),
                         Boolean.parseBoolean(conf.getStringProperty("PATH_STYLE_URIS")),
-                        conf.getStringProperty("DIAGNOSTICS_ACCOUNT_NAME"),
-                        conf.getStringProperty("DIAGNOSTICS_ACCOUNT_PKEY")
+                        conf.getStringProperty("AZURE_ACCOUNT_NAME"), //conf.getStringProperty("DIAGNOSTICS_ACCOUNT_NAME"),
+                        conf.getStringProperty("AZURE_ACCOUNT_PKEY") //conf.getStringProperty("DIAGNOSTICS_ACCOUNT_PKEY")
                 );
             else
                 tableStorageClient = TableStorageClient.create(

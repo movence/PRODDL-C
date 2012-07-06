@@ -62,17 +62,14 @@ public class UserService {
                     "user", "userid", userId, User.class
             );
 
-            if (rtnEntity != null) {
+            if(rtnEntity != null) {
                 rtnVal = (User) rtnEntity;
             } else { //if admin does not exist(in case of fresh start), create one with default password ("pdlAdmin")
-
-                if ("admin".equals(userId)) {
-                    String adminPass = passwordEncoder.encodePassword("pdlAdmin", null);
-
+                if("admin".equals(userId)) {
                     User admin = new User();
                     admin.setFirstName("admin");
                     admin.setUserid("admin");
-                    admin.setUserpass(adminPass);
+                    admin.setUserpass("pdlAdmin");
                     admin.setAdmin(1);
 
                     if (this.loadUser(admin))
@@ -125,13 +122,13 @@ public class UserService {
     }
 
     public boolean isAdmin(String userId) throws Exception {
-        boolean rtnVal=false;
+        boolean rtnVal = false;
         try {
             User user = this.getUserById(userId);
-            if(user != null && user.getUserid() != null) {
-                rtnVal=user.getAdmin()==1;
+            if (user != null && user.getUserid() != null) {
+                rtnVal = user.getAdmin() == 1;
             }
-        } catch(Exception ex) {
+        } catch (Exception ex) {
             ex.printStackTrace();
             throw ex;
         }

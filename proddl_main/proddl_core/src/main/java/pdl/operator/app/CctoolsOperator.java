@@ -47,6 +47,9 @@ public class CctoolsOperator extends AbstractApplicationOperator {
     private static final String LOOKUP_KEY_TASK_NAME = "$taskName";
     private static final String LOOKUP_KEY_PORT = "$port";
 
+    private static final String ENV_MAKEFLOW_LOW_PORT = "TCP_LOW_PORT";
+    private static final String ENV_MAKEFLOW_MAX_PORT = "TCP_MAX_PORT";
+
     private static final String GENERIC_TASK_NAME = "proddl";
 
     private Configuration conf;
@@ -114,7 +117,7 @@ public class CctoolsOperator extends AbstractApplicationOperator {
         return true;
     }
 
-    public ProcessBuilder buildProcessBuilder(String taskDir, List<String> args) {
+    public ProcessBuilder buildProcessBuilder(String taskDir, List<String> args, boolean setPortRange) {
         boolean isEnvironmentVarialbeSet = false;
 
         if (cygwinBinPath == null || cctoolsBinPath == null)
@@ -141,6 +144,9 @@ public class CctoolsOperator extends AbstractApplicationOperator {
             env.put("path", cygwinBinPath + File.pathSeparator + cctoolsBinPath);
         }
 
+        env.put(ENV_MAKEFLOW_LOW_PORT, "9001");
+        env.put(ENV_MAKEFLOW_MAX_PORT, "40000");
+
         return pb;
     }
 
@@ -166,11 +172,11 @@ public class CctoolsOperator extends AbstractApplicationOperator {
                             processArgs.set(processArgs.indexOf(LOOKUP_KEY_CATALOGSERVER_INFO), catalogServerAddress + ":" + catalogServerPort);
                             //processArgs.set(processArgs.indexOf(LOOKUP_KEY_TASK_NAME), taskName);
                             processArgs.set(processArgs.indexOf(LOOKUP_KEY_TASK_NAME), GENERIC_TASK_NAME);
-                            processArgs.set(processArgs.indexOf(LOOKUP_KEY_PORT), String.valueOf(makeflowPort++));
+                            processArgs.set(processArgs.indexOf(LOOKUP_KEY_PORT), "0"/*String.valueOf(makeflowPort++)*/);
                         }
                         processArgs.add(currFile.getPath());
 
-                        ProcessBuilder pb = this.buildProcessBuilder(taskDirectory, processArgs);
+                        ProcessBuilder pb = this.buildProcessBuilder(taskDirectory, processArgs, true);
                         process = pb.start();
                         processes.add(process);
 
@@ -211,7 +217,7 @@ public class CctoolsOperator extends AbstractApplicationOperator {
             processArgs.set(processArgs.indexOf(LOOKUP_KEY_CATALOGSERVER_INFO), catalogServerAddress + ":" + catalogServerPort);
             processArgs.set(processArgs.indexOf(LOOKUP_KEY_TASK_NAME), GENERIC_TASK_NAME);
 
-            ProcessBuilder pb = this.buildProcessBuilder(null, processArgs);
+            ProcessBuilder pb = this.buildProcessBuilder(null, processArgs, false);
             process = pb.start();
             processes.add(process);
 
@@ -244,7 +250,7 @@ public class CctoolsOperator extends AbstractApplicationOperator {
             processArgs.add("-p");
             processArgs.add(catalogServerPort);
 
-            ProcessBuilder pb = this.buildProcessBuilder(null, processArgs);
+            ProcessBuilder pb = this.buildProcessBuilder(null, processArgs, false);
             process = pb.start();
             /*process = Runtime.getRuntime().exec(cctoolsBinPath+"catalog_server" + " -p " + catalogServerPort);
             processes.add(process);*/
@@ -298,7 +304,7 @@ public class CctoolsOperator extends AbstractApplicationOperator {
     public void updateCatalogServerInfo(String key, String value) {
         try {
             TableOperator tableOperator = new TableOperator(conf);
-            String tableName = conf.getStringProperty("TABLE_NAME_DYNAMIC_DATA");
+            String tableName = conf.getStringProperty("TABLE_NAME_DYNAMIC_DATA")+conf.getStringProperty("DEPLOYMENT_TYPE");
 
             DynamicData catalogServerInfo = this.getCatalogServerInfo(key);
             if(catalogServerInfo!=null)
@@ -322,7 +328,7 @@ public class CctoolsOperator extends AbstractApplicationOperator {
             TableOperator tableOperator = new TableOperator(conf);
 
             catalogServerInfo = (DynamicData) tableOperator.queryEntityBySearchKey(
-                    conf.getStringProperty("TABLE_NAME_DYNAMIC_DATA"),
+                    conf.getStringProperty("TABLE_NAME_DYNAMIC_DATA")+conf.getStringProperty("DEPLOYMENT_TYPE"),
                     StaticValues.COLUMN_DYNAMIC_DATA_KEY,
                     key,
                     DynamicData.class
@@ -345,7 +351,7 @@ public class CctoolsOperator extends AbstractApplicationOperator {
                 processArgs.add(ToolPool.buildFilePath(cygwinBinPath, "bash"));
                 processArgs.add(currFile.getPath());
 
-                ProcessBuilder pb = this.buildProcessBuilder(taskDirectory, processArgs);
+                ProcessBuilder pb = this.buildProcessBuilder(taskDirectory, processArgs, false);
                 process = pb.start();
                 processes.add(process);
 

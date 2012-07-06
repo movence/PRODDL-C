@@ -47,7 +47,7 @@ public class JobManager {
     public JobManager() {
         conf = Configuration.getInstance();
         tableOperator = new TableOperator(conf);
-        jobDetailTableName = conf.getStringProperty("TABLE_NAME_JOB_DETAIL");
+        jobDetailTableName = conf.getStringProperty("TABLE_NAME_JOB_DETAIL")+conf.getStringProperty("DEPLOYMENT_TYPE");
     }
 
     /**
@@ -293,7 +293,7 @@ public class JobManager {
         List<ITableServiceEntity> jobs;
         try {
             jobs = tableOperator.queryListByCondition(
-                    conf.getStringProperty("TABLE_NAME_JOB_DETAIL"),
+                    jobDetailTableName,
                     condition,
                     JobDetail.class);
 
