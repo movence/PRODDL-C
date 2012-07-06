@@ -27,12 +27,13 @@ using System.Linq;
 using System.Text;
 using Microsoft.WindowsAzure.StorageClient;
 using Microsoft.WindowsAzure;
+using Microsoft.WindowsAzure.ServiceRuntime;
 
 namespace CommonTool.data
 {
     public class DynamicDataServiceContext : TableServiceContext
     {
-        private static readonly String dynamicDataTableName = "dynamicData";
+        private static readonly String dynamicDataTableName = "dynamicData"+RoleEnvironment.GetConfigurationSettingValue("DeploymentType");
 
         public DynamicDataServiceContext(String baseAddress, StorageCredentials credentials) : base(baseAddress, credentials) { }
 

@@ -75,12 +75,13 @@ namespace PRODDLJobRunner
 
             PerformanceCounterConfiguration pcc = new PerformanceCounterConfiguration();
             pcc.CounterSpecifier = @"\Processor(_Total)\% Processor Time";
-            pcc.SampleRate = System.TimeSpan.FromSeconds(15);
+            pcc.SampleRate = System.TimeSpan.FromSeconds(30);
             dmc.PerformanceCounters.DataSources.Add(pcc);
-            dmc.PerformanceCounters.ScheduledTransferPeriod = TimeSpan.FromMinutes(2.0);
+            dmc.PerformanceCounters.ScheduledTransferPeriod = TimeSpan.FromMinutes(3.0);
 
             DiagnosticMonitor.AllowInsecureRemoteConnections = true;
-            DiagnosticMonitor.Start("DiagnosticConnectionString", dmc);
+            //DiagnosticMonitor.Start("DiagnosticConnectionString", dmc);
+            DiagnosticMonitor.Start("StorageConnectionString", dmc);
 
 
             RoleEnvironment.Changing += RoleEnvironmentChanging;
@@ -143,7 +144,7 @@ namespace PRODDLJobRunner
 
                 Process proc = new SharedTools().buildCloudProcess(
                     String.Format("\"{0}\\bin\\java.exe\"", jreHome),
-                    String.Format("-jar {0} {1} {2} {3} {4} {5}", jarPath, "false", localStoragePath, "-", "-", "-"),
+                    String.Format("-jar {0} {1} {2} {3} {4} {5} {6}", jarPath, "false", localStoragePath, "-", "-", "-", RoleEnvironment.DeploymentId),
                     "JobRunner - Java Main Operator");
 
                 proc.Start();

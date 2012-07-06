@@ -66,7 +66,7 @@ namespace PRODDLMaster
             }
 
             //Delete diagnositcs tables
-            storageHelper.deleteDiagnosticsTables(RoleEnvironment.GetConfigurationSettingValue("DiagnosticConnectionString"));
+            storageHelper.deleteDiagnosticsTables(RoleEnvironment.GetConfigurationSettingValue("StorageConnectionString"));
 
             //Clean up Dynamic Data table except azure drive information
             deleteDynamicData();
@@ -232,6 +232,7 @@ namespace PRODDLMaster
                 Trace.WriteLine("START: startJavaMainOperator()");
 
                 String jettyPort = RoleEnvironment.CurrentRoleInstance.InstanceEndpoints["HttpIn"].IPEndpoint.Port.ToString();
+                String deploymentId = RoleEnvironment.DeploymentId;
                 IPEndPoint internalAddress = RoleEnvironment.CurrentRoleInstance.InstanceEndpoints["CatalogServer"].IPEndpoint;
                 String roleRoot = Environment.GetEnvironmentVariable("RoleRoot");
 
@@ -240,8 +241,8 @@ namespace PRODDLMaster
 
                 Process proc = new SharedTools().buildCloudProcess(
                     String.Format("\"{0}\\bin\\java.exe\"", jreHome),
-                    String.Format("-jar {0} {1} {2} {3} {4} {5}",
-                        jarPath, "true", localStoragePath, internalAddress.Address, internalAddress.Port, jettyPort),
+                    String.Format("-jar {0} {1} {2} {3} {4} {5} {6}",
+                        jarPath, "true", localStoragePath, internalAddress.Address, internalAddress.Port, jettyPort, RoleEnvironment.DeploymentId),
                     "ProteinDockingMaster - Java Main Operator");
 
                 proc.Start();

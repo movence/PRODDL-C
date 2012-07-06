@@ -55,7 +55,8 @@ namespace PRODDLMaster
 			dmc.Logs.ScheduledTransferLogLevelFilter = LogLevel.Verbose;
 
 			DiagnosticMonitor.AllowInsecureRemoteConnections = true;
-			DiagnosticMonitor.Start("DiagnosticConnectionString", dmc);
+			//DiagnosticMonitor.Start("DiagnosticConnectionString", dmc);
+            DiagnosticMonitor.Start("StorageConnectionString", dmc);
 
 			RoleEnvironment.Changing += RoleEnvironmentChanging;
 			CloudStorageAccount.SetConfigurationSettingPublisher((configName, configSetter) =>
