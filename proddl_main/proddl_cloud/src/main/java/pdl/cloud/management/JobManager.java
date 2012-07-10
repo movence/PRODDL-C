@@ -27,6 +27,7 @@ import pdl.cloud.storage.TableOperator;
 import pdl.common.Configuration;
 import pdl.common.QueryTool;
 import pdl.common.StaticValues;
+import pdl.common.ToolPool;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -47,7 +48,7 @@ public class JobManager {
     public JobManager() {
         conf = Configuration.getInstance();
         tableOperator = new TableOperator(conf);
-        jobDetailTableName = conf.getStringProperty("TABLE_NAME_JOB_DETAIL")+conf.getStringProperty("DEPLOYMENT_TYPE");
+        jobDetailTableName = ToolPool.buildTableName(conf.getStringProperty("TABLE_NAME_JOB_DETAIL"));
     }
 
     /**
@@ -262,9 +263,11 @@ public class JobManager {
         try {
             List<ITableServiceEntity> jobList = getJobList(QueryTool.getSingleConditionalStatement(StaticValues.COLUMN_JOB_DETAIL_STATUS, "eq", prevStatus));
 
-            for (ITableServiceEntity entity : jobList) {
-                JobDetail currJob = (JobDetail) entity;
-                updateJobStatus(currJob.getJobUUID(), newStatus, null, null);
+            if(jobList!=null && jobList.size()>0) {
+                for (ITableServiceEntity entity : jobList) {
+                    JobDetail currJob = (JobDetail) entity;
+                    updateJobStatus(currJob.getJobUUID(), newStatus, null, null);
+                }
             }
         } catch (Exception ex) {
             throw ex;

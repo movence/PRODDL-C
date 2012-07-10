@@ -46,6 +46,7 @@ public class CctoolsOperator extends AbstractApplicationOperator {
     private static final String LOOKUP_KEY_CATALOGSERVER_INFO = "$catalogServer";
     private static final String LOOKUP_KEY_TASK_NAME = "$taskName";
     private static final String LOOKUP_KEY_PORT = "$port";
+    private static final String LOOKUP_KEY_DEBUG_LOG = "$debug";
 
     private static final String ENV_MAKEFLOW_LOW_PORT = "TCP_LOW_PORT";
     private static final String ENV_MAKEFLOW_MAX_PORT = "TCP_MAX_PORT";
@@ -62,6 +63,8 @@ public class CctoolsOperator extends AbstractApplicationOperator {
     private String catalogServerAddress;
     private String catalogServerPort;
 
+    private String dynamicTableName;
+
     private int makeflowPort = 10000;
 
     private final static String[] makeflowArgs = {
@@ -69,8 +72,9 @@ public class CctoolsOperator extends AbstractApplicationOperator {
             "-p", LOOKUP_KEY_PORT, //random port
             "-C", LOOKUP_KEY_CATALOGSERVER_INFO, "-a", //catalog server and advertise makeflow to catalog server
             "-N", LOOKUP_KEY_TASK_NAME, //LOOKUP_KEY_TASK_NAME, //project name
-            "-r", "3" //retry
-
+            "-r", "3", //retry
+            "-d", "all", //debugging sub-system
+            "-o", LOOKUP_KEY_DEBUG_LOG //debugging log
     };
 
     private final static String[] workerArgs = {
@@ -92,6 +96,7 @@ public class CctoolsOperator extends AbstractApplicationOperator {
 
             cctoolsBinPath = ToolPool.buildFilePath(packagePath, "bin");
             cygwinBinPath = ToolPool.buildFilePath(storagePath, conf.getStringProperty("CYGWIN_NAME"), "bin");
+            dynamicTableName = ToolPool.buildTableName(conf.getStringProperty("TABLE_NAME_DYNAMIC_DATA"));
 
             processes = new ArrayList<Process>();
 
@@ -173,6 +178,7 @@ public class CctoolsOperator extends AbstractApplicationOperator {
                             //processArgs.set(processArgs.indexOf(LOOKUP_KEY_TASK_NAME), taskName);
                             processArgs.set(processArgs.indexOf(LOOKUP_KEY_TASK_NAME), GENERIC_TASK_NAME);
                             processArgs.set(processArgs.indexOf(LOOKUP_KEY_PORT), "0"/*String.valueOf(makeflowPort++)*/);
+                            processArgs.set(processArgs.indexOf(LOOKUP_KEY_DEBUG_LOG), ToolPool.buildFilePath(taskDirectory, "mf_debug.log"));
                         }
                         processArgs.add(currFile.getPath());
 
@@ -304,18 +310,16 @@ public class CctoolsOperator extends AbstractApplicationOperator {
     public void updateCatalogServerInfo(String key, String value) {
         try {
             TableOperator tableOperator = new TableOperator(conf);
-            String tableName = conf.getStringProperty("TABLE_NAME_DYNAMIC_DATA")+conf.getStringProperty("DEPLOYMENT_TYPE");
 
             DynamicData catalogServerInfo = this.getCatalogServerInfo(key);
             if(catalogServerInfo!=null)
-                tableOperator.deleteEntity(tableName, catalogServerInfo);
+                tableOperator.deleteEntity(dynamicTableName, catalogServerInfo);
 
             catalogServerInfo = new DynamicData("catalogserver_info");
             catalogServerInfo.setDataKey(key);
             catalogServerInfo.setDataValue(value);
 
-            tableOperator.insertSingleEntity(tableName, catalogServerInfo);
-            System.out.printf("Update catalogServerPort('%s':'%s') information to '%s'%n", key, value, tableName);
+            tableOperator.insertSingleEntity(dynamicTableName, catalogServerInfo);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -328,7 +332,7 @@ public class CctoolsOperator extends AbstractApplicationOperator {
             TableOperator tableOperator = new TableOperator(conf);
 
             catalogServerInfo = (DynamicData) tableOperator.queryEntityBySearchKey(
-                    conf.getStringProperty("TABLE_NAME_DYNAMIC_DATA")+conf.getStringProperty("DEPLOYMENT_TYPE"),
+                    dynamicTableName,
                     StaticValues.COLUMN_DYNAMIC_DATA_KEY,
                     key,
                     DynamicData.class

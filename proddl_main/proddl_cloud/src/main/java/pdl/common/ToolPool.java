@@ -111,4 +111,8 @@ public class ToolPool {
 
         return rtnVal;
     }
+
+    public static String buildTableName(String tableName) {
+        return tableName.concat(Configuration.getInstance().getStringProperty("DEPLOYMENT_TYPE"));
+    }
 }

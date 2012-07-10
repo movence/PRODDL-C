@@ -24,6 +24,7 @@ package pdl.cloud.management;
 import pdl.cloud.model.FileInfo;
 import pdl.cloud.storage.TableOperator;
 import pdl.common.Configuration;
+import pdl.common.ToolPool;
 
 /**
  * Created by IntelliJ IDEA.
@@ -39,7 +40,7 @@ public class FileManager {
     public FileManager() {
         conf = Configuration.getInstance();
         tableOperator = new TableOperator(conf);
-        filesTableName = conf.getStringProperty("TABLE_NAME_FILES")+conf.getStringProperty("DEPLOYMENT_TYPE");
+        filesTableName = ToolPool.buildTableName(conf.getStringProperty("TABLE_NAME_FILES"));
     }
 
     public boolean submitJob(FileInfo fileInfo) throws Exception {

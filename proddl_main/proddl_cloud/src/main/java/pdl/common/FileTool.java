@@ -51,7 +51,7 @@ public class FileTool {
         if(conf==null)
             conf = Configuration.getInstance();
 
-        fileTableName = conf.getStringProperty("TABLE_NAME_FILES")+conf.getStringProperty("DEPLOYMENT_TYPE");
+        fileTableName = ToolPool.buildTableName(conf.getStringProperty("TABLE_NAME_FILES"));
 
         String storagePath = conf.getStringProperty(StaticValues.CONFIG_KEY_DATASTORE_PATH);
 

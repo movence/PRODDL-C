@@ -81,7 +81,7 @@ public class ServiceOperatorHelper {
             this.runOperators();
 
             if (isMaster.equals("true")) { //Master Instance
-                String dynamicTable = conf.getStringProperty("TABLE_NAME_DYNAMIC_DATA")+conf.getStringProperty("DEPLOYMENT_TYPE");
+                String dynamicTable = ToolPool.buildTableName(conf.getStringProperty("TABLE_NAME_DYNAMIC_DATA"));
 
                 //remove odl storage path data in dynamic table
                 ITableServiceEntity oldPath = storageServices.queryEntityBySearchKey(

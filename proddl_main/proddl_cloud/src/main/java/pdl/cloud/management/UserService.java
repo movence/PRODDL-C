@@ -27,6 +27,7 @@ import org.soyatec.windowsazure.table.AbstractTableServiceEntity;
 import org.springframework.security.authentication.encoding.PasswordEncoder;
 import org.springframework.security.authentication.encoding.ShaPasswordEncoder;
 import pdl.common.Configuration;
+import pdl.common.ToolPool;
 
 /**
  * Created by IntelliJ IDEA.
@@ -38,9 +39,11 @@ public class UserService {
     private Configuration conf;
     private TableOperator tableOperator;
     private PasswordEncoder passwordEncoder = new ShaPasswordEncoder();
+    private String userTableName;
 
     public UserService() {
         conf = Configuration.getInstance();
+        userTableName = ToolPool.buildTableName(conf.getStringProperty("TABLE_NAME_USER"));
     }
 
     public UserService(Configuration conf) {
@@ -59,7 +62,7 @@ public class UserService {
             initializeTableOperator();
 
             AbstractTableServiceEntity rtnEntity = tableOperator.queryEntityBySearchKey(
-                    "user", "userid", userId, User.class
+                    userTableName, "userid", userId, User.class
             );
 
             if(rtnEntity != null) {
@@ -90,7 +93,7 @@ public class UserService {
         initializeTableOperator();
 
         user.setUserpass(passwordEncoder.encodePassword(user.getUserpass(), null));
-        rtnVal = tableOperator.insertSingleEntity("user", user);
+        rtnVal = tableOperator.insertSingleEntity(userTableName, user);
         if (!rtnVal)
             throw new Exception("Failed to load User.");
 
@@ -110,7 +113,7 @@ public class UserService {
 
             if (oldPass.equals(currUser.getUserpass())) {
                 currUser.setUserpass(newPass);
-                tableOperator.updateSingleEntity("user", currUser);
+                tableOperator.updateSingleEntity(userTableName, currUser);
                 rtnVal = true;
             }
 

@@ -28,6 +28,7 @@ import pdl.cloud.storage.BlobOperator;
 import pdl.cloud.storage.TableOperator;
 import pdl.common.Configuration;
 import pdl.common.StaticValues;
+import pdl.common.ToolPool;
 
 /**
  * Created by IntelliJ IDEA.
@@ -40,9 +41,11 @@ public class StorageServices {
 
     private TableOperator tableOperator;
     private BlobOperator blobOperator;
+    private String tableName;
 
     public StorageServices() {
         conf = Configuration.getInstance();
+        tableName = ToolPool.buildTableName(conf.getStringProperty("TABLE_NAME_FILES"));
     }
 
     /*
@@ -60,7 +63,7 @@ public class StorageServices {
 
     public String getFileNameById(String fileId) {
         FileInfo currFile = (FileInfo) getTableOperator().queryEntityBySearchKey(
-                conf.getStringProperty("TABLE_NAME_FILES")+conf.getStringProperty("DEPLOYMENT_TYPE"),
+                tableName,
                 StaticValues.COLUMN_ROW_KEY, fileId,
                 FileInfo.class);
         return currFile==null?null:currFile.getName();
@@ -92,7 +95,7 @@ public class StorageServices {
         boolean uploaded = getBlobOperator().uploadFileToBlob(fileInfo.getContainer(), fileInfo.getName(), filePath, fileInfo.getType(), overwrite);
         boolean inserted = false;
         if(uploaded) {
-            inserted = this.insertSingleEnttity(conf.getStringProperty("TABLE_NAME_FILES")+conf.getStringProperty("DEPLOYMENT_TYPE"), fileInfo);
+            inserted = this.insertSingleEnttity(tableName, fileInfo);
         }
         return inserted;
     }
