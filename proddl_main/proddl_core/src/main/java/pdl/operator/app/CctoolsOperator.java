@@ -73,8 +73,9 @@ public class CctoolsOperator extends AbstractApplicationOperator {
             "-C", LOOKUP_KEY_CATALOGSERVER_INFO, "-a", //catalog server and advertise makeflow to catalog server
             "-N", LOOKUP_KEY_TASK_NAME, //LOOKUP_KEY_TASK_NAME, //project name
             "-r", "3", //retry
-            "-d", "all", //debugging sub-system
-            "-o", LOOKUP_KEY_DEBUG_LOG //debugging log
+            "-L", "final.log"
+            /*"-d", "all", //debugging sub-system
+            "-o", LOOKUP_KEY_DEBUG_LOG //debugging log*/
     };
 
     private final static String[] workerArgs = {
@@ -178,7 +179,7 @@ public class CctoolsOperator extends AbstractApplicationOperator {
                             //processArgs.set(processArgs.indexOf(LOOKUP_KEY_TASK_NAME), taskName);
                             processArgs.set(processArgs.indexOf(LOOKUP_KEY_TASK_NAME), GENERIC_TASK_NAME);
                             processArgs.set(processArgs.indexOf(LOOKUP_KEY_PORT), "0"/*String.valueOf(makeflowPort++)*/);
-                            processArgs.set(processArgs.indexOf(LOOKUP_KEY_DEBUG_LOG), ToolPool.buildFilePath(taskDirectory, "mf_debug.log"));
+                            //processArgs.set(processArgs.indexOf(LOOKUP_KEY_DEBUG_LOG), "mf_debug.log");
                         }
                         processArgs.add(currFile.getPath());
 
