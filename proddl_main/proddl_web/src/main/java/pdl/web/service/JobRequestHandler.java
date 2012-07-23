@@ -220,8 +220,10 @@ public class JobRequestHandler {
                 jobInfoMap.put("user", job.getUserId());
                 jobInfoMap.put("input", job.getInput());
 
-                if(job.getStatus()== StaticValues.JOB_STATUS_COMPLETED) //get job result
+                if(job.getStatus()== StaticValues.JOB_STATUS_COMPLETED) {//get job result
                     jobInfoMap.put("result", job.getResult());
+                    jobInfoMap.put("log", job.getLog());
+                }
 
                 jobInfo = jobInfoMap;
             } else {
