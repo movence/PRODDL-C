@@ -41,6 +41,7 @@ namespace PRODDLJobRunner
     class PRODDLJobRunnerMain : RoleEntryPoint
     {
         public String localStoragePath;
+        private String logPath;
 
         public override void Run()
         {
@@ -65,13 +66,29 @@ namespace PRODDLJobRunner
 
         public override bool OnStart()
         {
-            // Set the maximum number of concurrent connections 
-            ServicePointManager.DefaultConnectionLimit = 12;
+            //ServicePointManager.UseNagleAlgorithm = false;
+            ServicePointManager.UseNagleAlgorithm = false;
+
+            logPath = Path.Combine(RoleEnvironment.GetLocalResource("LocalStorage").RootPath, "trace.log");
             
+            Trace.Listeners.Clear();
+            TextWriterTraceListener twtl = new TextWriterTraceListener(
+                logPath,
+                "TextLogger");
+            twtl.TraceOutputOptions = TraceOptions.ThreadId | TraceOptions.DateTime;
+            ConsoleTraceListener ctl = new ConsoleTraceListener(false);
+            ctl.TraceOutputOptions = TraceOptions.DateTime;
+            ctl.Name = "ConsoleLogger";
+            Trace.Listeners.Add(twtl);
+            Trace.Listeners.Add(ctl);
+            Trace.AutoFlush = true;
+           
             DiagnosticMonitorConfiguration dmc = DiagnosticMonitor.GetDefaultInitialConfiguration();
 
+            /*
             dmc.Logs.ScheduledTransferPeriod = TimeSpan.FromMinutes(3.0);
             dmc.Logs.ScheduledTransferLogLevelFilter = LogLevel.Verbose;
+            */
 
             PerformanceCounterConfiguration pcc = new PerformanceCounterConfiguration();
             pcc.CounterSpecifier = @"\Processor(_Total)\% Processor Time";
@@ -107,10 +124,8 @@ namespace PRODDLJobRunner
 
         private void RoleEnvironmentChanging(object sender, RoleEnvironmentChangingEventArgs e)
         {
-            // If a configuration setting is changing
             if (e.Changes.Any(change => change is RoleEnvironmentConfigurationSettingChange))
             {
-                // Set e.Cancel to true to restart this role instance
                 e.Cancel = true;
             }
         }
@@ -145,7 +160,7 @@ namespace PRODDLJobRunner
                 Process proc = new SharedTools().buildCloudProcess(
                     String.Format("\"{0}\\bin\\java.exe\"", jreHome),
                     String.Format("-jar {0} {1} {2} {3} {4} {5} {6}", jarPath, "false", localStoragePath, "-", "-", "-", RoleEnvironment.DeploymentId),
-                    "JobRunner - Java Main Operator");
+                    "[JobRunner]");
 
                 proc.Start();
                 proc.BeginOutputReadLine();
@@ -160,6 +175,20 @@ namespace PRODDLJobRunner
                 Trace.TraceError("EXCEPTION: startJavaMainOperator() - " + ex.ToString());
                 return false;
             }
+        }
+
+        public override void OnStop()
+        {
+            Trace.Flush();
+            Trace.Close();
+            StorageService storageHelper = new StorageService(RoleEnvironment.GetConfigurationSettingValue("StorageConnectionString"));
+            storageHelper.uploadLogToBlob(
+                "logs",
+                RoleEnvironment.DeploymentId,
+                "worker",
+                logPath
+            );
+            base.OnStop();
         }
     }
 }

@@ -45,5 +45,16 @@ namespace CommonTool.data
             }
         }
 
+        public void deleteDataByDeploymentId(string deploymentId)
+        {
+            List<PerformanceDataModel> perfDataList = (from d in this.PerformanceCounters
+                                              where d.DeploymentId == deploymentId
+                                              select d).ToList();
+            foreach(PerformanceDataModel tempData in perfDataList) {
+                this.DeleteObject(tempData);
+            }
+            this.SaveChanges();
+        }
+
     }
 }

@@ -47,8 +47,23 @@ namespace PRODDLMaster
 		public override bool OnStart()
 		{
 			// Set the maximum number of concurrent connections 
-			ServicePointManager.DefaultConnectionLimit = 12;
+			ServicePointManager.DefaultConnectionLimit = 10;
+            ServicePointManager.MaxServicePointIdleTime = 2500;
+            //ServicePointManager.UseNagleAlgorithm = false;
+
+            Trace.Listeners.Clear();
+            TextWriterTraceListener twtl = new TextWriterTraceListener(
+                Path.Combine(RoleEnvironment.GetLocalResource("LocalStorage").RootPath, "trace.log"),
+                "TextLogger");
+            twtl.TraceOutputOptions = TraceOptions.ThreadId | TraceOptions.DateTime;
+            ConsoleTraceListener ctl = new ConsoleTraceListener(false);
+            ctl.TraceOutputOptions = TraceOptions.DateTime;
+            ctl.Name = "ConsoleLogger";
+            Trace.Listeners.Add(twtl);
+            Trace.Listeners.Add(ctl);
+            Trace.AutoFlush = true;
 			
+            /*
 			DiagnosticMonitorConfiguration dmc = DiagnosticMonitor.GetDefaultInitialConfiguration();
 
 			dmc.Logs.ScheduledTransferPeriod = TimeSpan.FromMinutes(1.0);
@@ -57,6 +72,7 @@ namespace PRODDLMaster
 			DiagnosticMonitor.AllowInsecureRemoteConnections = true;
 			//DiagnosticMonitor.Start("DiagnosticConnectionString", dmc);
             DiagnosticMonitor.Start("StorageConnectionString", dmc);
+            */
 
 			RoleEnvironment.Changing += RoleEnvironmentChanging;
 			CloudStorageAccount.SetConfigurationSettingPublisher((configName, configSetter) =>
@@ -74,6 +90,8 @@ namespace PRODDLMaster
 				};
 			});
 
+            //RoleEnvironment.Stopping += RoleEnvironmentStopping;
+
             //application temp directory for Jetty
             string customTempLocalResourcePath = RoleEnvironment.GetLocalResource("TempStorage").RootPath;
             Environment.SetEnvironmentVariable("TMP", customTempLocalResourcePath);
@@ -84,13 +102,18 @@ namespace PRODDLMaster
 
 		private void RoleEnvironmentChanging(object sender, RoleEnvironmentChangingEventArgs e)
 		{
-			// If a configuration setting is changing
 			if (e.Changes.Any(change => change is RoleEnvironmentConfigurationSettingChange))
 			{
-				// Set e.Cancel to true to restart this role instance
 				e.Cancel = true;
 			}
 		}
+
+        /*
+        private void RoleEnvironmentStopping(object sender, RoleEnvironmentStoppingEventArgs e)
+        {
+            helper.Stopping();
+        }
+        */
 
 		public override void OnStop()
 		{

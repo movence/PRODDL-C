@@ -179,16 +179,30 @@ namespace CommonTool
             return true;
         }
 
-        public void deleteDiagnosticsTables(String diagnosticsConnectionString)
+        public void deleteDiagnosticsTables(String connectionString)
         {
             try
             {
-                CloudStorageAccount diagnosticsAccount = CloudStorageAccount.Parse(diagnosticsConnectionString);
+                CloudStorageAccount diagnosticsAccount = CloudStorageAccount.Parse(connectionString);
                 CloudTableClient tableClient = diagnosticsAccount.CreateCloudTableClient();
                 tableClient.DeleteTableIfExist("WADLogsTable");
                 tableClient.DeleteTableIfExist("WADPerformanceCountersTable");
             }
             catch (Exception ex)
+            {
+                Trace.TraceError(ex.Message);
+            }
+        }
+
+        public void uploadLogToBlob(String blobName, String deploymentId, String identifier, String logPath)
+        {
+            try {
+                CloudBlobContainer cloudBlobContainer = _account.CreateCloudBlobClient().GetContainerReference(blobName);
+                cloudBlobContainer.CreateIfNotExist();
+                CloudBlob blob = cloudBlobContainer.GetBlobReference(deploymentId+"_"+identifier+".log");
+                blob.UploadFile(logPath);
+            }
+            catch(Exception ex) 
             {
                 Trace.TraceError(ex.Message);
             }

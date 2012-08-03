@@ -42,6 +42,7 @@ namespace PRODDLMaster
     {
         private StorageService storageHelper;
         private DynamicDataServiceContext _dynamicDataContext;
+        private PerformanceDataServiceContext _perfServiceContext;
         private String localStoragePath;
 
         private const String DYNAMIC_TABLE_DRIVE_KEY_NAME = "MasterDriveIntialized";
@@ -60,22 +61,39 @@ namespace PRODDLMaster
 
         public void OnStop()
         {
-            if (storageHelper != null)
+            try
             {
-                storageHelper.unMountCloudDrive();
+                if (storageHelper != null)
+                {
+                    storageHelper.unMountCloudDrive();
+
+                    //Delete diagnositcs tables
+                    //storageHelper.deleteDiagnosticsTables(RoleEnvironment.GetConfigurationSettingValue("StorageConnectionString"));
+                    
+                    //Delete peprformance data for current deployemt
+                    _perfServiceContext.deleteDataByDeploymentId(RoleEnvironment.DeploymentId);
+
+                    //Clean up Dynamic Data table except azure drive information
+                    deleteDynamicData();
+
+                    Trace.Flush();
+                    Trace.Close();
+                    storageHelper.uploadLogToBlob(
+                        "logs",
+                        RoleEnvironment.DeploymentId,
+                        "master",
+                        Path.Combine(RoleEnvironment.GetLocalResource("LocalStorage").RootPath, "trace.log")
+                    );
+                }
             }
-
-            //Delete diagnositcs tables
-            storageHelper.deleteDiagnosticsTables(RoleEnvironment.GetConfigurationSettingValue("StorageConnectionString"));
-
-            //Clean up Dynamic Data table except azure drive information
-            deleteDynamicData();
+            catch (Exception ex)
+            {
+                Trace.TraceError(ex.ToString());
+            }
         }
 
         public void Run()
         {
-
-
             LocalResource localStorage = RoleEnvironment.GetLocalResource("LocalStorage");
             localStoragePath = Path.GetPathRoot(localStorage.RootPath);
 
@@ -125,6 +143,12 @@ namespace PRODDLMaster
                 _dynamicDataContext.RetryPolicy = RetryPolicies.Retry(3, TimeSpan.FromSeconds(3));
 
                 storageHelper._account.CreateCloudTableClient().CreateTableIfNotExist(_dynamicDataContext.getDynamicTableName());
+
+                _perfServiceContext = new PerformanceDataServiceContext(
+                    storageHelper._account.TableEndpoint.ToString(),
+                    storageHelper._account.Credentials
+                    );
+                _perfServiceContext.RetryPolicy = RetryPolicies.Retry(3, TimeSpan.FromSeconds(3));
             }
             catch (Exception ex)
             {
@@ -241,9 +265,12 @@ namespace PRODDLMaster
 
                 Process proc = new SharedTools().buildCloudProcess(
                     String.Format("\"{0}\\bin\\java.exe\"", jreHome),
-                    String.Format("-jar {0} {1} {2} {3} {4} {5} {6}",
-                        jarPath, "true", localStoragePath, internalAddress.Address, internalAddress.Port, jettyPort, RoleEnvironment.DeploymentId),
-                    "ProteinDockingMaster - Java Main Operator");
+                    String.Format(
+                        "-jar {0} {1} {2} {3} {4} {5} {6}",
+                        jarPath, "true", localStoragePath, internalAddress.Address, internalAddress.Port, jettyPort, RoleEnvironment.DeploymentId
+                    ),
+                    "[Master]"
+                );
 
                 proc.Start();
                 proc.BeginOutputReadLine();
