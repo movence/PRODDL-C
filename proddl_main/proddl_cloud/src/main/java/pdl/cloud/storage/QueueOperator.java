@@ -21,12 +21,13 @@
 
 package pdl.cloud.storage;
 
-import pdl.cloud.storage.listener.QueueMessageReceivedListener;
 import org.soyatec.windowsazure.queue.IMessage;
 import org.soyatec.windowsazure.queue.IQueue;
 import org.soyatec.windowsazure.queue.QueueStorageClient;
 import org.soyatec.windowsazure.queue.internal.Message;
+import pdl.cloud.storage.listener.QueueMessageReceivedListener;
 import pdl.common.Configuration;
+import pdl.common.StaticValues;
 
 import java.net.URI;
 
@@ -57,12 +58,10 @@ public class QueueOperator {
     private void initQueueClient() {
         try {
             queueStorageClient = QueueStorageClient.create(
-                    URI.create(
-                            conf.getStringProperty("QUEUE_HOST_NAME")),
-                    Boolean.parseBoolean(conf.getStringProperty("PATH_STYLE_URIS")
-                    ),
-                    conf.getStringProperty("AZURE_ACCOUNT_NAME"),
-                    conf.getStringProperty("AZURE_ACCOUNT_PKEY"));
+                    URI.create(StaticValues.AZURE_QUEUE_HOST_NAME),
+                    false,
+                    conf.getStringProperty(StaticValues.CONFIG_KEY_CSTORAGE_NAME),
+                    conf.getStringProperty(StaticValues.CONFIG_KEY_CSTORAGE_PKEY));
         } catch (Exception ex) {
             ex.printStackTrace();
         }

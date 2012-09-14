@@ -233,7 +233,7 @@ public class JobExecutor extends Thread {
                     FileTool fileTool = new FileTool();
                     //task output
                     String outputFileId = null;
-                    String outputFilePath = ToolPool.buildFilePath(workDir, "output" + StaticValues.FILE_EXTENSION);
+                    String outputFilePath = ToolPool.buildFilePath(workDir, "output" + StaticValues.FILE_DAT_EXTENSION);
                     if(ToolPool.canReadFile(outputFilePath))
                         outputFileId = fileTool.createFile(null, new FileInputStream(outputFilePath), currJob.getUserId());
                     //log file
@@ -286,7 +286,7 @@ public class JobExecutor extends Thread {
 
             boolean executed = cctoolsOperator.startMakeflow(false, currJob.getJobUUID(), mfFile, workDir);
             if(executed) {
-                String outputFilePath = ToolPool.buildFilePath(workDir, "output" + StaticValues.FILE_EXTENSION);
+                String outputFilePath = ToolPool.buildFilePath(workDir, "output" + StaticValues.FILE_DAT_EXTENSION);
 
                 FileTool fileTool = new FileTool();
                 String outputFileId = fileTool.createFile(null, new FileInputStream(outputFilePath), currJob.getUserId());
@@ -327,7 +327,7 @@ public class JobExecutor extends Thread {
             if(inputFile!=null) {
                 if(!fileTool.copyFromDatastore(
                         ToolPool.buildFilePath(inputFile.getPath(), inputFile.getName()),
-                        ToolPool.buildFilePath(workingDirectory, "input" + StaticValues.FILE_EXTENSION)))
+                        ToolPool.buildFilePath(workingDirectory, "input" + StaticValues.FILE_DAT_EXTENSION)))
                     throw new Exception("Copying input file failed.");
             } else {
                 throw new Exception("Input file record does not exit - " + currJob.getInputFileUUID());

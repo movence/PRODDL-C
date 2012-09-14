@@ -27,6 +27,7 @@ import org.soyatec.windowsazure.table.AbstractTableServiceEntity;
 import org.springframework.security.authentication.encoding.PasswordEncoder;
 import org.springframework.security.authentication.encoding.ShaPasswordEncoder;
 import pdl.common.Configuration;
+import pdl.common.StaticValues;
 import pdl.common.ToolPool;
 
 /**
@@ -43,7 +44,7 @@ public class UserService {
 
     public UserService() {
         conf = Configuration.getInstance();
-        userTableName = ToolPool.buildTableName(conf.getStringProperty("TABLE_NAME_USER"));
+        userTableName = ToolPool.buildTableName(StaticValues.TABLE_NAME_USER);
     }
 
     public UserService(Configuration conf) {
@@ -62,7 +63,7 @@ public class UserService {
             initializeTableOperator();
 
             AbstractTableServiceEntity rtnEntity = tableOperator.queryEntityBySearchKey(
-                    userTableName, "userid", userId, User.class
+                    userTableName, StaticValues.COLUMN_USER_ID, userId, User.class
             );
 
             if(rtnEntity != null) {

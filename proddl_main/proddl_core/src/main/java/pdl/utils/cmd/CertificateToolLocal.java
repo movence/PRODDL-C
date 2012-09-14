@@ -37,7 +37,7 @@ import java.util.List;
  * User: hkim
  * Date: 8/11/11
  * Time: 9:36 AM
- * To change this template use File | Settings | File Templates.
+ * Online tutorial on creating and converting Windows certificate http://www.windowsazure4j.org/learn/labs/Management/index.html
  */
 public class CertificateToolLocal {
     public boolean convert(String pfxFile, String keystoreFile,
@@ -48,11 +48,9 @@ public class CertificateToolLocal {
             File fileIn = new File(pfxFile);
             File fileOut = new File(keystoreFile);
             if (!fileIn.canRead()) {
-                System.out.println("Unable to access input keystore: " + fileIn.getPath());
                 throw new Exception("Unable to access input keystore: " + fileIn.getPath());
             }
             if (fileOut.exists() && !fileOut.canWrite()) {
-                System.out.println("Output file is not writable: " + fileOut.getPath());
                 throw new Exception("Output file is not writable: " + fileOut.getPath());
             }
             KeyStore kspkcs12 = KeyStore.getInstance("pkcs12");

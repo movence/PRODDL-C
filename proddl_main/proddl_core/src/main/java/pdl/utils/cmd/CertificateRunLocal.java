@@ -33,8 +33,8 @@ public class CertificateRunLocal {
         try {
             CertificateToolLocal tool = new CertificateToolLocal();
             tool.convert(
-                    "C:\\Users\\hkim\\Documents\\Backups\\AZURE\\certs\\jcviManagement.pfx",
-                    "C:\\Users\\hkim\\Documents\\Backups\\AZURE\\certs\\jcviManagement.keystore",
+                    "C:\\Users\\public\\AZURE\\certs\\jcviManagement.pfx",
+                    "C:\\Users\\public\\AZURE\\certs\\jcviManagement.keystore",
                     "managementjcvi", "managementjcvi", "jcvimanagement");
         } catch (Exception e) {
             e.printStackTrace();

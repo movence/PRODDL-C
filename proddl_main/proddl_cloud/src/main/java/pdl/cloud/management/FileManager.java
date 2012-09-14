@@ -24,6 +24,7 @@ package pdl.cloud.management;
 import pdl.cloud.model.FileInfo;
 import pdl.cloud.storage.TableOperator;
 import pdl.common.Configuration;
+import pdl.common.StaticValues;
 import pdl.common.ToolPool;
 
 /**
@@ -40,7 +41,7 @@ public class FileManager {
     public FileManager() {
         conf = Configuration.getInstance();
         tableOperator = new TableOperator(conf);
-        filesTableName = ToolPool.buildTableName(conf.getStringProperty("TABLE_NAME_FILES"));
+        filesTableName = ToolPool.buildTableName(StaticValues.TABLE_NAME_FILES);
     }
 
     public boolean submitJob(FileInfo fileInfo) throws Exception {
@@ -57,7 +58,7 @@ public class FileManager {
     public String getFileNameById(String id) throws Exception {
         String name = null;
         try {
-            FileInfo info = (FileInfo)tableOperator.queryEntityBySearchKey(filesTableName, "Row Key", id, FileInfo.class);
+            FileInfo info = (FileInfo)tableOperator.queryEntityBySearchKey(filesTableName, StaticValues.COLUMN_ROW_KEY, id, FileInfo.class);
             if(info!=null)
                 name=info.getSuuid();
         } catch(Exception ex) {

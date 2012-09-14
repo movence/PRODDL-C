@@ -26,15 +26,9 @@ package pdl.operator.app;
  * User: hkim
  * Date: 8/15/11
  * Time: 9:05 AM
- * To change this template use File | Settings | File Templates.
  */
 public class PythonOperator extends AbstractApplicationOperator {
-
-    public PythonOperator(String storagePath, String packageName, String flagFile, String param) {
-        super(storagePath, packageName, flagFile, param);
-    }
-
-    public boolean start(String port) {
-        return true;
+    public PythonOperator(String storagePath, String packageName, String flagFile) {
+        super(storagePath, packageName, flagFile, null);
     }
 }

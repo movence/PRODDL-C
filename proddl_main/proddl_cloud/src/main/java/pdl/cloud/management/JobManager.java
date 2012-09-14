@@ -48,7 +48,7 @@ public class JobManager {
     public JobManager() {
         conf = Configuration.getInstance();
         tableOperator = new TableOperator(conf);
-        jobDetailTableName = ToolPool.buildTableName(conf.getStringProperty("TABLE_NAME_JOB_DETAIL"));
+        jobDetailTableName = ToolPool.buildTableName(StaticValues.TABLE_NAME_JOB_DETAIL);
     }
 
     /**
@@ -58,7 +58,10 @@ public class JobManager {
      */
     private synchronized void reorderSubmittedJobs() throws Exception {
         try {
-            List<ITableServiceEntity> jobs = getJobList(QueryTool.getSingleConditionalStatement("status", "eq", StaticValues.JOB_STATUS_SUBMITTED));
+            List<ITableServiceEntity> jobs = getJobList(
+                    QueryTool.getSingleConditionalStatement(StaticValues.COLUMN_JOB_DETAIL_STATUS, "eq", StaticValues.JOB_STATUS_SUBMITTED
+                )
+            );
 
             if(jobs!=null && jobs.size()>0) {
                 ArrayList<JobDetail> prioritisedJobList = new ArrayList<JobDetail>();

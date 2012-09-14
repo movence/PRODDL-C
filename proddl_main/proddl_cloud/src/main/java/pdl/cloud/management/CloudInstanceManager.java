@@ -56,8 +56,6 @@ import java.util.List;
  */
 public class CloudInstanceManager {
     public static final String TABLE_PERFORMANCE_COUNTER_NAME = "WADPerformanceCountersTable";
-    public static final String COLUMN_PERFORMANCE_COUNTER_NAME = "CounterName";
-    public static final String COLUMN_PERFORMANCE_COUNTER_VALUE = "\\Processor(_Total)\\% Processor Time";
 
     private Configuration conf;
     private ServiceManagementRest manager;
@@ -76,33 +74,34 @@ public class CloudInstanceManager {
             this.storagePath = conf.getStringProperty(StaticValues.CONFIG_KEY_STORAGE_PATH);
 
             tableOperator = new TableOperator(conf);
-            tableOperator.initDiagnosticsTableClient();
 
             BlobOperator blobOperator = new BlobOperator(conf);
-            String keystoreFilePath = storagePath + conf.getStringProperty("KEYSTORE_FILE_NAME");
-            String trustcacertFiePath = storagePath + conf.getStringProperty("TRUSTCACERT_FILE_NAME");
+            String keystoreFilaName = String.format("%s.%s", conf.getStringProperty(StaticValues.CONFIG_KEY_CERTIFICATE_NAME), "keystore");
+            String trustcaFieName = String.format("%s.%s", conf.getStringProperty(StaticValues.CONFIG_KEY_CERTIFICATE_NAME), "trustcacerts");
+            String keystoreFilePath = storagePath+keystoreFilaName;
+            String trustcaFiePath = storagePath+trustcaFieName;
 
             //download keystore file for azure management
             if (!new File(keystoreFilePath).exists())
                 blobOperator.download(
-                        conf.getStringProperty("BLOB_CONTAINER_TOOLS"),
-                        conf.getStringProperty("KEYSTORE_FILE_NAME"),
+                        StaticValues.BLOB_CONTAINER_TOOLS,
+                        keystoreFilaName,
                         storagePath
                 );
-            if (!new File(trustcacertFiePath).exists())
+            if (!new File(trustcaFiePath).exists())
                 blobOperator.download(
-                        conf.getStringProperty("BLOB_CONTAINER_TOOLS"),
-                        conf.getStringProperty("TRUSTCACERT_FILE_NAME"),
+                        StaticValues.BLOB_CONTAINER_TOOLS,
+                        trustcaFieName,
                         storagePath
                 );
 
             manager = new ServiceManagementRest(
-                    conf.getStringProperty("SUBSCRIPTION_ID"),
+                    conf.getStringProperty(StaticValues.CONFIG_KEY_SUBSCRIPTION_ID),
                     keystoreFilePath,
-                    conf.getStringProperty("CERTIFICATE_PASS"),
-                    trustcacertFiePath,
-                    conf.getStringProperty("CERTIFICATE_PASS"),
-                    conf.getStringProperty("CERTIFICATE_ALIAS"));
+                    conf.getStringProperty(StaticValues.CONFIG_KEY_CERT_PASSWORD),
+                    trustcaFiePath,
+                    conf.getStringProperty(StaticValues.CONFIG_KEY_CERT_PASSWORD),
+                    conf.getStringProperty(StaticValues.CONFIG_KEY_CERT_ALIAS));
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -168,7 +167,7 @@ public class CloudInstanceManager {
 
                     Element roleElement = (Element) nodes.item(i);
 
-                    if (roleElement.getAttribute("name").equals(conf.getStringProperty("CLOUD_ROLE_WORKER_NAME"))) {
+                    if (roleElement.getAttribute("name").equals(conf.getStringProperty(StaticValues.CONFIG_KEY_WORKER_NAME))) {
 
                         NodeList instanceCountNode = roleElement.getElementsByTagName("Instances");
                         Element instanceCountElement = (Element) instanceCountNode.item(0);
@@ -176,8 +175,7 @@ public class CloudInstanceManager {
                         int currentInstanceCount = Integer.valueOf(instanceCountElement.getAttribute("count"));
 
                         if ("up".equals(flag)) {
-                            if (currentInstanceCount == Integer.valueOf(conf.getStringProperty("MAX_TOTAL_WORKER_INSTANCE"))) {
-                                //System.out.println("The maximum allowable number of instances has been reached.");
+                            if (currentInstanceCount == StaticValues.MAX_TOTAL_WORKER_INSTANCE) {
                                 break;
                             }
 
@@ -185,7 +183,6 @@ public class CloudInstanceManager {
                         } else {
                             //prevents instance count becomes 0
                             if (currentInstanceCount == 1) {
-                                //System.out.printf("There should be at least one %s instance%n", conf.getStringProperty("CLOUD_ROLE_WORKER_NAME"));
                                 break;
                             }
 
@@ -215,20 +212,32 @@ public class CloudInstanceManager {
     }
 
     public boolean scaleUp(int count) {
-        System.out.println("CloudInstanceManager - Scale Up Worker instance.");
         return scaleService("up", null, count);
     }
 
     public boolean scaleDown(int count) {
-        System.out.println("CloudInstanceManager - Scale Down Worker instance.");
         return scaleService("down", null, count);
     }
 
     public void executeScalingByProcessorTime() {
         try {
+            /*
+             * No reason to query by Counter Name.
+             * Query performance data by deployment id since there could be multiple instances sharing the same storage account
+             * 8/3/12 by hkim
+            String COLUMN_PERFORMANCE_COUNTER_NAME = "CounterName";
+            String COLUMN_PERFORMANCE_COUNTER_VALUE = "\\Processor(_Total)\\% Processor Time";
+
             List<ITableServiceEntity> entityList = tableOperator.queryListBySearchKey(
                     TABLE_PERFORMANCE_COUNTER_NAME, COLUMN_PERFORMANCE_COUNTER_NAME,
-                    COLUMN_PERFORMANCE_COUNTER_VALUE, null, null, PerformanceData.class);
+                    COLUMN_PERFORMANCE_COUNTER_VALUE, null, null, PerformanceData.class);*/
+
+            List<ITableServiceEntity> entityList = tableOperator.queryListBySearchKey(
+                    TABLE_PERFORMANCE_COUNTER_NAME,
+                    StaticValues.CONFIG_KEY_DEPLOYMENT_ID,
+                    conf.getStringProperty(StaticValues.CONFIG_KEY_DEPLOYMENT_ID),
+                    null, null,
+                    PerformanceData.class);
 
             if (entityList != null && entityList.size() > 0) {
                 float processorTimeFactor = 0;
@@ -239,9 +248,9 @@ public class CloudInstanceManager {
 
                 processorTimeFactor /= entityList.size();
 
-                if (processorTimeFactor > conf.getIntegerProperty("MAXIMUM_AVERAGE_CPU_USAGE")) {
+                if (processorTimeFactor > StaticValues.MAXIMUM_AVERAGE_CPU_USAGE) {
                     this.scaleUp(0);
-                } else if (processorTimeFactor < conf.getIntegerProperty("MINIMUM_AVERAGE_CPU_USAGE")) {
+                } else if (processorTimeFactor < StaticValues.MINIMUM_AVERAGE_CPU_USAGE) {
                     this.scaleDown(0);
                 }
             }

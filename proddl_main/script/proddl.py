@@ -370,20 +370,9 @@ def main():
     for o, a in opts:
         if o in ("-h", "--help"):
             print __doc__
-            exit(0) 
-            
-    """ ARGS
-    [0] - host
-    [1] - iteration count
-    [2] - id/path identifier for files
-    [3] - timer.py
-    [4] - input file
-    """
+            exit(0)
     tester = JobSubmitter()
     tester.testCycle(args)
-    
-    #logger = LogParser("someID")
-    #logger.test()
     
 if __name__ == "__main__":
     main()

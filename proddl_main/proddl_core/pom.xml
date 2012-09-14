@@ -149,10 +149,9 @@
                         <phase>install</phase>
                         <configuration>
                             <target>
-                                <copy file="./target/${artifact.id}-${version.number}.jar"
-                                      todir="${bootstrap.dir}/${worker.name}/tools"/>
-                                <copy file="./target/${artifact.id}-${version.number}.jar"
-                                      todir="${bootstrap.dir}/${master.name}/tools"/>
+                                <copy file="./target/${artifact.id}-${version.number}.jar" todir="${bootstrap.dir}/CommonTool/tools"/>
+                                <!--<copy file="./target/${artifact.id}-${version.number}.jar" todir="${bootstrap.dir}/${worker.name}/tools"/>
+                                <copy file="./target/${artifact.id}-${version.number}.jar" todir="${bootstrap.dir}/${master.name}/tools"/>-->
                             </target>
                         </configuration>
                         <goals>

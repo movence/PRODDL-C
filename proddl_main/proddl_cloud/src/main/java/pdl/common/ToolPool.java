@@ -113,6 +113,6 @@ public class ToolPool {
     }
 
     public static String buildTableName(String tableName) {
-        return tableName.concat(Configuration.getInstance().getStringProperty("DEPLOYMENT_TYPE"));
+        return tableName.concat(Configuration.getInstance().getStringProperty(StaticValues.CONFIG_KEY_DEPLOYMENT_NAME));
     }
 }

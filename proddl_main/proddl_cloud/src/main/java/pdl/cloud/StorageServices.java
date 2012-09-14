@@ -41,11 +41,9 @@ public class StorageServices {
 
     private TableOperator tableOperator;
     private BlobOperator blobOperator;
-    private String tableName;
 
     public StorageServices() {
         conf = Configuration.getInstance();
-        tableName = ToolPool.buildTableName(conf.getStringProperty("TABLE_NAME_FILES"));
     }
 
     /*
@@ -63,7 +61,7 @@ public class StorageServices {
 
     public String getFileNameById(String fileId) {
         FileInfo currFile = (FileInfo) getTableOperator().queryEntityBySearchKey(
-                tableName,
+                ToolPool.buildTableName(StaticValues.TABLE_NAME_FILES),
                 StaticValues.COLUMN_ROW_KEY, fileId,
                 FileInfo.class);
         return currFile==null?null:currFile.getName();
@@ -95,7 +93,7 @@ public class StorageServices {
         boolean uploaded = getBlobOperator().uploadFileToBlob(fileInfo.getContainer(), fileInfo.getName(), filePath, fileInfo.getType(), overwrite);
         boolean inserted = false;
         if(uploaded) {
-            inserted = this.insertSingleEnttity(tableName, fileInfo);
+            inserted = this.insertSingleEnttity(ToolPool.buildTableName(StaticValues.TABLE_NAME_FILES), fileInfo);
         }
         return inserted;
     }
@@ -105,7 +103,7 @@ public class StorageServices {
     }
 
     public boolean downloadToolsByName(String name, String path) {
-        return this.downloadByName(conf.getStringProperty("BLOB_CONTAINER_TOOLS"), name, path);
+        return this.downloadByName(StaticValues.BLOB_CONTAINER_TOOLS, name, path);
     }
     /*
      * Files are stored in Azure drive 7/6/12

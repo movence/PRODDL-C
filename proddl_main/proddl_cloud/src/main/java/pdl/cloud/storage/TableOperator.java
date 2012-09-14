@@ -28,6 +28,7 @@ import org.soyatec.windowsazure.internal.util.TimeSpan;
 import org.soyatec.windowsazure.table.*;
 import org.soyatec.windowsazure.table.internal.CloudTableQuery;
 import pdl.common.Configuration;
+import pdl.common.StaticValues;
 
 import java.net.URI;
 import java.util.List;
@@ -57,22 +58,14 @@ public class TableOperator {
         this.conf = conf;
     }
 
-    private void initTableClient(String storageType) {
+    private void initTableClient() {
         try {
-            if ("diagnostics".equals(storageType))
-                tableStorageClient = TableStorageClient.create(
-                        URI.create(conf.getStringProperty("TABLE_HOST_NAME")),
-                        Boolean.parseBoolean(conf.getStringProperty("PATH_STYLE_URIS")),
-                        conf.getStringProperty("AZURE_ACCOUNT_NAME"), //conf.getStringProperty("DIAGNOSTICS_ACCOUNT_NAME"),
-                        conf.getStringProperty("AZURE_ACCOUNT_PKEY") //conf.getStringProperty("DIAGNOSTICS_ACCOUNT_PKEY")
-                );
-            else
-                tableStorageClient = TableStorageClient.create(
-                        URI.create(conf.getStringProperty("TABLE_HOST_NAME")),
-                        Boolean.parseBoolean(conf.getStringProperty("PATH_STYLE_URIS")),
-                        conf.getStringProperty("AZURE_ACCOUNT_NAME"),
-                        conf.getStringProperty("AZURE_ACCOUNT_PKEY")
-                );
+            tableStorageClient = TableStorageClient.create(
+                    URI.create(StaticValues.AZURE_TABLE_HOST_NAME),
+                    false,
+                    conf.getStringProperty(StaticValues.CONFIG_KEY_CSTORAGE_NAME),
+                    conf.getStringProperty(StaticValues.CONFIG_KEY_CSTORAGE_PKEY)
+            );
 
             tableStorageClient.setRetryPolicy(RetryPolicies.retryN(3, TimeSpan.fromSeconds(3)));
             /*IRetryPolicy retryPolicy = new TableRetryPolicy();
@@ -82,15 +75,11 @@ public class TableOperator {
         }
     }
 
-    public void initDiagnosticsTableClient() {
-        initTableClient("diagnostics");
-    }
-
     public ITable createTable(String tableName) {
         ITable table = null;
         try {
             if (tableStorageClient == null)
-                initTableClient(null);
+                initTableClient();
 
             table = tableStorageClient.getTableReference(tableName);
             if (null == table) {
@@ -112,7 +101,7 @@ public class TableOperator {
         try {
 
             if (tableStorageClient == null)
-                initTableClient(null);
+                initTableClient();
 
             ITable table = tableStorageClient.getTableReference(tableName);
             if (!table.isTableExist())
@@ -131,7 +120,7 @@ public class TableOperator {
         try {
 
             if (tableStorageClient == null)
-                initTableClient(null);
+                initTableClient();
 
             ITable table = tableStorageClient.getTableReference(tableName);
             if (!table.isTableExist())
@@ -188,7 +177,7 @@ public class TableOperator {
 
         try {
             if (tableStorageClient == null)
-                initTableClient(null);
+                initTableClient();
 
             CloudTableQuery sql = CloudTableQuery.select();
             if (searchColumn != null && searchKey != null)
@@ -239,7 +228,7 @@ public class TableOperator {
 
         try {
             if (tableStorageClient == null)
-                initTableClient(null);
+                initTableClient();
 
             CloudTableQuery sql = CloudTableQuery.select();
             sql.where(condition);
@@ -262,10 +251,8 @@ public class TableOperator {
         ITable table;
 
         try {
-            if (tableName.startsWith("WAD")) //Azure Diagnostics Table storage
-                initTableClient("diagnostics");
-            else if (tableStorageClient == null)
-                initTableClient(null);
+            if(tableStorageClient == null)
+                initTableClient();
 
             table = tableStorageClient.getTableReference(tableName);
 
@@ -284,7 +271,7 @@ public class TableOperator {
 
         try {
             if (tableStorageClient == null)
-                initTableClient(null);
+                initTableClient();
 
             ITable table = tableStorageClient.getTableReference(tableName);
             if (!table.isTableExist())
@@ -304,7 +291,7 @@ public class TableOperator {
     public <B extends ITableServiceEntity> void updateMultipleEntities(String tableName, List<B> entityList) {
         try {
             if (tableStorageClient == null)
-                initTableClient(null);
+                initTableClient();
 
             ITable table = tableStorageClient.getTableReference(tableName);
             if (!table.isTableExist())

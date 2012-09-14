@@ -21,13 +21,10 @@
 
 package pdl.operator;
 
-import org.soyatec.windowsazure.table.ITableServiceEntity;
 import pdl.cloud.StorageServices;
-import pdl.cloud.model.DynamicData;
 import pdl.cloud.model.JobDetail;
 import pdl.common.Configuration;
 import pdl.common.StaticValues;
-import pdl.common.ToolPool;
 import pdl.operator.app.CctoolsOperator;
 import pdl.operator.app.CygwinOperator;
 import pdl.operator.app.JettyThreadedOperator;
@@ -45,15 +42,11 @@ import java.util.concurrent.TimeUnit;
  * User: hkim
  * Date: 12/13/11
  * Time: 2:31 PM
- * To change this template use File | Settings | File Templates.
  */
 public class ServiceOperatorHelper {
 
     private Configuration conf;
     private StorageServices storageServices;
-
-    private PythonOperator pythonOperator;
-    private CygwinOperator cygwinOperator;
     private CctoolsOperator cctoolsOperator;
 
     private String storagePath;
@@ -63,58 +56,55 @@ public class ServiceOperatorHelper {
         storageServices = new StorageServices();
     }
 
-    /**
-     * @param isMaster
-     * @param storagePath
-     * @param masterAddress
-     * @param catalogServerPort
-     * @param jettyPort
-     */
-    public void run(String isMaster, String storagePath, String masterAddress, String catalogServerPort, String jettyPort, String deploymentId) {
+    public void run() {
         try {
-
-            storagePath = ToolPool.buildFilePath(storagePath.replace("/", File.separator));
-            conf.setProperty(StaticValues.CONFIG_KEY_STORAGE_PATH, storagePath);
-            conf.setProperty(StaticValues.CONFIG_KEY_DEPLOYMENT_ID, deploymentId);
-            this.storagePath = storagePath;
+            this.storagePath = conf.getStringProperty(StaticValues.CONFIG_KEY_STORAGE_PATH);
 
             this.runOperators();
 
-            if (isMaster.equals("true")) { //Master Instance
-                String dynamicTable = ToolPool.buildTableName(conf.getStringProperty("TABLE_NAME_DYNAMIC_DATA"));
+            String isMaster = conf.getStringProperty(StaticValues.CONFIG_KEY_MASTER_INSTANCE);
+            if (isMaster != null && isMaster.equals("true")) { //Master Instance
+                /*
+                 * Storage and datastore information are supplied with properties file by bootstrap
+                 * by hkim 9/6/2012
+                 *
+                String dynamicTable = ToolPool.buildTableName(StaticValues.TABLE_NAME_DYNAMIC_DATA);
 
                 //remove odl storage path data in dynamic table
                 ITableServiceEntity oldPath = storageServices.queryEntityBySearchKey(
                         dynamicTable,
                         StaticValues.COLUMN_DYNAMIC_DATA_KEY,
-                        StaticValues.KEY_DYNAMIC_DATA_STORAGE_PATH,
+                        StaticValues.CONFIG_KEY_STORAGE_PATH,
                         DynamicData.class);
-                if(oldPath!=null) {
+                if (oldPath != null) {
                     storageServices.deleteEntity(dynamicTable, oldPath);
                 }
 
                 DynamicData storageData = new DynamicData("storage_info");
-                storageData.setDataKey(StaticValues.KEY_DYNAMIC_DATA_STORAGE_PATH);
+                storageData.setDataKey(StaticValues.CONFIG_KEY_STORAGE_PATH);
                 storageData.setDataValue(storagePath);
                 storageServices.insertSingleEnttity(dynamicTable, storageData);
 
                 //file storage space, provided by c# bootstrap application
-                String datasotrePath = conf.getStringProperty(StaticValues.CONFIG_KEY_DATASTORE_PATH);
-                if(datasotrePath==null) {
-                    storageData = (DynamicData)storageServices.queryEntityBySearchKey(
+                String datastorePath = conf.getStringProperty(StaticValues.CONFIG_KEY_DATASTORE_PATH);
+                if (datastorePath == null) {
+                    storageData = (DynamicData) storageServices.queryEntityBySearchKey(
                             dynamicTable,
                             StaticValues.COLUMN_DYNAMIC_DATA_KEY, StaticValues.KEY_DYNAMIC_DATA_DRIVE_PATH,
                             DynamicData.class);
 
-                    if(storageData==null)
-                        datasotrePath = storagePath;
+                    if (storageData == null)
+                        datastorePath = storagePath;
                     else
-                        datasotrePath = storageData.getDataValue();
+                        datastorePath = storageData.getDataValue();
 
-                    conf.setProperty(StaticValues.CONFIG_KEY_DATASTORE_PATH, ToolPool.buildFilePath(datasotrePath, null));
+                    conf.setProperty(StaticValues.CONFIG_KEY_DATASTORE_PATH, ToolPool.buildFilePath(datastorePath, null));
                 }
-
-                this.runMaster(jettyPort, masterAddress, catalogServerPort);
+                */
+                String webServerPort = conf.getStringProperty(StaticValues.CONFIG_KEY_WEBSERVER_PORT);
+                String internalAddress = conf.getStringProperty(StaticValues.CONFIG_KEY_INTERNAL_ADDR);
+                String internalPort = conf.getStringProperty(StaticValues.CONFIG_KEY_INTERNAL_PORT);
+                this.runMaster(webServerPort, internalAddress, internalPort);
             } else { //Job(WorkQ) runner
                 this.runJobRunner();
             }
@@ -125,28 +115,14 @@ public class ServiceOperatorHelper {
     }
 
     private void runOperators() throws Exception {
-        pythonOperator = new PythonOperator(
-                storagePath,
-                conf.getStringProperty("PYTHON_NAME"),
-                conf.getStringProperty("PYTHON_FLAG_FILE"),
-                null
-        );
+         //TODO need more dynamic way to handle 3rd party package
+        PythonOperator pythonOperator = new PythonOperator(storagePath, "python", "python.exe");
         pythonOperator.run(storageServices);
 
-        cygwinOperator = new CygwinOperator(
-                storagePath,
-                conf.getStringProperty("CYGWIN_NAME"),
-                conf.getStringProperty("CYGWIN_FLAG_FILE"),
-                null
-        );
+        CygwinOperator cygwinOperator = new CygwinOperator(storagePath, "cygwin", "cygwin.bat");
         cygwinOperator.run(storageServices);
 
-        cctoolsOperator = new CctoolsOperator(
-                storagePath,
-                conf.getStringProperty("CCTOOLS_NAME"),
-                "bin" + File.separator + conf.getProperty("CCTOOLS_FLAG_FILE"),
-                null
-        );
+        cctoolsOperator = new CctoolsOperator(storagePath, "cctools-3.5.1", "bin" + File.separator + "makeflow.exe");
         cctoolsOperator.run(storageServices);
     }
 
@@ -164,21 +140,20 @@ public class ServiceOperatorHelper {
 
         //Adds processor time monitor to timer
         /*
-        * Removed instance monitor for manual instance management through REST
+        * Removed instance monitor for manual instance management through REST API
         * by hkim 6/26/12
         *
-        int timeInterval = conf.getIntegerProperty("WORKER_INSTANCE_MONITORING_INTERVAL");
         ScheduledInstanceMonitor instanceMonitor = new ScheduledInstanceMonitor();
         Timer instanceMonitorTimer = new Timer();
-        instanceMonitorTimer.scheduleAtFixedRate(instanceMonitor, timeInterval, timeInterval);
+        instanceMonitorTimer.scheduleAtFixedRate(instanceMonitor, StaticValue.WORKER_INSTANCE_MONITORING_INTERVAL, timeInterval);
         */
 
         //Job running threads pool
         final JobExecutorThreadPool threadExecutor = new JobExecutorThreadPool(
-                conf.getIntegerProperty("CORE_NUMBER_JOB_EXECUTOR"),
-                conf.getIntegerProperty("MAX_NUMBER_JOB_EXECUTOR"),
-                conf.getIntegerProperty("MAX_KEEP_ALIVE_VALUE_JOB_EXECUTOR"),
-                conf.getStringProperty("MAX_KEEP_ALIVE_UNIT_JOB_EXECUTOR").equals("min") ? TimeUnit.MINUTES : TimeUnit.SECONDS,
+                StaticValues.CORE_NUMBER_JOB_EXECUTOR,
+                StaticValues.MAX_NUMBER_JOB_EXECUTOR,
+                StaticValues.MAX_KEEP_ALIVE_VALUE_JOB_EXECUTOR,
+                StaticValues.MAX_KEEP_ALIVE_UNIT_JOB_EXECUTOR.equals("min") ? TimeUnit.MINUTES : TimeUnit.SECONDS,
                 new SynchronousQueue<Runnable>(),
                 //new BlockingArrayQueue<Runnable>(5),
                 new RejectedJobExecutorHandler()
@@ -203,7 +178,7 @@ public class ServiceOperatorHelper {
     }
 
     private void runJobRunner() throws Exception {
-        int maxWorkerCount = conf.getIntegerProperty("MAX_WORKER_INSTANCE_PER_NODE");
+        int maxWorkerCount = StaticValues.MAX_WORKER_INSTANCE_PER_NODE;
 
         while (!cctoolsOperator.isCatalogServerInfoAvailable()) {
             Thread.sleep(10000);
@@ -212,14 +187,14 @@ public class ServiceOperatorHelper {
         final ThreadPoolExecutor workerPool = new ThreadPoolExecutor(
                 maxWorkerCount,
                 maxWorkerCount,
-                conf.getIntegerProperty("MAX_KEEP_ALIVE_VALUE_JOB_EXECUTOR"),
-                conf.getStringProperty("MAX_KEEP_ALIVE_UNIT_JOB_EXECUTOR").equals("min") ? TimeUnit.MINUTES : TimeUnit.SECONDS,
+                StaticValues.MAX_KEEP_ALIVE_VALUE_JOB_EXECUTOR,
+                StaticValues.MAX_KEEP_ALIVE_UNIT_JOB_EXECUTOR.equals("min") ? TimeUnit.MINUTES : TimeUnit.SECONDS,
                 new SynchronousQueue<Runnable>(),
                 //new BlockingArrayQueue<Runnable>(5),
                 new RejectedExecutionHandler() {
                     @Override
                     public void rejectedExecution(Runnable runnable, ThreadPoolExecutor threadPoolExecutor) {
-                    return;
+                        return;
                     }
                 }
         );
@@ -231,7 +206,7 @@ public class ServiceOperatorHelper {
             }
         });
 
-        for(int i=0;i<maxWorkerCount;i++) {
+        for (int i = 0; i < maxWorkerCount; i++) {
             WorkerExecutor worker = new WorkerExecutor(cctoolsOperator);
             workerPool.execute(worker);
         }

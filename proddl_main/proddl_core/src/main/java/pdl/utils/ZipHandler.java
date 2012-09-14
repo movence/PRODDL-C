@@ -34,7 +34,6 @@ import java.util.zip.ZipFile;
  * User: hkim
  * Date: 12/13/11
  * Time: 2:34 PM
- * To change this template use File | Settings | File Templates.
  */
 public class ZipHandler {
     public ZipHandler() {

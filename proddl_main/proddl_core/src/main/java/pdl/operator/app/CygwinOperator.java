@@ -26,15 +26,9 @@ package pdl.operator.app;
  * User: hkim
  * Date: 9/1/11
  * Time: 3:34 PM
- * To change this template use File | Settings | File Templates.
  */
 public class CygwinOperator extends AbstractApplicationOperator {
-    public CygwinOperator(String storagePath, String packageName, String flagFile, String param) {
-        super(storagePath, packageName, flagFile, param);
-    }
-
-    @Override
-    public boolean start(String port) {
-        return true;
+    public CygwinOperator(String storagePath, String packageName, String flagFile) {
+        super(storagePath, packageName, flagFile, null);
     }
 }

@@ -27,7 +27,6 @@ import pdl.cloud.management.JobManager;
 import pdl.cloud.management.UserService;
 import pdl.cloud.model.JobDetail;
 import pdl.cloud.model.User;
-import pdl.common.Configuration;
 import pdl.common.QueryTool;
 import pdl.common.StaticValues;
 import pdl.common.ToolPool;
@@ -47,8 +46,6 @@ public class JobRequestHandler {
     UserService userService;
     FileService fileService;
     ArrayList<String> adminJobs;
-
-    private static final String JOB_TYPE_SCALE_UP = "scaleup";
 
     public JobRequestHandler() {
         manager = new JobManager();
@@ -161,21 +158,13 @@ public class JobRequestHandler {
 
     private void checkJobPrivilege(String jobName, String userName) throws Exception {
         if(adminJobs==null) {
-            adminJobs = new ArrayList<String>(Arrays.asList(Configuration.getInstance().getStringProperty("ADMIN_ONLY_JOBS").split(",")));
+            adminJobs = new ArrayList<String>(Arrays.asList(StaticValues.ADMIN_ONLY_JOBS));
         }
 
         boolean isAdminUser = this.isUserAdmin(userName);
 
         if(!isAdminUser && adminJobs.contains(jobName))
             throw new Exception(String.format("access denied for %s", jobName));
-
-        /*List<String> userAllowedJobs = new ArrayList<String>(Arrays.asList(StaticValues.USER_AVAILABLE_JOBS.split(",")));
-        List<String> adminAllowedJobs = new ArrayList<String>(Arrays.asList(StaticValues.ADMIN_ONLY_JOBS.split(",")));
-        adminAllowedJobs.addAll(userAllowedJobs);
-        if(!userAllowedJobs.contains(jobName) || !(isAdminUser && adminAllowedJobs.contains(jobName))) {
-            rtnVal.put("message", String.format("The Job('%s') is not available or you do not have permission.", jobName));
-            throw new Exception("User requested a job that is not allowed to execute.");
-        }*/
     }
 
     private boolean addUser(Map<String, Object> inputInMap, UserService userService) throws Exception {
@@ -211,7 +200,7 @@ public class JobRequestHandler {
 
             JobDetail job = manager.getJobByID(jobId);
 
-            Object jobInfo;
+            Object jobInfo = null;
             if(job!=null) {
                 Map<String, Object> jobInfoMap = new TreeMap<String, Object>();
                 //jobInfoMap.put("Job ID", job.getJobUUID());
@@ -226,8 +215,6 @@ public class JobRequestHandler {
                 }
 
                 jobInfo = jobInfoMap;
-            } else {
-                jobInfo = String.format("job does not exist for '%s'", jobId);
             }
             rtnVal.put("info", jobInfo);
 
@@ -272,14 +259,14 @@ public class JobRequestHandler {
         try {
             List<String> jobIdWithStatus = new ArrayList<String>();
 
-            List<ITableServiceEntity> jobs = manager.getJobList(QueryTool.getSingleConditionalStatement("userId", "eq", userName));
+            List<ITableServiceEntity> jobs = manager.getJobList(QueryTool.getSingleConditionalStatement(StaticValues.COLUMN_USER_ID, "eq", userName));
             if(jobs!=null && jobs.size()>0) {
                 for(ITableServiceEntity entity : jobs) {
                     JobDetail job = (JobDetail)entity;
                     jobIdWithStatus.add(job.getJobUUID()+":"+job.getStatusInString());
                 }
             }
-            rtnVal.put("Jobs", jobIdWithStatus.isEmpty()?"There is no job for "+userName:jobIdWithStatus);
+            rtnVal.put("Jobs", jobIdWithStatus);
 
         } catch(Exception ex) {
             ex.printStackTrace();

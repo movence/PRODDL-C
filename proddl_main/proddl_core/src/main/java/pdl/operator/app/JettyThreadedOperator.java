@@ -77,7 +77,7 @@ public class JettyThreadedOperator extends Thread {
 
             System.out.println("JettyThreadedOperator: start DONE");
         } catch (Exception ex) {
-            System.out.println("JettyThreadedOperator.start threw : " + ex.toString());
+            System.err.println("JettyThreadedOperator.start threw : " + ex.toString());
             ex.printStackTrace();
         }
     }

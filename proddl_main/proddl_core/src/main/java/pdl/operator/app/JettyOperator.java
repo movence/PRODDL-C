@@ -55,13 +55,13 @@ public class JettyOperator extends AbstractApplicationOperator {
 
             command.add(ToolPool.buildFilePath(storagePath,"jre","bin","java"));
             command.add("-jar");
-            command.add(ToolPool.buildFilePath(packagePath,"start.jar"));
-            command.add("-Djetty.port=" + port);
-            command.add("-Djetty.home=" + packagePath);
+            command.add(ToolPool.buildFilePath(toolPath,"start.jar"));
+            command.add("-Djetty.port=" + arg);
+            command.add("-Djetty.home=" + toolPath);
 
             ProcessBuilder builder = new ProcessBuilder(command);
             builder.redirectErrorStream(true);
-            builder.directory(new File(packagePath));
+            builder.directory(new File(toolPath));
 
             process = builder.start();
 

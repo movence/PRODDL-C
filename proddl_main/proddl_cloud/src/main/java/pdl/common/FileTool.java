@@ -51,7 +51,7 @@ public class FileTool {
         if(conf==null)
             conf = Configuration.getInstance();
 
-        fileTableName = ToolPool.buildTableName(conf.getStringProperty("TABLE_NAME_FILES"));
+        fileTableName = ToolPool.buildTableName(StaticValues.TABLE_NAME_FILES);
 
         String storagePath = conf.getStringProperty(StaticValues.CONFIG_KEY_DATASTORE_PATH);
 
@@ -63,11 +63,11 @@ public class FileTool {
 
     public FileInfo createFileRecord(String username) {
         FileInfo fileInfo = new FileInfo();
-        fileInfo.setName(fileInfo.getIuuid()+StaticValues.FILE_EXTENSION);
+        fileInfo.setName(fileInfo.getIuuid()+StaticValues.FILE_DAT_EXTENSION);
         fileInfo.setUserId(username);
         fileInfo.setStatus(StaticValues.FILE_STATUS_RESERVED);
 
-        int hashedDirectory = Math.abs(fileInfo.getIuuid().hashCode()) % conf.getIntegerProperty("MAX_FILE_COUNT_PER_DIRECTORY");
+        int hashedDirectory = Math.abs(fileInfo.getIuuid().hashCode()) % StaticValues.MAX_FILE_COUNT_PER_DIRECTORY;
         String dirPath = uploadDirectoryPath + hashedDirectory;
         ToolPool.createDirectoryIfNotExist(dirPath);
         fileInfo.setPath(String.valueOf(hashedDirectory));
@@ -108,7 +108,7 @@ public class FileTool {
 
             //TODO It might need to allow files to be uploaded to other blob containers than jobFiles
             if (type!=null && type.equals("blob")) {
-                fileInfo.setContainer(conf.getStringProperty("BLOB_CONTAINER_FILES"));
+                fileInfo.setContainer("files"); //TODO may need to define blob container for files in properties resource file
                 boolean uploaded = services.uploadFileToBlob(fileInfo, newFilePath, false);
 
                 if(!uploaded) {
@@ -212,7 +212,6 @@ public class FileTool {
         return filePath;
     }
 
-    //TODO files are stored in Azure drive: provide a way to delete file either in blob storage or drive
     public boolean delete(String fileId, String username) throws Exception {
         boolean rtnVal = false;
         try {
@@ -229,7 +228,9 @@ public class FileTool {
                 if(file.exists())
                     file.delete();
 
-                rtnVal = services.deleteBlob(conf.getStringProperty("BLOB_CONTAINER_FILES"), info.getName());
+                //TODO files are stored in Azure drive: provide a way to delete file either in blob storage or drive
+                //rtnVal = services.deleteBlob(conf.getStringProperty("BLOB_CONTAINER_FILES"), info.getName());
+                rtnVal = true;
             }
         } catch(Exception ex) {
             throw ex;

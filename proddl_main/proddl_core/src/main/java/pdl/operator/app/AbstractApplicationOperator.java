@@ -22,6 +22,7 @@
 package pdl.operator.app;
 
 import pdl.cloud.StorageServices;
+import pdl.common.StaticValues;
 import pdl.common.ToolPool;
 import pdl.utils.ZipHandler;
 
@@ -32,60 +33,58 @@ import java.io.File;
  * User: hkim
  * Date: 8/10/11
  * Time: 2:05 PM
- * To change this template use File | Settings | File Templates.
  */
 public abstract class AbstractApplicationOperator implements IApplicationOperator {
     protected String storagePath;
-    protected String packagePath;
-    protected String packageName;
-    protected String packageFile;
-    protected String packageFilePath;
-    protected String param;
+    protected String toolPath;
+    protected String toolName;
+    protected String arg;
     protected String flagFile;
 
-    public AbstractApplicationOperator(String storagePath, String packageName, String flagFile, String param) {
+    public AbstractApplicationOperator(String storagePath, String toolName, String flagFile, String arg) {
         this.storagePath = storagePath;
-        this.packageName = packageName;
-        this.packageFile = packageName + ".zip";
-        this.packagePath = storagePath + packageName;
-        this.packageFilePath = storagePath + packageFile;
+        this.toolName = toolName;
+        toolPath = ToolPool.buildFilePath(storagePath, toolName);
         this.flagFile = flagFile;
-        this.param = param;
+        this.arg = arg;
     }
 
-    public void run(StorageServices services) throws Exception {
+    public void run(StorageServices storageService) throws Exception {
         boolean result = false;
 
-        if ((result = download(services))) {
-            if ((result = unzip())) {
-                result = start(param);
+        String toolFileName = toolName+StaticValues.FILE_ZIP_EXTENTION;
+        String toolFilePath = ToolPool.buildFilePath(storagePath, toolFileName);
+
+        result = ToolPool.isDirectoryExist(toolPath);
+        if(!result){
+            result = ToolPool.canReadFile(toolFilePath);
+            if(!result) {
+                this.download(storageService, toolFileName);
             }
+            result = this.unzip(toolFilePath);
+
+            File toolFile = new File(toolFilePath);
+            toolFile.delete();
         }
+
         if (!result)
-            throw new Exception(String.format("Failed to obtain tool - %s%n", packageName));
+            throw new Exception(String.format("Failed to obtain tool - %s%n", toolName));
 
     }
 
-    public boolean download(StorageServices services) throws Exception {
-        File tool = new File(packagePath);
-        return tool.exists() || services.downloadToolsByName(packageFile, packageFilePath);
+    public boolean download(StorageServices storageService, String toolFileName) throws Exception {
+        return storageService.downloadToolsByName(toolFileName, ToolPool.buildFilePath(storagePath, toolFileName));
     }
 
-    public abstract boolean start(String param);
-
-    public boolean unzip() throws Exception {
+    public boolean unzip(String toolFilePath) throws Exception {
         boolean rtnVal = false;
 
         ZipHandler zipOperator = new ZipHandler();
-        if (zipOperator.unZip(packageFilePath, storagePath)) {
-            if (ToolPool.isDirectoryExist(packagePath) && (new File(ToolPool.buildFilePath(packagePath, flagFile))).exists())
+        if (zipOperator.unZip(toolFilePath, storagePath)) {
+            if (ToolPool.isDirectoryExist(toolPath) && (new File(ToolPool.buildFilePath(toolPath, flagFile))).exists())
                 rtnVal = true;
         }
 
         return rtnVal;
-    }
-
-    public boolean stop() {
-        return true;
     }
 }

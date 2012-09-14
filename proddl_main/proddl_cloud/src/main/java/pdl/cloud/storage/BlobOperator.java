@@ -33,6 +33,7 @@ import org.soyatec.windowsazure.error.StorageException;
 import org.soyatec.windowsazure.error.StorageServerException;
 import org.soyatec.windowsazure.internal.util.NameValueCollection;
 import pdl.common.Configuration;
+import pdl.common.StaticValues;
 import pdl.common.ToolPool;
 
 import java.io.File;
@@ -68,12 +69,10 @@ public class BlobOperator {
     private void initBlobClient() {
         try {
             blobStorageClient = BlobStorageClient.create(
-                    URI.create(
-                            conf.getStringProperty("BLOB_HOST_NAME")),
-                    Boolean.parseBoolean(conf.getStringProperty("PATH_STYLE_URIS")
-                    ),
-                    conf.getStringProperty("AZURE_ACCOUNT_NAME"),
-                    conf.getStringProperty("AZURE_ACCOUNT_PKEY")
+                    URI.create(StaticValues.AZURE_BLOB_HOST_NAME),
+                    false,
+                    conf.getStringProperty(StaticValues.CONFIG_KEY_CSTORAGE_NAME),
+                    conf.getStringProperty(StaticValues.CONFIG_KEY_CSTORAGE_PKEY)
             );
             //blobStorageClient.setRetryPolicy( RetryPolicies.retryN( 1, TimeSpan.fromSeconds( 5 ) ) );
         } catch (Exception ex) {

@@ -23,6 +23,7 @@ package pdl.common;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -33,6 +34,41 @@ import java.util.Properties;
  * Date: 1/23/12
  * Time: 11:28 AM
  */
+
+
+/**
+ *
+ * Sample Configuration file
+ *
+ * <Master>
+      IsMaster={master|worker identifier}
+      DeploymentName={postfix to blob directory and table names}
+      DeploymentId={deployment ID}
+      StoragePath={path to general storage area}
+      DataStorePath={path to storage area for task and files}
+      StorageAccountName={storage container name}
+      StorageAccountPkey={primary access key to storage container}
+      SubscriptionId={AZURE subscription ID: can be found in Azure portal}
+      CloudRoleWorkerName={worker role name}
+      CertificateName={certificate file name of keystore and trustcacert}
+      CertificatePassword={password for certificate file}
+      CertificateAlias={alias for certificate file}
+      WebserverPort={web container port}
+      InternalAddress={internal IP address}
+      InternalPort={internal port number}
+ * </Master>
+ *
+ * <Worker>
+      IsMaster={master|worker identifier, can be omitted}
+      DeploymentName={postfix to blob directory and table names}
+      DeploymentId={deployment ID}
+      StoragePath={path to general storage area}
+      StorageAccountName={storage container name}
+      StorageAccountPkey={primary access key to storage container}
+ * </Worker>
+ *
+ */
+
 public class Configuration {
 
     private static Configuration instance;
@@ -57,15 +93,31 @@ public class Configuration {
     public static Configuration load() throws IOException {
         Configuration config = new Configuration();
 
-        InputStream propStream = Configuration.class.getClassLoader().getResourceAsStream("property/proddl.properties");
-        if (propStream != null) {
-            Properties properties = new Properties();
-            properties.load(propStream);
-            for (Object key : properties.keySet()) {
-                config.setProperty(key.toString(), properties.get(key));
+        try {
+            ClassLoader loader = ClassLoader.getSystemClassLoader();
+            if(loader != null) {
+                URL url = loader.getResource(StaticValues.CONFIG_FILENAME);
+                if(url == null) {
+                    url = loader.getResource("/"+StaticValues.CONFIG_FILENAME);
+                }
+
+                if(url != null) {
+                    InputStream in = url.openStream();
+                    Properties props = new Properties();
+                    props.load(in);
+                    for (Object key : props.keySet()) {
+                        config.setProperty(key.toString(), props.get(key));
+                    }
+
+                } else {
+                    System.err.println(StaticValues.CONFIG_FILENAME + " cannot be found.");
+                }
             }
-        } else
-            System.err.println("property/proddl.properties is missing.");
+        } catch(IOException ioe) {
+            ioe.printStackTrace();
+        } catch(Exception ex) {
+            ex.printStackTrace();
+        }
 
         return config;
     }
@@ -86,3 +138,4 @@ public class Configuration {
         properties.put(key, value);
     }
 }
+

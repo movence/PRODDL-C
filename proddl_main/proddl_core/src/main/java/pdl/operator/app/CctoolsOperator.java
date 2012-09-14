@@ -63,10 +63,6 @@ public class CctoolsOperator extends AbstractApplicationOperator {
     private String catalogServerAddress;
     private String catalogServerPort;
 
-    private String dynamicTableName;
-
-    private int makeflowPort = 10000;
-
     private final static String[] makeflowArgs = {
             "-T", "wq", //batch system
             "-p", LOOKUP_KEY_PORT, //random port
@@ -86,8 +82,8 @@ public class CctoolsOperator extends AbstractApplicationOperator {
             "-N", LOOKUP_KEY_TASK_NAME
     };
 
-    public CctoolsOperator(String storagePath, String packageName, String flagFile, String param) {
-        super(storagePath, packageName, flagFile, param);
+    public CctoolsOperator(String storagePath, String packageName, String flagFile) {
+        super(storagePath, packageName, flagFile, null);
         setPaths();
     }
 
@@ -95,12 +91,15 @@ public class CctoolsOperator extends AbstractApplicationOperator {
         try {
             conf = Configuration.getInstance();
 
-            cctoolsBinPath = ToolPool.buildFilePath(packagePath, "bin");
-            cygwinBinPath = ToolPool.buildFilePath(storagePath, conf.getStringProperty("CYGWIN_NAME"), "bin");
-            dynamicTableName = ToolPool.buildTableName(conf.getStringProperty("TABLE_NAME_DYNAMIC_DATA"));
+            cctoolsBinPath = ToolPool.buildFilePath(toolPath, "bin");
+            cygwinBinPath = ToolPool.buildFilePath(storagePath, "cygwin", "bin");
+
+            //create /tmp directory under cctools
+            File tmpDir = new File(ToolPool.buildFilePath(toolPath, "tmp"));
+            if(!tmpDir.exists() || !tmpDir.isDirectory())
+                tmpDir.mkdir();
 
             processes = new ArrayList<Process>();
-
             Runtime.getRuntime().addShutdownHook(new Thread() {
                 @Override
                 public void run() {
@@ -113,14 +112,6 @@ public class CctoolsOperator extends AbstractApplicationOperator {
         } catch (Exception ex) {
             ex.printStackTrace();
         }
-    }
-
-    public boolean start(String param) {
-        //create /tmp directory under cctools
-        File tmpDir = new File(ToolPool.buildFilePath(packagePath, "tmp"));
-        if(!tmpDir.exists() || !tmpDir.isDirectory())
-            tmpDir.mkdir();
-        return true;
     }
 
     public ProcessBuilder buildProcessBuilder(String taskDir, List<String> args, boolean setPortRange) {
@@ -187,8 +178,8 @@ public class CctoolsOperator extends AbstractApplicationOperator {
                         process = pb.start();
                         processes.add(process);
 
-                        LogStreamReader errorGobbler = new LogStreamReader(process.getErrorStream(), "MAKEFLOW ERROR");
-                        LogStreamReader outputGobbler = new LogStreamReader(process.getInputStream(), "MAKEFLOW OUTPUT");
+                        LogStreamReader errorGobbler = new LogStreamReader(process.getErrorStream(), "ERROR-[Makeflow]");
+                        LogStreamReader outputGobbler = new LogStreamReader(process.getInputStream(), "OUTPUT-[Makeflow]");
                         errorGobbler.start();
                         outputGobbler.start();
 
@@ -228,8 +219,8 @@ public class CctoolsOperator extends AbstractApplicationOperator {
             process = pb.start();
             processes.add(process);
 
-            LogStreamReader errorGobbler = new LogStreamReader(process.getErrorStream(), "WORKER ERROR");
-            LogStreamReader outputGobbler = new LogStreamReader(process.getInputStream(), "WORKER OUTPUT");
+            LogStreamReader errorGobbler = new LogStreamReader(process.getErrorStream(), "ERROR-[Worker]");
+            LogStreamReader outputGobbler = new LogStreamReader(process.getInputStream(), "OUTPUT-[Worker]");
             errorGobbler.start();
             outputGobbler.start();
 
@@ -314,13 +305,13 @@ public class CctoolsOperator extends AbstractApplicationOperator {
 
             DynamicData catalogServerInfo = this.getCatalogServerInfo(key);
             if(catalogServerInfo!=null)
-                tableOperator.deleteEntity(dynamicTableName, catalogServerInfo);
+                tableOperator.deleteEntity(ToolPool.buildTableName(StaticValues.TABLE_NAME_DYNAMIC_DATA), catalogServerInfo);
 
             catalogServerInfo = new DynamicData("catalogserver_info");
             catalogServerInfo.setDataKey(key);
             catalogServerInfo.setDataValue(value);
 
-            tableOperator.insertSingleEntity(dynamicTableName, catalogServerInfo);
+            tableOperator.insertSingleEntity(ToolPool.buildTableName(StaticValues.TABLE_NAME_DYNAMIC_DATA), catalogServerInfo);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -333,7 +324,7 @@ public class CctoolsOperator extends AbstractApplicationOperator {
             TableOperator tableOperator = new TableOperator(conf);
 
             catalogServerInfo = (DynamicData) tableOperator.queryEntityBySearchKey(
-                    dynamicTableName,
+                    ToolPool.buildTableName(StaticValues.TABLE_NAME_DYNAMIC_DATA),
                     StaticValues.COLUMN_DYNAMIC_DATA_KEY,
                     key,
                     DynamicData.class
@@ -360,8 +351,8 @@ public class CctoolsOperator extends AbstractApplicationOperator {
                 process = pb.start();
                 processes.add(process);
 
-                LogStreamReader errorGobbler = new LogStreamReader(process.getErrorStream(), "BASH ERROR");
-                LogStreamReader outputGobbler = new LogStreamReader(process.getInputStream(), "BASH OUTPUT");
+                LogStreamReader errorGobbler = new LogStreamReader(process.getErrorStream(), "ERROR-[Bash]");
+                LogStreamReader outputGobbler = new LogStreamReader(process.getInputStream(), "OUTPUT-[Bash]");
                 errorGobbler.start();
                 outputGobbler.start();
 
@@ -383,8 +374,8 @@ public class CctoolsOperator extends AbstractApplicationOperator {
             if (currFile.exists() || currFile.canRead()) {
                 Process process = Runtime.getRuntime().exec(taskFileName);
 
-                LogStreamReader errorGobbler = new LogStreamReader(process.getErrorStream(), "EXE ERROR");
-                LogStreamReader outputGobbler = new LogStreamReader(process.getInputStream(), "EXE OUTPUT");
+                LogStreamReader errorGobbler = new LogStreamReader(process.getErrorStream(), "ERROR-[Exe]");
+                LogStreamReader outputGobbler = new LogStreamReader(process.getInputStream(), "OUTPUT-[Exe]");
                 errorGobbler.start();
                 outputGobbler.start();
 
@@ -412,7 +403,7 @@ public class CctoolsOperator extends AbstractApplicationOperator {
                 BufferedReader br = new BufferedReader(isr);
                 String line=null;
                 while ( (line = br.readLine()) != null)
-                    System.out.println(type + ">" + line);
+                    System.out.println(type+" "+line);
             } catch (IOException ioe) {
                 ioe.printStackTrace();
             }
