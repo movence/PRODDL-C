@@ -57,10 +57,11 @@ namespace CommonTool
             try
             {
                 /* Drive initialization */
-                LocalResource masterDriveCache = RoleEnvironment.GetLocalResource("DriveCache");
-                CloudDrive.InitializeCache(masterDriveCache.RootPath + "cache", masterDriveCache.MaximumSizeInMegabytes);
+                LocalResource localStorage = RoleEnvironment.GetLocalResource("LocalStorage");
+                int cacheSize = int.Parse(RoleEnvironment.GetConfigurationSettingValue(SharedTools.KEY_VHD_SIZE)) + 100;
+                CloudDrive.InitializeCache(Path.Combine(Path.GetPathRoot(localStorage.RootPath) + "drivecache"), cacheSize);
                 _cloudDrive = _account.CreateCloudDrive(driveUri);
-                _cloudDrivePath = _cloudDrive.Mount(masterDriveCache.MaximumSizeInMegabytes, DriveMountOptions.None);
+                _cloudDrivePath = _cloudDrive.Mount(cacheSize, DriveMountOptions.None);
                 rtnVal = true;
             }
             catch (Exception ex)

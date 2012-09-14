@@ -33,7 +33,7 @@ namespace CommonTool.data
 {
     public class DynamicDataServiceContext : TableServiceContext
     {
-        private static readonly String dynamicDataTableName = "dynamicData"+RoleEnvironment.GetConfigurationSettingValue("DeploymentType");
+        private static readonly String dynamicDataTableName = "dynamicData"+RoleEnvironment.GetConfigurationSettingValue("DeploymentName");
 
         public DynamicDataServiceContext(String baseAddress, StorageCredentials credentials) : base(baseAddress, credentials) { }
 

@@ -40,18 +40,36 @@ namespace PRODDLJobRunner
 {
     class PRODDLJobRunnerMain : RoleEntryPoint
     {
-        public String localStoragePath;
-        private String logPath;
+        private string localStoragePath;
+        private string logPath;
 
         public override void Run()
         {
             try
             {
-                LocalResource localStorage = RoleEnvironment.GetLocalResource("LocalStorage");
-                localStoragePath = Path.GetPathRoot(localStorage.RootPath);
+                //check configuration status before doing anything
+                while (true)
+                {
+                    string c_finalized = RoleEnvironment.GetConfigurationSettingValue("ConfigurationFinalized");
+                    if (c_finalized != null & "1".Equals(c_finalized))
+                        break;
+                    else
+                        Thread.Sleep(6 * 60 * 60 * 1000); //sleeps for 6 hours until user inputs configuration data 
+                }
 
-                extractJRE();
-                startJavaMainOperator();
+                DiagnosticMonitorConfiguration dmc = DiagnosticMonitor.GetDefaultInitialConfiguration();
+                PerformanceCounterConfiguration pcc = new PerformanceCounterConfiguration();
+                pcc.CounterSpecifier = @"\Processor(_Total)\% Processor Time";
+                pcc.SampleRate = System.TimeSpan.FromSeconds(30);
+                dmc.PerformanceCounters.DataSources.Add(pcc);
+                dmc.PerformanceCounters.ScheduledTransferPeriod = TimeSpan.FromMinutes(3.0);
+
+                DiagnosticMonitor.AllowInsecureRemoteConnections = true;
+                DiagnosticMonitor.Start("StorageConnectionString", dmc);
+
+                SharedTools.createPropertyFile(new Dictionary<string,string>());
+                SharedTools.startJavaMainOperator("[Worker]", localStoragePath);
+                //startJavaMainOperator();
             }
             catch (Exception ex)
             {
@@ -60,7 +78,7 @@ namespace PRODDLJobRunner
 
             //while (true)
             //{
-            //   Thread.Sleep(10000);
+            //   Thread.Sleep(10000);4
             //}
         }
 
@@ -69,7 +87,9 @@ namespace PRODDLJobRunner
             //ServicePointManager.UseNagleAlgorithm = false;
             ServicePointManager.UseNagleAlgorithm = false;
 
-            logPath = Path.Combine(RoleEnvironment.GetLocalResource("LocalStorage").RootPath, "trace.log");
+            LocalResource localStorage = RoleEnvironment.GetLocalResource("LocalStorage");
+            localStoragePath = Path.GetPathRoot(localStorage.RootPath);
+            logPath = Path.Combine(localStoragePath, "trace.log");
             
             Trace.Listeners.Clear();
             TextWriterTraceListener twtl = new TextWriterTraceListener(
@@ -82,27 +102,13 @@ namespace PRODDLJobRunner
             Trace.Listeners.Add(twtl);
             Trace.Listeners.Add(ctl);
             Trace.AutoFlush = true;
-           
-            DiagnosticMonitorConfiguration dmc = DiagnosticMonitor.GetDefaultInitialConfiguration();
 
             /*
             dmc.Logs.ScheduledTransferPeriod = TimeSpan.FromMinutes(3.0);
             dmc.Logs.ScheduledTransferLogLevelFilter = LogLevel.Verbose;
             */
 
-            PerformanceCounterConfiguration pcc = new PerformanceCounterConfiguration();
-            pcc.CounterSpecifier = @"\Processor(_Total)\% Processor Time";
-            pcc.SampleRate = System.TimeSpan.FromSeconds(30);
-            dmc.PerformanceCounters.DataSources.Add(pcc);
-            dmc.PerformanceCounters.ScheduledTransferPeriod = TimeSpan.FromMinutes(3.0);
-
-            DiagnosticMonitor.AllowInsecureRemoteConnections = true;
-            //DiagnosticMonitor.Start("DiagnosticConnectionString", dmc);
-            DiagnosticMonitor.Start("StorageConnectionString", dmc);
-
-
             RoleEnvironment.Changing += RoleEnvironmentChanging;
-
             CloudStorageAccount.SetConfigurationSettingPublisher((configName, configSetter) =>
             {
                 configSetter(RoleEnvironment.GetConfigurationSettingValue(configName));
@@ -130,22 +136,6 @@ namespace PRODDLJobRunner
             }
         }
 
-        private bool extractJRE()
-        {
-            try
-            {
-                new SharedTools().extractZipFile(Path.Combine(Directory.GetCurrentDirectory(), @"tools\jre6x64.zip"), localStoragePath);
-
-                Trace.TraceInformation("DONE: extractJRE()");
-                return true;
-            }
-            catch (Exception ex)
-            {
-                Trace.TraceError("EXCEPTION: extractJRE() - " + ex.ToString());
-                return false;
-            }
-        }
-
         private bool startJavaMainOperator()
         {
             try
@@ -157,7 +147,7 @@ namespace PRODDLJobRunner
                 string jarPath = roleRoot + @"\approot\tools\proddl_core-1.0.jar";
                 string jreHome = localStoragePath + @"jre";
 
-                Process proc = new SharedTools().buildCloudProcess(
+                Process proc = SharedTools.buildCloudProcess(
                     String.Format("\"{0}\\bin\\java.exe\"", jreHome),
                     String.Format("-jar {0} {1} {2} {3} {4} {5} {6}", jarPath, "false", localStoragePath, "-", "-", "-", RoleEnvironment.DeploymentId),
                     "[JobRunner]");

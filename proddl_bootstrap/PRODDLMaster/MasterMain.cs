@@ -38,23 +38,35 @@ namespace PRODDLMaster
 	class MasterMain : RoleEntryPoint
 	{
 		MasterHelper helper;
+        private string logPath;
+
 		public override void Run()
-		{
-			helper = new MasterHelper();
+        {
+            //check configuration status before doing anything
+            while (true)
+            {
+                string c_finalized = RoleEnvironment.GetConfigurationSettingValue("ConfigurationFinalized");
+                if (c_finalized != null && "1".Equals(c_finalized))
+                    break;
+                else
+                    Thread.Sleep(6 * 60 * 60 * 1000); //sleeps for 6 hours until user inputs configuration data 
+            }
+
+			helper = new MasterHelper(logPath);
 			helper.Run();
 		}
 
 		public override bool OnStart()
 		{
+            logPath = Path.Combine(Path.GetPathRoot(RoleEnvironment.GetLocalResource("LocalStorage").RootPath), "trace.log");
+
 			// Set the maximum number of concurrent connections 
 			ServicePointManager.DefaultConnectionLimit = 10;
             ServicePointManager.MaxServicePointIdleTime = 2500;
             //ServicePointManager.UseNagleAlgorithm = false;
 
             Trace.Listeners.Clear();
-            TextWriterTraceListener twtl = new TextWriterTraceListener(
-                Path.Combine(RoleEnvironment.GetLocalResource("LocalStorage").RootPath, "trace.log"),
-                "TextLogger");
+            TextWriterTraceListener twtl = new TextWriterTraceListener(logPath,"TextLogger");
             twtl.TraceOutputOptions = TraceOptions.ThreadId | TraceOptions.DateTime;
             ConsoleTraceListener ctl = new ConsoleTraceListener(false);
             ctl.TraceOutputOptions = TraceOptions.DateTime;
@@ -62,17 +74,6 @@ namespace PRODDLMaster
             Trace.Listeners.Add(twtl);
             Trace.Listeners.Add(ctl);
             Trace.AutoFlush = true;
-			
-            /*
-			DiagnosticMonitorConfiguration dmc = DiagnosticMonitor.GetDefaultInitialConfiguration();
-
-			dmc.Logs.ScheduledTransferPeriod = TimeSpan.FromMinutes(1.0);
-			dmc.Logs.ScheduledTransferLogLevelFilter = LogLevel.Verbose;
-
-			DiagnosticMonitor.AllowInsecureRemoteConnections = true;
-			//DiagnosticMonitor.Start("DiagnosticConnectionString", dmc);
-            DiagnosticMonitor.Start("StorageConnectionString", dmc);
-            */
 
 			RoleEnvironment.Changing += RoleEnvironmentChanging;
 			CloudStorageAccount.SetConfigurationSettingPublisher((configName, configSetter) =>
@@ -90,7 +91,7 @@ namespace PRODDLMaster
 				};
 			});
 
-            //RoleEnvironment.Stopping += RoleEnvironmentStopping;
+            //RoleEnvironment.Stopping += RoleEnvironmentStopping; 
 
             //application temp directory for Jetty
             string customTempLocalResourcePath = RoleEnvironment.GetLocalResource("TempStorage").RootPath;

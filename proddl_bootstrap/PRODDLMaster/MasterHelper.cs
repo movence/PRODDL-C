@@ -44,19 +44,20 @@ namespace PRODDLMaster
         private DynamicDataServiceContext _dynamicDataContext;
         private PerformanceDataServiceContext _perfServiceContext;
         private String localStoragePath;
+        private string logPath;
 
         private const String DYNAMIC_TABLE_DRIVE_KEY_NAME = "MasterDriveIntialized";
-        private const String DYNAMIC_TABLE_DRIVE_PATH = "MasterDrivePath";
         private const String DYNAMIC_TABLE_CATALOG_ADDRESS = "CatalogServerAddress";
         private const String DYNAMIC_TABLE_CATALOG_PORT = "CatalogServerPort";
-        private const String DYNAMIC_TABLE_STORAGE_PATH = "StoragePath";
+
+        public MasterHelper(string logPath) {
+            this.logPath = logPath;
+        }
 
         private String[] DYNAMIC_TABLE_KEYS = 
         { 
             DYNAMIC_TABLE_CATALOG_ADDRESS, 
-            DYNAMIC_TABLE_CATALOG_PORT, 
-            DYNAMIC_TABLE_STORAGE_PATH, 
-            DYNAMIC_TABLE_DRIVE_PATH 
+            DYNAMIC_TABLE_CATALOG_PORT
         };
 
         public void OnStop()
@@ -82,7 +83,7 @@ namespace PRODDLMaster
                         "logs",
                         RoleEnvironment.DeploymentId,
                         "master",
-                        Path.Combine(RoleEnvironment.GetLocalResource("LocalStorage").RootPath, "trace.log")
+                        logPath
                     );
                 }
             }
@@ -99,12 +100,15 @@ namespace PRODDLMaster
 
             storageHelper = new StorageService(RoleEnvironment.GetConfigurationSettingValue("StorageConnectionString"));
 
+            string vhdName = RoleEnvironment.GetConfigurationSettingValue("VHDName");
+            string blobContainer = RoleEnvironment.GetConfigurationSettingValue("BlobContainer");
+
             if (!this.IsMasterDriveExist())
             {
-                String vhdFilePath = createDriveFromCMD();
+                String vhdFilePath = createDriveFromCMD(vhdName);
                 if (!String.IsNullOrEmpty(vhdFilePath))
                 {
-                    if (storageHelper.uploadCloudDrive(vhdFilePath, "tools", RoleEnvironment.GetConfigurationSettingValue("VHDName")))
+                    if (storageHelper.uploadCloudDrive(vhdFilePath, blobContainer, vhdName))
                     {
                         this.updateMasterDriveData(DYNAMIC_TABLE_DRIVE_KEY_NAME, "true");
                         File.Delete(vhdFilePath);
@@ -112,7 +116,7 @@ namespace PRODDLMaster
                 }
                 else
                 {
-                    Trace.WriteLine("master.vhd does not exist");
+                    Trace.TraceError("master.vhd does not exist");
                 }
             }
             else
@@ -120,16 +124,27 @@ namespace PRODDLMaster
                 Trace.WriteLine("Azure drive file already exist");
             }
 
-            String drivePath = storageHelper.getMountedDrivePath(RoleEnvironment.GetConfigurationSettingValue("VHDUri"));
-            this.updateMasterDriveData(DYNAMIC_TABLE_DRIVE_PATH, drivePath);
+            String drivePath = storageHelper.getMountedDrivePath(String.Format("{0}/{1}", blobContainer, vhdName));
+            //this.updateMasterDriveData(DYNAMIC_TABLE_DRIVE_PATH, drivePath);
 
-            extractJRE();
-            startJavaMainOperator(); //this call never returns, it's on JAVA's hand now
+            String webServerPort = RoleEnvironment.CurrentRoleInstance.InstanceEndpoints["HttpIn"].IPEndpoint.Port.ToString();
+            IPEndPoint internalAddress = RoleEnvironment.CurrentRoleInstance.InstanceEndpoints["CatalogServer"].IPEndpoint;
 
-            //while (true)
-            //{
-            //   Thread.Sleep(10000);
-            //}
+            Dictionary<string, string> properties = new Dictionary<string, string>();
+            properties.Add(SharedTools.KEY_SUBSCRIPTION_ID, RoleEnvironment.GetConfigurationSettingValue(SharedTools.KEY_SUBSCRIPTION_ID));
+            properties.Add(SharedTools.KEY_WORKER_NAME, SharedTools.KEY_WORKER_NAME_VALUE);
+            properties.Add(SharedTools.KEY_CERTIFICATE_NAME, RoleEnvironment.GetConfigurationSettingValue(SharedTools.KEY_CERTIFICATE_NAME));
+            properties.Add(SharedTools.KEY_CERT_PASSWORD, RoleEnvironment.GetConfigurationSettingValue(SharedTools.KEY_CERT_PASSWORD));
+            properties.Add(SharedTools.KEY_CERT_ALIAS, RoleEnvironment.GetConfigurationSettingValue(SharedTools.KEY_CERT_ALIAS));
+            properties.Add(SharedTools.KEY_MASTER_INSTANCE, "true");
+            properties.Add(SharedTools.KEY_WEBSERVER_PORT, webServerPort);
+            properties.Add(SharedTools.KEY_INTERNAL_ADDR, internalAddress.Address.ToString());
+            properties.Add(SharedTools.KEY_INTERNAL_PORT, internalAddress.Port.ToString());
+            properties.Add(SharedTools.KEY_DATASTORE_PATH, drivePath+Path.DirectorySeparatorChar);
+
+            SharedTools.createPropertyFile(properties);
+            SharedTools.startJavaMainOperator("[Master]", localStoragePath);
+            //startJavaMainOperator(); //this call never return, it's on JAVA's hand now
         }
 
         private void initializeTableContext()
@@ -188,14 +203,14 @@ namespace PRODDLMaster
             }
         }
 
-        private String createDriveFromCMD()
+        private String createDriveFromCMD(string vhdName)
         {
             try
             {
-                string vhdFilePath = localStoragePath + @RoleEnvironment.GetConfigurationSettingValue("VHDName");
+                string vhdFilePath = Path.Combine(localStoragePath, vhdName);
                 String scriptPath = createVHDScriptFile(localStoragePath, vhdFilePath);
 
-                Process proc = new SharedTools().buildCloudProcessWithError(
+                Process proc = SharedTools.buildCloudProcessWithError(
                     System.Environment.GetEnvironmentVariable("WINDIR") + "\\System32\\diskpart.exe",
                     "/s" + " " + scriptPath,
                     "createDriveFromCMD()");
@@ -230,25 +245,6 @@ namespace PRODDLMaster
             return scriptPath;
         }
 
-        private bool extractJRE()
-        {
-            try
-            {
-                new SharedTools().extractZipFile(
-                    Path.Combine(Directory.GetCurrentDirectory(), @"tools\jre6x64.zip"), 
-                    localStoragePath
-                );
-
-                Trace.WriteLine("DONE: extractJRE()");
-                return true;
-            }
-            catch (Exception ex)
-            {
-                Trace.TraceError("EXCEPTION: extractJRE() - " + ex.ToString());
-                return false;
-            }
-        }
-
         private bool startJavaMainOperator()
         {
             try
@@ -263,7 +259,7 @@ namespace PRODDLMaster
                 String jarPath = roleRoot + @"\approot\tools\proddl_core-1.0.jar";
                 String jreHome = localStoragePath + @"jre";
 
-                Process proc = new SharedTools().buildCloudProcess(
+                Process proc = SharedTools.buildCloudProcess(
                     String.Format("\"{0}\\bin\\java.exe\"", jreHome),
                     String.Format(
                         "-jar {0} {1} {2} {3} {4} {5} {6}",

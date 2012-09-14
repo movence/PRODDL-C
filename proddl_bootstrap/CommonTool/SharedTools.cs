@@ -29,19 +29,46 @@ using System.IO;
 
 using SevenZip;
 
+using Microsoft.WindowsAzure.ServiceRuntime;
+
 namespace CommonTool
 {
     public class SharedTools
     {
-        public Process buildCloudProcess(String fileName, String args, String outputTag)
+        //readonly variables for properties
+        public static readonly string KEY_SUBSCRIPTION_ID = "SubscriptionId";
+        public static readonly string KEY_DEPLOYMENT_NAME = "DeploymentName";
+        public static readonly string KEY_DEPLOYMENT_ID = "DeploymentId";
+
+        public static readonly string KEY_STORAGE_NAME = "StorageAccountName";
+        public static readonly string KEY_STORAGE_PKEY = "StorageAccountPkey";
+        public static readonly string KEY_STORAGE_PATH = "StoragePath";
+        public static readonly string KEY_DATASTORE_PATH = "DataStorePath";
+
+        public static readonly string KEY_WORKER_NAME = "CloudRoleWorkerName";
+        public static readonly string KEY_WORKER_NAME_VALUE = "PRODDLJobRunner";
+
+        public static readonly string KEY_CERTIFICATE_NAME = "CertificateName";
+        public static readonly string KEY_CERT_PASSWORD = "CertificatePassword";
+        public static readonly string KEY_CERT_ALIAS = "CertificateAlias";
+
+        public static readonly string KEY_MASTER_INSTANCE = "IsMaster";
+        public static readonly string KEY_WEBSERVER_PORT = "WebserverPort";
+        public static readonly string KEY_INTERNAL_ADDR = "InternalAddress";
+        public static readonly string KEY_INTERNAL_PORT = "InternalPort";
+
+        public static readonly string KEY_VHD_SIZE = "VHDSize";
+        public static readonly string KEY_VHD_NAME = "VHDName";
+
+        public static Process buildCloudProcess(String fileName, String args, String outputTag)
         {
-            Process proc = this.buildCloudProcessWithError(fileName, args, outputTag);
+            Process proc = buildCloudProcessWithError(fileName, args, outputTag);
             proc.StartInfo.RedirectStandardOutput = true;
             proc.OutputDataReceived += (sender, e) => { if (e.Data != null) Trace.WriteLine(outputTag + ":OUTPUT>> " + e.Data); };
             return proc;
         }
 
-        public Process buildCloudProcessWithError(String fileName, String args, String outputTag)
+        public static Process buildCloudProcessWithError(String fileName, String args, String outputTag)
         {
             Process proc = new Process();
             proc.StartInfo.RedirectStandardError = true;
@@ -57,21 +84,121 @@ namespace CommonTool
             return proc;
         }
 
-        public Boolean extractZipFile(String filePath, String extractTo)
+        public static bool extractZipFile(String filePath, String extractTo)
         {
+            bool rtnVal = false;
+
             try
             {
                 string sevenZipPath = Path.Combine(Directory.GetCurrentDirectory(), @"tools\7z64.dll");
                 SevenZipExtractor.SetLibraryPath(sevenZipPath);
                 SevenZipExtractor extractor = new SevenZipExtractor(filePath);
                 extractor.ExtractArchive(extractTo);
-                return true;
+                rtnVal = true;
             }
             catch (Exception ex)
             {
                 Trace.TraceError("EXCEPTION: extractZipFile() - " + ex.ToString());
-                return false;
             }
+
+            return rtnVal;
+        }
+
+        public static Dictionary<string, string> setDefaultProps()
+        {
+            Dictionary<string, string> props = new Dictionary<string, string>();
+            props.Add(KEY_DEPLOYMENT_NAME, RoleEnvironment.GetConfigurationSettingValue(KEY_DEPLOYMENT_NAME));
+            props.Add(KEY_DEPLOYMENT_ID, RoleEnvironment.DeploymentId);
+            props.Add(KEY_STORAGE_PATH, Path.GetPathRoot(RoleEnvironment.GetLocalResource("LocalStorage").RootPath)+Path.DirectorySeparatorChar);
+
+            string connectionString = RoleEnvironment.GetConfigurationSettingValue("StorageConnectionString");
+            string[] pairs = connectionString.Split(';');
+            foreach (string pair in pairs)
+            {
+                string value = pair.Substring(pair.IndexOf('=') + 1);
+                if (pair.Contains("AccountKey="))
+                {
+                    props.Add(SharedTools.KEY_STORAGE_PKEY, value);
+                }
+                else if (pair.Contains("AccountName="))
+                {
+                    props.Add(SharedTools.KEY_STORAGE_NAME, value);
+                }
+            }
+            return props;
+        }
+
+        public static bool createPropertyFile(Dictionary<string, string> kvd)
+        {
+            bool rtnVal = false;
+
+            try
+            {
+                Dictionary<string, string> props = setDefaultProps();
+                props = props.Concat(kvd).ToDictionary(kvp=>kvp.Key, kvp=>kvp.Value);
+
+                List<string> lines = new List<string>(kvd.Count);
+                foreach (KeyValuePair<string, string> pair in props)
+                {
+                    lines.Add(pair.Key + "=" + pair.Value);
+                }
+                File.WriteAllLines(Path.Combine(Directory.GetCurrentDirectory(), @"tools", "proddl.properties"), lines.ToArray<string>());
+                rtnVal = true;
+            }
+            catch (Exception ex)
+            {
+                Trace.TraceError("EXCEPTION: createPropertyFile() - " + ex.ToString());
+            }
+
+            return rtnVal;
+        }
+
+        public static bool extractJRE(String storagePath)
+        {
+            bool rtnVal = false;
+
+            try
+            {
+                extractZipFile(Path.Combine(Directory.GetCurrentDirectory(), @"tools\jre6x64.zip"),storagePath);
+                rtnVal = true;
+            }
+            catch (Exception ex)
+            {
+                Trace.TraceError("EXCEPTION: extractJRE() - " + ex.ToString());
+            }
+
+            return rtnVal;
+        }
+
+        public static bool startJavaMainOperator(String tag, String storagePath)
+        {
+            bool rtnVal = false;
+
+            try
+            {
+                extractJRE(storagePath);
+
+                string currDir = Directory.GetCurrentDirectory();
+                string classPath = Path.Combine(currDir, @"tools")+Path.PathSeparator+Path.Combine(currDir, @"tools\proddl_core-1.0.jar");
+                Process proc = buildCloudProcess(
+                    Path.Combine(storagePath + @"jre\bin\java.exe"),
+                    String.Format("-cp {0} {1}", classPath, "pdl.operator.ServiceOperator"),
+                    tag
+                );
+
+                proc.Start();
+                proc.BeginOutputReadLine();
+                proc.BeginErrorReadLine();
+                proc.WaitForExit();
+
+                rtnVal = true;
+            }
+            catch (Exception ex)
+            {
+                Trace.TraceError("EXCEPTION: startJavaMainOperator() - " + ex.ToString());
+            }
+
+            return rtnVal;
         }
     }
 }
