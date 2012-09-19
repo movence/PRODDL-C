@@ -257,7 +257,7 @@ public class TableOperator {
             table = tableStorageClient.getTableReference(tableName);
 
             if (table != null && table.isTableExist())
-                table.getTableServiceContext().deleteEntityIfNotModified(entity);
+                table.getTableServiceContext().deleteEntity(entity);
 
         } catch (StorageException ex) {
             ex.printStackTrace();

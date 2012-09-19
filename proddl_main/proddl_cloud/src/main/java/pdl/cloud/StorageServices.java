@@ -55,8 +55,8 @@ public class StorageServices {
         return tableOperator;
     }
 
-    public boolean insertSingleEnttity(String tablename, ITableServiceEntity entity) {
-        return getTableOperator().insertSingleEntity(tablename, entity);
+    public boolean insertSingleEnttity(String tableName, ITableServiceEntity entity) {
+        return getTableOperator().insertSingleEntity(tableName, entity);
     }
 
     public String getFileNameById(String fileId) {
@@ -67,16 +67,16 @@ public class StorageServices {
         return currFile==null?null:currFile.getName();
     }
 
-    public ITableServiceEntity queryEntityBySearchKey(String tablename, String column, String key, Class model) {
-        return getTableOperator().queryEntityBySearchKey(tablename, column, key, model);
+    public ITableServiceEntity queryEntityBySearchKey(String tableName, String column, String key, Class model) {
+        return getTableOperator().queryEntityBySearchKey(tableName, column, key, model);
     }
 
-    public boolean updateEntity(String tablename, ITableServiceEntity entity) {
-        return getTableOperator().updateSingleEntity(tablename, entity);
+    public boolean updateEntity(String tableName, ITableServiceEntity entity) {
+        return getTableOperator().updateSingleEntity(tableName, entity);
     }
 
-    public void deleteEntity(String tablename, ITableServiceEntity entity) {
-        getTableOperator().deleteEntity(tablename, entity);
+    public void deleteEntity(String tableName, ITableServiceEntity entity) {
+        getTableOperator().deleteEntity(tableName, entity);
     }
 
 

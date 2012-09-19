@@ -44,10 +44,14 @@ public class FileTool {
 
     public FileTool() {
         services = new StorageServices();
-        this.getUploadDirectoryPath();
+        this.initialize();
     }
 
-    private void getUploadDirectoryPath() {
+    public String getUploadDirectoryPath() {
+        return uploadDirectoryPath;
+    }
+
+    private void initialize() {
         if(conf==null)
             conf = Configuration.getInstance();
 
@@ -55,7 +59,7 @@ public class FileTool {
 
         String storagePath = conf.getStringProperty(StaticValues.CONFIG_KEY_DATASTORE_PATH);
 
-        uploadDirectoryPath = ToolPool.buildFilePath(storagePath, StaticValues.DIRECTORY_FILE_AREA);
+        uploadDirectoryPath = ToolPool.buildDirPath(storagePath, StaticValues.DIRECTORY_FILE_AREA);
         File uploadDir = new File(uploadDirectoryPath);
         if(!uploadDir.exists())
             uploadDir.mkdir();

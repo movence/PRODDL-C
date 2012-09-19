@@ -25,10 +25,7 @@ import pdl.cloud.StorageServices;
 import pdl.cloud.model.JobDetail;
 import pdl.common.Configuration;
 import pdl.common.StaticValues;
-import pdl.operator.app.CctoolsOperator;
-import pdl.operator.app.CygwinOperator;
-import pdl.operator.app.JettyThreadedOperator;
-import pdl.operator.app.PythonOperator;
+import pdl.operator.app.*;
 import pdl.operator.service.*;
 
 import java.io.File;
@@ -116,10 +113,10 @@ public class ServiceOperatorHelper {
 
     private void runOperators() throws Exception {
          //TODO need more dynamic way to handle 3rd party package
-        PythonOperator pythonOperator = new PythonOperator(storagePath, "python", "python.exe");
+        AbstractApplicationOperator pythonOperator = new PythonOperator(storagePath, "python", "python.exe");
         pythonOperator.run(storageServices);
 
-        CygwinOperator cygwinOperator = new CygwinOperator(storagePath, "cygwin", "cygwin.bat");
+        AbstractApplicationOperator cygwinOperator = new CygwinOperator(storagePath, "cygwin", "cygwin.bat");
         cygwinOperator.run(storageServices);
 
         cctoolsOperator = new CctoolsOperator(storagePath, "cctools-3.5.1", "bin" + File.separator + "makeflow.exe");

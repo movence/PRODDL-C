@@ -51,7 +51,11 @@
                 <configuration>
                     <skipTests>true</skipTests>
                     <useFile>false</useFile>
-                    <debugForkedProcess>true</debugForkedProcess>
+                    <!--<debugForkedProcess>false</debugForkedProcess>-->
+                    <excludes>
+                        <exclude>**/CloudInstanceManagerTest.java</exclude>
+                        <exclude>**/UserServiceTest.java</exclude>
+                    </excludes>
                 </configuration>
             </plugin>
             <!--<plugin>

@@ -108,6 +108,7 @@ public class Configuration {
                     for (Object key : props.keySet()) {
                         config.setProperty(key.toString(), props.get(key));
                     }
+                    in.close();
 
                 } else {
                     System.err.println(StaticValues.CONFIG_FILENAME + " cannot be found.");

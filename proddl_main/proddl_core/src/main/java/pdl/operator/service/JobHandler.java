@@ -62,6 +62,10 @@ public class JobHandler {
         return currJob;
     }
 
+    public boolean updateJobStatus(String jobUUID, int status) {
+        return this.updateJobStatus(jobUUID, status, null, null);
+    }
+
     public boolean updateJobStatus(String jobUUID, int status, String resultFile, String logFile) {
         boolean rtnVal = false;
         try {

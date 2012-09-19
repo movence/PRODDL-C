@@ -22,6 +22,7 @@
 package pdl.operator.service;
 
 import org.apache.commons.io.FileUtils;
+import pdl.cloud.management.CertificateManager;
 import pdl.cloud.management.CloudInstanceManager;
 import pdl.cloud.model.FileInfo;
 import pdl.cloud.model.JobDetail;
@@ -42,14 +43,19 @@ import java.util.Map;
  * Time: 10:19 AM
  */
 public class JobExecutor extends Thread {
-    private static final String WORKER_INSTANCE_COUNT_KEY = "n_worker";
+    private final String WORKER_INSTANCE_COUNT_KEY = "n_worker";
+    private final String CER_CERTIFICATE_KEY = "cer_fid";
+    private final String PFX_CERTIFICATE_KEY = "pfx_fid";
+    private final String CERTIFICATE_PASSWORD_KEY = "c_password";
     private CctoolsOperator cctoolsOperator;
     private JobDetail currJob;
+    private JobHandler jobHandler;
 
     public JobExecutor(ThreadGroup group, JobDetail currJob, CctoolsOperator operator) {
         super(group, currJob.getJobUUID() + "_job");
         this.currJob=currJob;
         this.cctoolsOperator = operator;
+        this.jobHandler = new JobHandler();
     }
 
     public JobExecutor(JobDetail currJob, CctoolsOperator operator) {
@@ -88,7 +94,9 @@ public class JobExecutor extends Thread {
                 );
 
                 if(jobName.equals("scaleup") || jobName.equals("scaledown")) {
-                    rtnVal = this.executeScaleJob(currJob);
+                    rtnVal = this.executeScaleJob();
+                } else if(jobName.equals("cert")) {
+                    rtnVal = this.executeCertificateJob();
                 } else {
                     String workDirPath = createJobDirectoryIfNotExist(jobID);
                     if (workDirPath != null) {
@@ -118,14 +126,14 @@ public class JobExecutor extends Thread {
         String storagePath = Configuration.getInstance().getStringProperty(StaticValues.CONFIG_KEY_DATASTORE_PATH);
         boolean jobAreaExist = false;
 
-        File jobArea = new File(ToolPool.buildFilePath(storagePath + StaticValues.DIRECTORY_TASK_AREA));
+        File jobArea = new File(ToolPool.buildDirPath(storagePath + StaticValues.DIRECTORY_TASK_AREA));
         if (!ToolPool.isDirectoryExist(jobArea.getPath()))
             jobAreaExist = jobArea.mkdir();
         else
             jobAreaExist = true;
 
         if (jobAreaExist) {
-            File currJobDirectory = new File(ToolPool.buildFilePath(jobArea.getPath(),jobUUID));
+            File currJobDirectory = new File(ToolPool.buildDirPath(jobArea.getPath(),jobUUID));
             if (!ToolPool.isDirectoryExist(currJobDirectory.getPath())) {
                 if (currJobDirectory.mkdir())
                     jobDir = currJobDirectory.getPath();
@@ -136,7 +144,7 @@ public class JobExecutor extends Thread {
         } else
             throw new Exception(String.format("Job Executor: There is no storage area at '%s'", jobArea.getPath()));
 
-        return ToolPool.buildFilePath(jobDir, null);
+        return jobDir;
     }
 
     private boolean createInputJsonFile(String workDir) throws Exception {
@@ -154,10 +162,7 @@ public class JobExecutor extends Thread {
         return rtnVal;
     }
 
-    private void updateJobStatus() {
-    }
-
-    private boolean executeScaleJob(JobDetail job) throws Exception {
+    private boolean executeScaleJob() throws Exception {
         boolean rtnVal = false;
         Map<String, Object> inputInMap = null;
         int workerCount = -1;
@@ -173,7 +178,7 @@ public class JobExecutor extends Thread {
 
         if(workerCount>0) {
             CloudInstanceManager instanceManager = new CloudInstanceManager();
-            if(job.getJobName().equals("scaleup"))
+            if(currJob.getJobName().equals("scaleup"))
                 rtnVal = instanceManager.scaleUp(workerCount);
             else
                 rtnVal = instanceManager.scaleDown(workerCount);
@@ -181,9 +186,28 @@ public class JobExecutor extends Thread {
             rtnVal = false;
         }
 
-        JobHandler jobHandler = new JobHandler();
-        jobHandler.updateJobStatus(currJob.getJobUUID(), rtnVal?StaticValues.JOB_STATUS_COMPLETED:StaticValues.JOB_STATUS_FAILED, null, null);
+        jobHandler.updateJobStatus(currJob.getJobUUID(), rtnVal?StaticValues.JOB_STATUS_COMPLETED:StaticValues.JOB_STATUS_FAILED);
+        return rtnVal;
+    }
 
+    private boolean executeCertificateJob() throws Exception {
+        boolean rtnVal = false;
+        Map<String, Object> inputInMap = null;
+
+        if(currJob.getInput()!=null) {
+            inputInMap = ToolPool.jsonStringToMap(currJob.getInput());
+            if(inputInMap.containsKey(CER_CERTIFICATE_KEY) && inputInMap.containsKey(PFX_CERTIFICATE_KEY) && inputInMap.containsKey(CERTIFICATE_PASSWORD_KEY)) {
+                String cerFileId = (String)inputInMap.get(CER_CERTIFICATE_KEY);
+                String pfxFileId = (String)inputInMap.get(PFX_CERTIFICATE_KEY);
+                String certPass = (String)inputInMap.get(CERTIFICATE_PASSWORD_KEY);
+
+                if(cerFileId!=null && pfxFileId!=null && certPass!=null) {
+                    CertificateManager certManager = new CertificateManager();
+                    rtnVal = certManager.execute(pfxFileId, cerFileId, certPass);
+                }
+            }
+        }
+        jobHandler.updateJobStatus(currJob.getJobUUID(), rtnVal?StaticValues.JOB_STATUS_COMPLETED:StaticValues.JOB_STATUS_FAILED);
         return rtnVal;
     }
 

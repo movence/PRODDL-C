@@ -35,14 +35,14 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
+import pdl.cloud.model.DynamicData;
 import pdl.cloud.model.PerformanceData;
-import pdl.cloud.storage.BlobOperator;
 import pdl.cloud.storage.TableOperator;
 import pdl.common.Configuration;
 import pdl.common.StaticValues;
+import pdl.common.ToolPool;
 
 import java.io.ByteArrayInputStream;
-import java.io.File;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.List;
@@ -60,8 +60,6 @@ public class CloudInstanceManager {
     private Configuration conf;
     private ServiceManagementRest manager;
     private String hostedServiceName;
-
-    private String storagePath;
     private TableOperator tableOperator;
 
     public CloudInstanceManager() {
@@ -71,17 +69,21 @@ public class CloudInstanceManager {
 
     private void initializeManager() {
         try {
-            this.storagePath = conf.getStringProperty(StaticValues.CONFIG_KEY_STORAGE_PATH);
+            String dataStorePath = conf.getStringProperty(StaticValues.CONFIG_KEY_DATASTORE_PATH);
 
             tableOperator = new TableOperator(conf);
+            String keystoreFilaName = StaticValues.CERTIFICATE_NAME+".keystore";
+            String trustcaFieName = StaticValues.CERTIFICATE_NAME+".trustcacerts";
+            String keystoreFilePath = ToolPool.buildFilePath(dataStorePath, StaticValues.DIRECTORY_FILE_AREA, keystoreFilaName);
+            String trustcaFilePath = ToolPool.buildFilePath(dataStorePath, StaticValues.DIRECTORY_FILE_AREA, trustcaFieName);
+
+            /*
+             * Certificates are stored in Azure drive
+             * by hkim 9/18/2012
+             *
+            //download keystore file for azure management
 
             BlobOperator blobOperator = new BlobOperator(conf);
-            String keystoreFilaName = String.format("%s.%s", conf.getStringProperty(StaticValues.CONFIG_KEY_CERTIFICATE_NAME), "keystore");
-            String trustcaFieName = String.format("%s.%s", conf.getStringProperty(StaticValues.CONFIG_KEY_CERTIFICATE_NAME), "trustcacerts");
-            String keystoreFilePath = storagePath+keystoreFilaName;
-            String trustcaFiePath = storagePath+trustcaFieName;
-
-            //download keystore file for azure management
             if (!new File(keystoreFilePath).exists())
                 blobOperator.download(
                         StaticValues.BLOB_CONTAINER_TOOLS,
@@ -94,14 +96,22 @@ public class CloudInstanceManager {
                         trustcaFieName,
                         storagePath
                 );
-
+            */
+            String certPass = conf.getStringProperty(StaticValues.CONFIG_KEY_CERT_PASSWORD);
+            if(certPass==null) {
+                DynamicData passData = (DynamicData)tableOperator.queryEntityBySearchKey(
+                        ToolPool.buildTableName(StaticValues.TABLE_NAME_DYNAMIC_DATA),
+                        StaticValues.COLUMN_DYNAMIC_DATA_KEY,
+                        StaticValues.CONFIG_KEY_CERT_PASSWORD,
+                        DynamicData.class);
+                certPass = passData.getDataValue();
+            }
             manager = new ServiceManagementRest(
                     conf.getStringProperty(StaticValues.CONFIG_KEY_SUBSCRIPTION_ID),
-                    keystoreFilePath,
-                    conf.getStringProperty(StaticValues.CONFIG_KEY_CERT_PASSWORD),
-                    trustcaFiePath,
-                    conf.getStringProperty(StaticValues.CONFIG_KEY_CERT_PASSWORD),
-                    conf.getStringProperty(StaticValues.CONFIG_KEY_CERT_ALIAS));
+                    keystoreFilePath, certPass,
+                    trustcaFilePath, certPass,
+                    StaticValues.CERTIFICATE_ALIAS
+            );
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -147,8 +157,6 @@ public class CloudInstanceManager {
                 throw new Exception("scaleService threw Exception: There is no deployed service");
 
             for (Deployment deployment : deployments) {
-                System.err.printf("****Scaling Service Log: %s, %s", deployment.getName(), deployment.getStatus());
-
                 //skips deployments by given name or status
                 if ((deploymentName != null && !deploymentName.equals(deployment.getName()))
                         || (deployment.getStatus()!=null && deployment.getStatus().equals("RunningTransitioning"))
@@ -198,7 +206,6 @@ public class CloudInstanceManager {
 
                         BlobStream blobFileStream = new BlobMemoryStream(new ByteArrayInputStream(out.toString().getBytes("UTF-8")));
                         manager.changeDeploymentConfiguration(hostedServiceName, deployment.getName(), blobFileStream, null);
-
 
                         rtnVal = true;
                         break;

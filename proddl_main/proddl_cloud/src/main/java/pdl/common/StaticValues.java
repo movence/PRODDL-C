@@ -62,7 +62,7 @@ public class StaticValues {
     public static final String TABLE_NAME_USER = "user";
 
     public static final String COLUMN_ROW_KEY = "RowKey";
-    public static final String COLUMN_USER_ID = "userid";
+    public static final String COLUMN_USER_ID = "userId";
     public static final String COLUMN_DYNAMIC_DATA_KEY = "dataKey";
     public static final String COLUMN_JOB_DETAIL_PRIORITY = "priority";
     public static final String COLUMN_JOB_DETAIL_STATUS = "status";
@@ -93,7 +93,8 @@ public class StaticValues {
             "execute",
             "adduser",
             "scaleup",
-            "scaledown"
+            "scaledown",
+            "cert"
         };
     public static final String SPECIAL_EXECUTION_JOB = "execute";
     public static final int CORE_NUMBER_JOB_EXECUTOR = 1;
@@ -107,6 +108,9 @@ public class StaticValues {
     public static final int WORKER_INSTANCE_MONITORING_INTERVAL = 3600000; //time interval for monitoring CPU usage on Worker instance in milliseconds
     public static final int MAXIMUM_AVERAGE_CPU_USAGE = 50;
     public static final int MINIMUM_AVERAGE_CPU_USAGE = 15;
+
+    public static final String CERTIFICATE_NAME = "management";
+    public static final String CERTIFICATE_ALIAS = "keyalias";
 
     //ERROR CODE
 }

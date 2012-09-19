@@ -266,7 +266,7 @@ public class JobRequestHandler {
                     jobIdWithStatus.add(job.getJobUUID()+":"+job.getStatusInString());
                 }
             }
-            rtnVal.put("Jobs", jobIdWithStatus);
+            rtnVal.put("job", jobIdWithStatus);
 
         } catch(Exception ex) {
             ex.printStackTrace();

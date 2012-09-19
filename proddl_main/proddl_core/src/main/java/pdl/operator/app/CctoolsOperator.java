@@ -91,11 +91,11 @@ public class CctoolsOperator extends AbstractApplicationOperator {
         try {
             conf = Configuration.getInstance();
 
-            cctoolsBinPath = ToolPool.buildFilePath(toolPath, "bin");
-            cygwinBinPath = ToolPool.buildFilePath(storagePath, "cygwin", "bin");
+            cctoolsBinPath = ToolPool.buildDirPath(toolPath, "bin");
+            cygwinBinPath = ToolPool.buildDirPath(storagePath, "cygwin", "bin");
 
             //create /tmp directory under cctools
-            File tmpDir = new File(ToolPool.buildFilePath(toolPath, "tmp"));
+            File tmpDir = new File(ToolPool.buildDirPath(toolPath, "tmp"));
             if(!tmpDir.exists() || !tmpDir.isDirectory())
                 tmpDir.mkdir();
 
@@ -344,7 +344,7 @@ public class CctoolsOperator extends AbstractApplicationOperator {
             if (currFile.exists() || currFile.canRead()) {
 
                 List<String> processArgs = new ArrayList<String>();
-                processArgs.add(ToolPool.buildFilePath(cygwinBinPath, "bash"));
+                processArgs.add(ToolPool.buildDirPath(cygwinBinPath, "bash"));
                 processArgs.add(currFile.getPath());
 
                 ProcessBuilder pb = this.buildProcessBuilder(taskDirectory, processArgs, false);

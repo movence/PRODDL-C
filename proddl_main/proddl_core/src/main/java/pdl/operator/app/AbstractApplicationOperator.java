@@ -44,7 +44,7 @@ public abstract class AbstractApplicationOperator implements IApplicationOperato
     public AbstractApplicationOperator(String storagePath, String toolName, String flagFile, String arg) {
         this.storagePath = storagePath;
         this.toolName = toolName;
-        toolPath = ToolPool.buildFilePath(storagePath, toolName);
+        toolPath = ToolPool.buildDirPath(storagePath, toolName);
         this.flagFile = flagFile;
         this.arg = arg;
     }

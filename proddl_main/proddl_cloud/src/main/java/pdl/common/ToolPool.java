@@ -57,15 +57,19 @@ public class ToolPool {
 
     /**
      * build path with given parameters
-     * @param path path to begin with
-     * @param dirs series of directory names to append
+     * @param root path to begin with
+     * @param args series of directory names to append
      * @return new path with given dirs
      */
-    public static String buildFilePath(String path, String... dirs) {
-        String newPath = path.endsWith(File.separator)?path:path.concat(File.separator);
-        if(dirs!=null) {
-            for(String dir : dirs) {
-                newPath += dir.concat(dir.endsWith(File.separator)?"":File.separator);
+    public static String buildFilePath(String root, String... args) {
+        String path = buildDirPath(root, args);
+        return path.substring(0, path.length()-1);
+    }
+    public static String buildDirPath(String root, String... args) {
+        String newPath = root.endsWith(File.separator)?root:root.concat(File.separator);
+        if(args!=null) {
+            for(String arg : args) {
+                newPath += arg.concat(arg.endsWith(File.separator)?"":File.separator);
             }
         }
         return newPath;

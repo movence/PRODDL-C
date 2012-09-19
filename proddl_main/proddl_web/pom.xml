@@ -90,11 +90,14 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>2.12</version>
+                <version>2.4.3</version>
                 <configuration>
-                    <skipTests>true</skipTests>
+                    <skipTests>false</skipTests>
                     <useFile>false</useFile>
-                    <debugForkedProcess>true</debugForkedProcess>
+                    <!--<debugForkedProcess>true</debugForkedProcess>-->
+                    <!--<excludes>
+                        <exclude>**/JobRequestHandlerTest.java</exclude>
+                    </excludes>-->
                 </configuration>
             </plugin>
         </plugins>

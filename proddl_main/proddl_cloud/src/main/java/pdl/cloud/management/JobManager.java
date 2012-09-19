@@ -302,7 +302,6 @@ public class JobManager {
                     jobDetailTableName,
                     condition,
                     JobDetail.class);
-
         } catch (Exception ex) {
             ex.printStackTrace();
             throw ex;
