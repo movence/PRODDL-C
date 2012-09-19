@@ -133,9 +133,11 @@ namespace PRODDLMaster
             Dictionary<string, string> properties = new Dictionary<string, string>();
             properties.Add(SharedTools.KEY_SUBSCRIPTION_ID, RoleEnvironment.GetConfigurationSettingValue(SharedTools.KEY_SUBSCRIPTION_ID));
             properties.Add(SharedTools.KEY_WORKER_NAME, SharedTools.KEY_WORKER_NAME_VALUE);
+            /*
             properties.Add(SharedTools.KEY_CERTIFICATE_NAME, RoleEnvironment.GetConfigurationSettingValue(SharedTools.KEY_CERTIFICATE_NAME));
             properties.Add(SharedTools.KEY_CERT_PASSWORD, RoleEnvironment.GetConfigurationSettingValue(SharedTools.KEY_CERT_PASSWORD));
             properties.Add(SharedTools.KEY_CERT_ALIAS, RoleEnvironment.GetConfigurationSettingValue(SharedTools.KEY_CERT_ALIAS));
+            */
             properties.Add(SharedTools.KEY_MASTER_INSTANCE, "true");
             properties.Add(SharedTools.KEY_WEBSERVER_PORT, webServerPort);
             properties.Add(SharedTools.KEY_INTERNAL_ADDR, internalAddress.Address.ToString());
