@@ -9,9 +9,9 @@
     <packaging>pom</packaging>
     <version>1.0</version>
     <modules>
-        <module>proddl_core</module>
-        <module>proddl_web</module>
         <module>proddl_cloud</module>
+        <module>proddl_web</module>
+        <module>proddl_core</module>
     </modules>
 
     <dependencies>
