@@ -93,7 +93,7 @@ public class JobExecutor extends Thread {
                         Thread.currentThread().getName(), jobID, jobName
                 );
 
-                if(jobName.equals("scaleup") || jobName.equals("scaledown")) {
+                if(jobName.equals("scale")) { //if(jobName.equals("scaleup") || jobName.equals("scaledown")) {
                     rtnVal = this.executeScaleJob();
                 } else if(jobName.equals("cert")) {
                     rtnVal = this.executeCertificateJob();
@@ -178,10 +178,7 @@ public class JobExecutor extends Thread {
 
         if(workerCount>0) {
             CloudInstanceManager instanceManager = new CloudInstanceManager();
-            if(currJob.getJobName().equals("scaleup"))
-                rtnVal = instanceManager.scaleUp(workerCount);
-            else
-                rtnVal = instanceManager.scaleDown(workerCount);
+            rtnVal = instanceManager.scaleService(workerCount);
         } else {
             rtnVal = false;
         }

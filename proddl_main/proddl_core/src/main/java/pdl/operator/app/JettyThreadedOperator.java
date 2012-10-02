@@ -28,7 +28,6 @@ import org.eclipse.jetty.server.nio.SelectChannelConnector;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.eclipse.jetty.webapp.WebAppContext;
 
-import java.io.File;
 import java.security.ProtectionDomain;
 
 /**
@@ -47,8 +46,6 @@ public class JettyThreadedOperator extends Thread {
 
     public void run() {
         try {
-            System.out.println("JettyThreadedOperator: START");
-
             Server jettyServer = new Server();
             jettyServer.setStopAtShutdown(true);
             jettyServer.setGracefulShutdown(1000);
@@ -63,7 +60,6 @@ public class JettyThreadedOperator extends Thread {
 
             ProtectionDomain protectionDomain = JettyOperator.class.getProtectionDomain();
             String warFile = protectionDomain.getCodeSource().getLocation().toExternalForm();
-            String currentDir = new File(protectionDomain.getCodeSource().getLocation().getPath()).getParent();
 
             WebAppContext context = new WebAppContext(warFile, "/");
             context.setServer(jettyServer);
@@ -75,9 +71,8 @@ public class JettyThreadedOperator extends Thread {
             jettyServer.start();
             jettyServer.join();
 
-            System.out.println("JettyThreadedOperator: start DONE");
+            System.out.println("jetty web server started.");
         } catch (Exception ex) {
-            System.err.println("JettyThreadedOperator.start threw : " + ex.toString());
             ex.printStackTrace();
         }
     }

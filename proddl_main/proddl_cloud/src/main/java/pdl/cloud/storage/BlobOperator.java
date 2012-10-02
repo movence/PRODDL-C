@@ -55,11 +55,7 @@ public class BlobOperator {
     ContainerAccessControl publicAccessACL = new ContainerAccessControl(true);
 
     public BlobOperator() {
-        try {
-            conf = Configuration.getInstance();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        conf = Configuration.getInstance();
     }
 
     public BlobOperator(Configuration conf) {

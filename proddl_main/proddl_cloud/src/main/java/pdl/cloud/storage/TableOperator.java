@@ -47,11 +47,7 @@ public class TableOperator {
     public TableStorageClient tableStorageClient;
 
     public TableOperator() {
-        try {
-            conf = Configuration.getInstance();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        conf = Configuration.getInstance();
     }
 
     public TableOperator(Configuration conf) {

@@ -24,7 +24,6 @@ package pdl.cloud.management;
 import org.soyatec.windowsazure.table.ITableServiceEntity;
 import pdl.cloud.model.JobDetail;
 import pdl.cloud.storage.TableOperator;
-import pdl.common.Configuration;
 import pdl.common.QueryTool;
 import pdl.common.StaticValues;
 import pdl.common.ToolPool;
@@ -40,14 +39,11 @@ import java.util.List;
  * To change this template use File | Settings | File Templates.
  */
 public class JobManager {
-
-    private Configuration conf;
     private TableOperator tableOperator;
     private String jobDetailTableName;
 
     public JobManager() {
-        conf = Configuration.getInstance();
-        tableOperator = new TableOperator(conf);
+        tableOperator = new TableOperator();
         jobDetailTableName = ToolPool.buildTableName(StaticValues.TABLE_NAME_JOB_DETAIL);
     }
 
@@ -60,7 +56,7 @@ public class JobManager {
         try {
             List<ITableServiceEntity> jobs = getJobList(
                     QueryTool.getSingleConditionalStatement(StaticValues.COLUMN_JOB_DETAIL_STATUS, "eq", StaticValues.JOB_STATUS_SUBMITTED
-                )
+                    )
             );
 
             if(jobs!=null && jobs.size()>0) {

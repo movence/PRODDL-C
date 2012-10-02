@@ -26,7 +26,6 @@ import org.soyatec.windowsazure.table.ITableServiceEntity;
 import pdl.cloud.model.FileInfo;
 import pdl.cloud.storage.BlobOperator;
 import pdl.cloud.storage.TableOperator;
-import pdl.common.Configuration;
 import pdl.common.StaticValues;
 import pdl.common.ToolPool;
 
@@ -37,21 +36,17 @@ import pdl.common.ToolPool;
  * Time: 3:16 PM
  */
 public class StorageServices {
-    private Configuration conf;
-
     private TableOperator tableOperator;
     private BlobOperator blobOperator;
 
-    public StorageServices() {
-        conf = Configuration.getInstance();
-    }
+    public StorageServices() {}
 
     /*
      *TABLE OPERATIONS
      */
     private TableOperator getTableOperator() {
         if (tableOperator == null)
-            tableOperator = new TableOperator(conf);
+            tableOperator = new TableOperator();
         return tableOperator;
     }
 
@@ -85,7 +80,7 @@ public class StorageServices {
      */
     private BlobOperator getBlobOperator() {
         if (blobOperator == null)
-            blobOperator = new BlobOperator(conf);
+            blobOperator = new BlobOperator();
         return blobOperator;
     }
 

@@ -62,7 +62,7 @@ public class StaticValues {
     public static final String TABLE_NAME_USER = "user";
 
     public static final String COLUMN_ROW_KEY = "RowKey";
-    public static final String COLUMN_USER_ID = "userId";
+    public static final String COLUMN_USER_ID = "userid";
     public static final String COLUMN_DYNAMIC_DATA_KEY = "dataKey";
     public static final String COLUMN_JOB_DETAIL_PRIORITY = "priority";
     public static final String COLUMN_JOB_DETAIL_STATUS = "status";
@@ -92,8 +92,9 @@ public class StaticValues {
         {
             "execute",
             "adduser",
-            "scaleup",
-            "scaledown",
+            "scale",
+            //"scaleup",
+            //"scaledown",
             "cert"
         };
     public static final String SPECIAL_EXECUTION_JOB = "execute";

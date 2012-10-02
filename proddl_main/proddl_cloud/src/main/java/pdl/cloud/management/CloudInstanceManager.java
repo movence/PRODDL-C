@@ -62,6 +62,9 @@ public class CloudInstanceManager {
     private String hostedServiceName;
     private TableOperator tableOperator;
 
+    private Document configurationDocument;
+    private Element countElement;
+
     public CloudInstanceManager() {
         conf = Configuration.getInstance();
         initializeManager();
@@ -72,34 +75,14 @@ public class CloudInstanceManager {
             String dataStorePath = conf.getStringProperty(StaticValues.CONFIG_KEY_DATASTORE_PATH);
 
             tableOperator = new TableOperator(conf);
-            String keystoreFilaName = StaticValues.CERTIFICATE_NAME+".keystore";
-            String trustcaFieName = StaticValues.CERTIFICATE_NAME+".trustcacerts";
+            String keystoreFilaName = StaticValues.CERTIFICATE_NAME + ".keystore";
+            String trustcaFieName = StaticValues.CERTIFICATE_NAME + ".trustcacerts";
             String keystoreFilePath = ToolPool.buildFilePath(dataStorePath, StaticValues.DIRECTORY_FILE_AREA, keystoreFilaName);
             String trustcaFilePath = ToolPool.buildFilePath(dataStorePath, StaticValues.DIRECTORY_FILE_AREA, trustcaFieName);
 
-            /*
-             * Certificates are stored in Azure drive
-             * by hkim 9/18/2012
-             *
-            //download keystore file for azure management
-
-            BlobOperator blobOperator = new BlobOperator(conf);
-            if (!new File(keystoreFilePath).exists())
-                blobOperator.download(
-                        StaticValues.BLOB_CONTAINER_TOOLS,
-                        keystoreFilaName,
-                        storagePath
-                );
-            if (!new File(trustcaFiePath).exists())
-                blobOperator.download(
-                        StaticValues.BLOB_CONTAINER_TOOLS,
-                        trustcaFieName,
-                        storagePath
-                );
-            */
             String certPass = conf.getStringProperty(StaticValues.CONFIG_KEY_CERT_PASSWORD);
-            if(certPass==null) {
-                DynamicData passData = (DynamicData)tableOperator.queryEntityBySearchKey(
+            if (certPass == null) {
+                DynamicData passData = (DynamicData) tableOperator.queryEntityBySearchKey(
                         ToolPool.buildTableName(StaticValues.TABLE_NAME_DYNAMIC_DATA),
                         StaticValues.COLUMN_DYNAMIC_DATA_KEY,
                         StaticValues.CONFIG_KEY_CERT_PASSWORD,
@@ -112,6 +95,7 @@ public class CloudInstanceManager {
                     trustcaFilePath, certPass,
                     StaticValues.CERTIFICATE_ALIAS
             );
+            configurationDocument = null;
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -138,7 +122,7 @@ public class CloudInstanceManager {
         try {
             hostedServiceName = getHostedServiceName();
 
-            if(hostedServiceName != null) {
+            if (hostedServiceName != null) {
                 HostedServiceProperties serviceProperties = manager.getHostedServiceProperties(hostedServiceName, true);
                 deploymentList = serviceProperties.getDeployments();
             }
@@ -149,95 +133,94 @@ public class CloudInstanceManager {
         return deploymentList;
     }
 
-    private boolean scaleService(String flag, String deploymentName, int count) {
-        boolean rtnVal = false;
+    private String getDeploymentName() throws Exception {
+        String deploymentName = null;
+
+        List<Deployment> deployments = getDeploymentList();
+        if (deployments == null || deployments.size() == 0)
+            throw new Exception("No deployment is available.");
+
+        for (Deployment deployment : deployments) {
+            //finds correct deployment by id
+            if ((deployment.getStatus() != null && deployment.getStatus().getLiteral().equals("RunningTransitioning"))
+                    || !deployment.getPrivateId().equals(conf.getStringProperty(StaticValues.CONFIG_KEY_DEPLOYMENT_ID))) {
+                continue;
+            }
+
+            InputSource is = new InputSource();
+            is.setCharacterStream(new StringReader(deployment.getConfiguration()));
+
+            DOMParser domParser = new DOMParser();
+            domParser.parse(is);
+            configurationDocument = domParser.getDocument();
+            deploymentName = deployment.getName();
+        }
+        return deploymentName;
+    }
+
+    public int getCurrentInstanceCount() {
+        int count = 0;
+
         try {
-            List<Deployment> deployments = getDeploymentList();
-            if (deployments == null || deployments.size() == 0)
-                throw new Exception("scaleService threw Exception: There is no deployed service");
-
-            for (Deployment deployment : deployments) {
-                //skips deployments by given name or status
-                if ((deploymentName != null && !deploymentName.equals(deployment.getName()))
-                        || (deployment.getStatus()!=null && deployment.getStatus().equals("RunningTransitioning"))
-                        || !conf.getStringProperty(StaticValues.CONFIG_KEY_DEPLOYMENT_ID).equals(deployment.getPrivateId()))
-                    continue;
-
-                InputSource is = new InputSource();
-                is.setCharacterStream(new StringReader(deployment.getConfiguration()));
-
-                DOMParser domParser = new DOMParser();
-                domParser.parse(is);
-                Document doc = domParser.getDocument();
-                NodeList nodes = doc.getElementsByTagName("Role");
-
+            if(configurationDocument!=null) {
+                NodeList nodes = configurationDocument.getElementsByTagName("Role");
                 for (int i = 0; i < nodes.getLength(); i++) {
 
                     Element roleElement = (Element) nodes.item(i);
 
                     if (roleElement.getAttribute("name").equals(conf.getStringProperty(StaticValues.CONFIG_KEY_WORKER_NAME))) {
-
                         NodeList instanceCountNode = roleElement.getElementsByTagName("Instances");
-                        Element instanceCountElement = (Element) instanceCountNode.item(0);
-
-                        int currentInstanceCount = Integer.valueOf(instanceCountElement.getAttribute("count"));
-
-                        if ("up".equals(flag)) {
-                            if (currentInstanceCount == StaticValues.MAX_TOTAL_WORKER_INSTANCE) {
-                                break;
-                            }
-
-                            currentInstanceCount++;
-                        } else {
-                            //prevents instance count becomes 0
-                            if (currentInstanceCount == 1) {
-                                break;
-                            }
-
-                            //currentInstanceCount--;
-                            //reduce number of instances by half
-                            currentInstanceCount/=2;
-                        }
-                        instanceCountElement.setAttribute("count", (count!=0?count:currentInstanceCount)+"");
-
-                        StringWriter out = new StringWriter();
-                        XMLSerializer serializer = new XMLSerializer(out, new OutputFormat(doc));
-                        serializer.serialize(doc);
-
-                        BlobStream blobFileStream = new BlobMemoryStream(new ByteArrayInputStream(out.toString().getBytes("UTF-8")));
-                        manager.changeDeploymentConfiguration(hostedServiceName, deployment.getName(), blobFileStream, null);
-
-                        rtnVal = true;
+                        countElement = (Element) instanceCountNode.item(0);
+                        count = Integer.valueOf(countElement.getAttribute("count"));
                         break;
                     }
                 }
             }
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch(Exception ex) {
+            ex.printStackTrace();
+        }
+        return count;
+    }
+
+    public boolean scaleService(int count) {
+        boolean rtnVal = false;
+        try {
+            if(count>0 && count<StaticValues.MAX_TOTAL_WORKER_INSTANCE) {
+                String deploymentName = this.getDeploymentName();
+                int currentInstanceCount = this.getCurrentInstanceCount();
+
+                if(currentInstanceCount!=0) {
+                    countElement.setAttribute("count", ""+count);
+
+                    StringWriter out = new StringWriter();
+                    XMLSerializer serializer = new XMLSerializer(out, new OutputFormat(configurationDocument));
+                    serializer.serialize(configurationDocument);
+
+                    BlobStream blobFileStream = new BlobMemoryStream(new ByteArrayInputStream(out.toString().getBytes("UTF-8")));
+                    manager.changeDeploymentConfiguration(hostedServiceName, deploymentName, blobFileStream, null);
+
+                    rtnVal = true;
+                }
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
         }
         return rtnVal;
-    }
-
-    public boolean scaleUp(int count) {
-        return scaleService("up", null, count);
-    }
-
-    public boolean scaleDown(int count) {
-        return scaleService("down", null, count);
     }
 
     public void executeScalingByProcessorTime() {
         try {
             /*
-             * No reason to query by Counter Name.
-             * Query performance data by deployment id since there could be multiple instances sharing the same storage account
-             * 8/3/12 by hkim
+            * No reason to query by Counter Name.
+            * Query performance data by deployment id since there could be multiple instances sharing the same storage account
+            * 8/3/12 by hkim
             String COLUMN_PERFORMANCE_COUNTER_NAME = "CounterName";
             String COLUMN_PERFORMANCE_COUNTER_VALUE = "\\Processor(_Total)\\% Processor Time";
 
             List<ITableServiceEntity> entityList = tableOperator.queryListBySearchKey(
-                    TABLE_PERFORMANCE_COUNTER_NAME, COLUMN_PERFORMANCE_COUNTER_NAME,
-                    COLUMN_PERFORMANCE_COUNTER_VALUE, null, null, PerformanceData.class);*/
+                 TABLE_PERFORMANCE_COUNTER_NAME, COLUMN_PERFORMANCE_COUNTER_NAME,
+                 COLUMN_PERFORMANCE_COUNTER_VALUE, null, null, PerformanceData.class);
+            */
 
             List<ITableServiceEntity> entityList = tableOperator.queryListBySearchKey(
                     TABLE_PERFORMANCE_COUNTER_NAME,
@@ -256,9 +239,9 @@ public class CloudInstanceManager {
                 processorTimeFactor /= entityList.size();
 
                 if (processorTimeFactor > StaticValues.MAXIMUM_AVERAGE_CPU_USAGE) {
-                    this.scaleUp(0);
+                    this.scaleService(0);
                 } else if (processorTimeFactor < StaticValues.MINIMUM_AVERAGE_CPU_USAGE) {
-                    this.scaleDown(0);
+                    this.scaleService(0);
                 }
             }
         } catch (Exception ex) {
