@@ -61,10 +61,7 @@ public class UserService {
 
         try {
             initializeTableOperator();
-
-            AbstractTableServiceEntity rtnEntity = tableOperator.queryEntityBySearchKey(
-                    userTableName, StaticValues.COLUMN_USER_ID, userId, User.class
-            );
+            AbstractTableServiceEntity rtnEntity = tableOperator.queryEntityBySearchKey(userTableName, StaticValues.COLUMN_USER_ID, userId, User.class);
 
             if(rtnEntity != null) {
                 rtnVal = (User) rtnEntity;
@@ -72,13 +69,12 @@ public class UserService {
                 if("admin".equals(userId)) {
                     User admin = new User();
                     admin.setFirstName("admin");
-                    admin.setUserid("admin");
+                    admin.setUserId("admin");
                     admin.setUserpass("pdlAdmin");
                     admin.setAdmin(1);
 
                     if (this.loadUser(admin))
                         rtnVal = admin;
-
                 }
             }
         } catch (Exception ex) {
@@ -129,7 +125,7 @@ public class UserService {
         boolean rtnVal = false;
         try {
             User user = this.getUserById(userId);
-            if (user != null && user.getUserid() != null) {
+            if (user != null && user.getUserId() != null) {
                 rtnVal = user.getAdmin() == 1;
             }
         } catch (Exception ex) {

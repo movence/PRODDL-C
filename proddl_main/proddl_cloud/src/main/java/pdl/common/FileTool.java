@@ -65,11 +65,12 @@ public class FileTool {
             uploadDir.mkdir();
     }
 
-    public FileInfo createFileRecord(String username) {
+    public FileInfo createFileRecord(String originalFileName, String username) {
         FileInfo fileInfo = new FileInfo();
         fileInfo.setName(fileInfo.getIuuid()+StaticValues.FILE_DAT_EXTENSION);
         fileInfo.setUserId(username);
         fileInfo.setStatus(StaticValues.FILE_STATUS_RESERVED);
+        fileInfo.setOriginalName(originalFileName);
 
         int hashedDirectory = Math.abs(fileInfo.getIuuid().hashCode()) % StaticValues.MAX_FILE_COUNT_PER_DIRECTORY;
         String dirPath = uploadDirectoryPath + hashedDirectory;
@@ -89,11 +90,11 @@ public class FileTool {
         return fileInfo;
     }
 
-    public String createFile(String type, InputStream fileIn, String username) throws Exception{
+    public String createFile(String type, InputStream fileIn, String fileName, String username) throws Exception{
         String rtnVal = null;
         FileOutputStream fileOut = null;
         try {
-            FileInfo fileInfo = this.createFileRecord(username);
+            FileInfo fileInfo = this.createFileRecord(fileName, username);
 
             String newFilePath = ToolPool.buildFilePath(uploadDirectoryPath, fileInfo.getPath(), fileInfo.getName());
             fileOut = new FileOutputStream(newFilePath);

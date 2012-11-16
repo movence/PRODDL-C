@@ -54,17 +54,14 @@ public class JobManager {
      */
     private synchronized void reorderSubmittedJobs() throws Exception {
         try {
-            List<ITableServiceEntity> jobs = getJobList(
-                    QueryTool.getSingleConditionalStatement(StaticValues.COLUMN_JOB_DETAIL_STATUS, "eq", StaticValues.JOB_STATUS_SUBMITTED
-                    )
+            List<JobDetail> jobs = getJobList(
+                QueryTool.getSingleConditionalStatement(StaticValues.COLUMN_JOB_DETAIL_STATUS, "eq", StaticValues.JOB_STATUS_SUBMITTED)
             );
 
             if(jobs!=null && jobs.size()>0) {
                 ArrayList<JobDetail> prioritisedJobList = new ArrayList<JobDetail>();
                 int scaleJobCount = 0;
-                for (ITableServiceEntity job : jobs) {
-
-                    JobDetail currJob = (JobDetail) job;
+                for (JobDetail currJob : jobs) {
                     if(currJob.getJobName().contains("scale")) //set highest priority for scaling jobs
                         prioritisedJobList.add(scaleJobCount++, currJob);
                     else
@@ -225,7 +222,7 @@ public class JobManager {
     }
 
     /**
-     * Updates job status of a job with given UUID (String) and status (Integer)
+     * Updates status of a job with given UUID (String) and status (Integer)
      *
      * @param jobId  UUID of a job
      * @param status integer value of job status (defined in StaticValues object)
@@ -260,11 +257,12 @@ public class JobManager {
 
     public void updateMultipleJobStatus(int prevStatus, int newStatus) throws Exception {
         try {
-            List<ITableServiceEntity> jobList = getJobList(QueryTool.getSingleConditionalStatement(StaticValues.COLUMN_JOB_DETAIL_STATUS, "eq", prevStatus));
+            List<JobDetail> jobList = getJobList(
+                    QueryTool.getSingleConditionalStatement(StaticValues.COLUMN_JOB_DETAIL_STATUS, "eq", prevStatus)
+            );
 
             if(jobList!=null && jobList.size()>0) {
-                for (ITableServiceEntity entity : jobList) {
-                    JobDetail currJob = (JobDetail) entity;
+                for (JobDetail currJob : jobList) {
                     updateJobStatus(currJob.getJobUUID(), newStatus, null, null);
                 }
             }
@@ -291,13 +289,25 @@ public class JobManager {
         return rtnVal;
     }
 
-    public List<ITableServiceEntity> getJobList(String condition) throws Exception {
-        List<ITableServiceEntity> jobs;
+    /**
+     * retrieves list of job that meets given sql condition
+     * @param condition sql formatted (Azure style) condition - where clause
+     * @return list of jobs
+     * @throws Exception
+     */
+    public List<JobDetail> getJobList(String condition) throws Exception {
+        List<JobDetail> jobs = null;
         try {
-            jobs = tableOperator.queryListByCondition(
+            List<ITableServiceEntity> jobEntities = tableOperator.queryListByCondition(
                     jobDetailTableName,
                     condition,
                     JobDetail.class);
+            if(jobEntities!=null && jobEntities.size()>0) {
+                jobs = new ArrayList<JobDetail>();
+                for(ITableServiceEntity entity : jobEntities) {
+                    jobs.add((JobDetail)entity);
+                }
+            }
         } catch (Exception ex) {
             ex.printStackTrace();
             throw ex;

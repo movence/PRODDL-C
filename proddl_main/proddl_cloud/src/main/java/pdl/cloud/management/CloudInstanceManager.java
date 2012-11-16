@@ -162,18 +162,21 @@ public class CloudInstanceManager {
         int count = 0;
 
         try {
-            if(configurationDocument!=null) {
-                NodeList nodes = configurationDocument.getElementsByTagName("Role");
-                for (int i = 0; i < nodes.getLength(); i++) {
+            String deploymentName = null;
+            while(configurationDocument==null || deploymentName==null) {
+                deploymentName = this.getDeploymentName();
+            }
 
-                    Element roleElement = (Element) nodes.item(i);
+            NodeList nodes = configurationDocument.getElementsByTagName("Role");
+            for (int i = 0; i < nodes.getLength(); i++) {
 
-                    if (roleElement.getAttribute("name").equals(conf.getStringProperty(StaticValues.CONFIG_KEY_WORKER_NAME))) {
-                        NodeList instanceCountNode = roleElement.getElementsByTagName("Instances");
-                        countElement = (Element) instanceCountNode.item(0);
-                        count = Integer.valueOf(countElement.getAttribute("count"));
-                        break;
-                    }
+                Element roleElement = (Element) nodes.item(i);
+
+                if (roleElement.getAttribute("name").equals(conf.getStringProperty(StaticValues.CONFIG_KEY_WORKER_NAME))) {
+                    NodeList instanceCountNode = roleElement.getElementsByTagName("Instances");
+                    countElement = (Element) instanceCountNode.item(0);
+                    count = Integer.valueOf(countElement.getAttribute("count"));
+                    break;
                 }
             }
         } catch(Exception ex) {
@@ -189,7 +192,7 @@ public class CloudInstanceManager {
                 String deploymentName = this.getDeploymentName();
                 int currentInstanceCount = this.getCurrentInstanceCount();
 
-                if(currentInstanceCount!=0) {
+                if(currentInstanceCount!=0 && currentInstanceCount!=count) {
                     countElement.setAttribute("count", ""+count);
 
                     StringWriter out = new StringWriter();
@@ -238,10 +241,11 @@ public class CloudInstanceManager {
 
                 processorTimeFactor /= entityList.size();
 
+                int currCount = this.getCurrentInstanceCount();
                 if (processorTimeFactor > StaticValues.MAXIMUM_AVERAGE_CPU_USAGE) {
-                    this.scaleService(0);
+                    this.scaleService(currCount+1);
                 } else if (processorTimeFactor < StaticValues.MINIMUM_AVERAGE_CPU_USAGE) {
-                    this.scaleService(0);
+                    this.scaleService(currCount/2);
                 }
             }
         } catch (Exception ex) {

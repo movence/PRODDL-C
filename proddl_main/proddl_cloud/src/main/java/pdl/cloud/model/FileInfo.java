@@ -38,6 +38,7 @@ public class FileInfo extends AbstractTableServiceEntity {
     String userId;
     String container;
     String path;
+    String originalName;
     int status; //reserved:1, committed:2
 
     public FileInfo(String partitionKey, String rowKey) {
@@ -118,5 +119,13 @@ public class FileInfo extends AbstractTableServiceEntity {
 
     public void setStatus(int status) {
         this.status = status;
+    }
+
+    public String getOriginalName() {
+        return originalName;
+    }
+
+    public void setOriginalName(String originalName) {
+        this.originalName = originalName;
     }
 }

@@ -33,7 +33,7 @@ import org.soyatec.windowsazure.table.Guid;
 public class User extends AbstractTableServiceEntity {
     private String firstName;
     private String lastName;
-    private String userid;
+    private String userId;
     private String userpass;
     private int isAdmin; //0: NO, 1: YES
     private String email;
@@ -67,12 +67,12 @@ public class User extends AbstractTableServiceEntity {
         this.lastName = lastName;
     }
 
-    public String getUserid() {
-        return userid;
+    public String getUserId() {
+        return userId;
     }
 
-    public void setUserid(String userid) {
-        this.userid = userid;
+    public void setUserId(String userId) {
+        this.userId = userId;
     }
 
     public String getUserpass() {

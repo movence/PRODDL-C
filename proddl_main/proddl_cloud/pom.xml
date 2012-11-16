@@ -52,10 +52,6 @@
                     <skipTests>false</skipTests>
                     <useFile>false</useFile>
                     <!--<debugForkedProcess>true</debugForkedProcess>-->
-                    <excludes>
-                        <exclude>UserServiceTest.java</exclude>
-                        <exclude>CertificateManger.java</exclude>
-                    </excludes>
                 </configuration>
             </plugin>
             <!--<plugin>
