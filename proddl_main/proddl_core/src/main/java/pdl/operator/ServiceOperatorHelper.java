@@ -53,6 +53,9 @@ public class ServiceOperatorHelper {
         storageServices = new StorageServices();
     }
 
+    /**
+     * starts master or worker by flag
+     */
     public void run() {
         try {
             this.storagePath = conf.getStringProperty(StaticValues.CONFIG_KEY_STORAGE_PATH);
@@ -111,6 +114,10 @@ public class ServiceOperatorHelper {
         }
     }
 
+    /**
+     * download 3rd party tools from blob storage area, then extracts into local storage space
+     * @throws Exception
+     */
     private void runOperators() throws Exception {
          //TODO need more dynamic way to handle 3rd party package
         AbstractApplicationOperator pythonOperator = new PythonOperator(storagePath, "python", "python.exe");
@@ -123,6 +130,16 @@ public class ServiceOperatorHelper {
         cctoolsOperator.run(storageServices);
     }
 
+    /**
+     * starts master
+     *  -rolls back any pending or running job statues
+     *  -starts catalog server
+     *  -runs a job
+     * @param jettyPort port number Jetty uses
+     * @param masterAddress local IP address
+     * @param catalogServerPort internal communication port between cctools instances
+     * @throws Exception
+     */
     private void runMaster(String jettyPort, String masterAddress, String catalogServerPort) throws Exception {
         JettyThreadedOperator jettyOperator = new JettyThreadedOperator(jettyPort);
         jettyOperator.start();
@@ -174,9 +191,14 @@ public class ServiceOperatorHelper {
         }
     }
 
+    /**
+     * starts worker
+     * @throws Exception
+     */
     private void runJobRunner() throws Exception {
         int maxWorkerCount = StaticValues.MAX_WORKER_INSTANCE_PER_NODE;
 
+        //waits until master is available
         while (!cctoolsOperator.isCatalogServerInfoAvailable()) {
             Thread.sleep(10000);
         }

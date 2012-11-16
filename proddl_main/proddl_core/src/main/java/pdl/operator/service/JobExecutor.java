@@ -37,16 +37,17 @@ import java.io.FileInputStream;
 import java.util.Map;
 
 /**
+ * Main job executor class that parses input data and processes job
  * Created by IntelliJ IDEA.
  * User: hkim
  * Date: 1/27/12
  * Time: 10:19 AM
  */
 public class JobExecutor extends Thread {
-    private final String WORKER_INSTANCE_COUNT_KEY = "n_worker";
-    private final String CER_CERTIFICATE_KEY = "cer_fid";
-    private final String PFX_CERTIFICATE_KEY = "pfx_fid";
-    private final String CERTIFICATE_PASSWORD_KEY = "c_password";
+    private final String WORKER_INSTANCE_COUNT_KEY = "n_worker";  //for scale
+    private final String CER_CERTIFICATE_KEY = "cer_fid"; // file UUID for cer
+    private final String PFX_CERTIFICATE_KEY = "pfx_fid"; // file UUID for pfx
+    private final String CERTIFICATE_PASSWORD_KEY = "c_password"; //certification password
     private CctoolsOperator cctoolsOperator;
     private JobDetail currJob;
     private JobHandler jobHandler;
@@ -62,6 +63,10 @@ public class JobExecutor extends Thread {
         this(new ThreadGroup("worker"), currJob, operator);
     }
 
+    /**
+     * returns id of current job so that the status can be updated in thread pool in case of failure
+     * @return current job id
+     */
     @Override
     public String toString() {
         /**
@@ -71,6 +76,9 @@ public class JobExecutor extends Thread {
         return currJob.getJobUUID();
     }
 
+    /**
+     * thread run
+     */
     public void run() {
         if (currJob != null && currJob.getJobUUID() != null) {
             boolean jobExecuted = executeJob();
@@ -80,6 +88,10 @@ public class JobExecutor extends Thread {
         }
     }
 
+    /**
+     * executes job according to its jobName with parameters(input)
+     * @return boolean value of job execution
+     */
     private boolean executeJob() {
         boolean rtnVal = false;
 
@@ -121,6 +133,12 @@ public class JobExecutor extends Thread {
         return rtnVal;
     }
 
+    /**
+     * creates a directory for current job
+     * @param jobUUID current job id
+     * @return path to job directory
+     * @throws Exception
+     */
     private String createJobDirectoryIfNotExist(String jobUUID) throws Exception {
         String jobDir = null;
         String storagePath = Configuration.getInstance().getStringProperty(StaticValues.CONFIG_KEY_DATASTORE_PATH);
@@ -147,6 +165,12 @@ public class JobExecutor extends Thread {
         return jobDir;
     }
 
+    /**
+     * writes input data to .json file in job directory
+     * @param workDir job directory path
+     * @return boolean value for creating json file
+     * @throws Exception
+     */
     private boolean createInputJsonFile(String workDir) throws Exception {
         boolean rtnVal;
 
@@ -162,6 +186,11 @@ public class JobExecutor extends Thread {
         return rtnVal;
     }
 
+    /**
+     * executes scale job - administrator only
+     * @return boolean value for executing scale job
+     * @throws Exception
+     */
     private boolean executeScaleJob() throws Exception {
         boolean rtnVal = false;
         Map<String, Object> inputInMap = null;
@@ -187,6 +216,11 @@ public class JobExecutor extends Thread {
         return rtnVal;
     }
 
+    /**
+     * executes certificate('cert') job - administrator only
+     * @return boolean value for executing certificate job
+     * @throws Exception
+     */
     private boolean executeCertificateJob() throws Exception {
         boolean rtnVal = false;
         Map<String, Object> inputInMap = null;
@@ -208,6 +242,11 @@ public class JobExecutor extends Thread {
         return rtnVal;
     }
 
+    /**
+     * executes general job('execute')
+     * @param workDir current job directory path
+     * @throws Exception
+     */
     private void genericJobExecution(String workDir) throws Exception {
         JobHandler jobHandler = new JobHandler();
 
@@ -256,12 +295,12 @@ public class JobExecutor extends Thread {
                     String outputFileId = null;
                     String outputFilePath = ToolPool.buildFilePath(workDir, "output" + StaticValues.FILE_DAT_EXTENSION);
                     if(ToolPool.canReadFile(outputFilePath))
-                        outputFileId = fileTool.createFile(null, new FileInputStream(outputFilePath), currJob.getUserId());
+                        outputFileId = fileTool.createFile(null, new FileInputStream(outputFilePath), null, currJob.getUserId());
                     //log file
                     String logFilePath = ToolPool.buildFilePath(workDir, "final.log");
                     String logFileId = null;
                     if(ToolPool.canReadFile(logFilePath))
-                        logFileId = fileTool.createFile(null, new FileInputStream(ToolPool.buildFilePath(workDir, "final.log")), currJob.getUserId());
+                        logFileId = fileTool.createFile(null, new FileInputStream(ToolPool.buildFilePath(workDir, "final.log")), null, currJob.getUserId());
 
                     //if(outputFileId!=null && !outputFileId.isEmpty())
                     jobHandler.updateJobStatus(currJob.getJobUUID(), StaticValues.JOB_STATUS_COMPLETED, outputFileId, logFileId);
@@ -310,12 +349,12 @@ public class JobExecutor extends Thread {
                 String outputFilePath = ToolPool.buildFilePath(workDir, "output" + StaticValues.FILE_DAT_EXTENSION);
 
                 FileTool fileTool = new FileTool();
-                String outputFileId = fileTool.createFile(null, new FileInputStream(outputFilePath), currJob.getUserId());
+                String outputFileId = fileTool.createFile(null, new FileInputStream(outputFilePath), null, currJob.getUserId());
                 //log file
                 String logFileId = null;
                 String logFilePath = ToolPool.buildFilePath(workDir, "final.log");
                 if(ToolPool.canReadFile(logFilePath))
-                    logFileId = fileTool.createFile(null, new FileInputStream(ToolPool.buildFilePath(workDir, "final.log")), currJob.getUserId());
+                    logFileId = fileTool.createFile(null, new FileInputStream(ToolPool.buildFilePath(workDir, "final.log")), null, currJob.getUserId());
 
                 //if(outputFileId!=null && !outputFileId.isEmpty())
                 jobHandler.updateJobStatus(currJob.getJobUUID(), StaticValues.JOB_STATUS_COMPLETED, outputFileId, logFileId);

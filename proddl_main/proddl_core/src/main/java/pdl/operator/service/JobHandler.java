@@ -38,6 +38,10 @@ public class JobHandler {
         jobManager = new JobManager();
     }
 
+    public JobHandler(JobManager manager) {
+        this.jobManager = manager;
+    }
+
     public synchronized JobDetail getSubmmittedJob() {
         JobDetail singleJob = null;
 

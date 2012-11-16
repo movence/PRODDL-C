@@ -29,6 +29,11 @@ package pdl.operator;
  * To change this template use File | Settings | File Templates.
  */
 public class ServiceOperator {
+
+    /**
+     * Main executor
+     * @param args
+     */
     public static void main(String[] args) {
         ServiceOperatorHelper helper = new ServiceOperatorHelper();
         helper.run();
