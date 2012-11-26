@@ -29,6 +29,8 @@ import pdl.cloud.model.FileInfo;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by IntelliJ IDEA.
@@ -38,19 +40,22 @@ import java.io.InputStream;
  */
 public class FileTool {
     Configuration conf;
-    StorageServices services;
-    String uploadDirectoryPath;
+    StorageServices storageServices;
+    String fileStoragePath;
     String fileTableName;
 
     public FileTool() {
-        services = new StorageServices();
+        storageServices = new StorageServices();
         this.initialize();
     }
 
-    public String getUploadDirectoryPath() {
-        return uploadDirectoryPath;
+    public String getFileStoragePath() {
+        return fileStoragePath;
     }
 
+    /**
+     * Initialize FileTool by getting configuration values
+     */
     private void initialize() {
         if(conf==null)
             conf = Configuration.getInstance();
@@ -59,44 +64,66 @@ public class FileTool {
 
         String storagePath = conf.getStringProperty(StaticValues.CONFIG_KEY_DATASTORE_PATH);
 
-        uploadDirectoryPath = ToolPool.buildDirPath(storagePath, StaticValues.DIRECTORY_FILE_AREA);
-        File uploadDir = new File(uploadDirectoryPath);
+        fileStoragePath = ToolPool.buildDirPath(storagePath, StaticValues.DIRECTORY_FILE_AREA);
+        File uploadDir = new File(fileStoragePath);
         if(!uploadDir.exists())
             uploadDir.mkdir();
     }
 
-    public FileInfo createFileRecord(String originalFileName, String username) {
+    /**
+     * create file information object with reserved flag
+     * @param originalFileName original file name
+     * @param userName user ID
+     * @return file information
+     */
+    public FileInfo createFileRecord(String originalFileName, String userName) {
         FileInfo fileInfo = new FileInfo();
         fileInfo.setName(fileInfo.getIuuid()+StaticValues.FILE_DAT_EXTENSION);
-        fileInfo.setUserId(username);
+        fileInfo.setUserId(userName);
         fileInfo.setStatus(StaticValues.FILE_STATUS_RESERVED);
         fileInfo.setOriginalName(originalFileName);
 
         int hashedDirectory = Math.abs(fileInfo.getIuuid().hashCode()) % StaticValues.MAX_FILE_COUNT_PER_DIRECTORY;
-        String dirPath = uploadDirectoryPath + hashedDirectory;
+        String dirPath = fileStoragePath + hashedDirectory;
         ToolPool.createDirectoryIfNotExist(dirPath);
         fileInfo.setPath(String.valueOf(hashedDirectory));
 
         return fileInfo;
     }
 
+    /**
+     * get file information by UUID
+     * @param fileId UUID of file
+     * @return file information
+     * @throws Exception
+     */
     public FileInfo getFileInfoById(String fileId) throws Exception{
         FileInfo fileInfo = null;
 
-        ITableServiceEntity entity = services.queryEntityBySearchKey(fileTableName, StaticValues.COLUMN_ROW_KEY, fileId, FileInfo.class);
+        ITableServiceEntity entity = storageServices.queryEntityBySearchKey(fileTableName, StaticValues.COLUMN_ROW_KEY, fileId, FileInfo.class);
         if(entity!=null)
             fileInfo = (FileInfo)entity;
 
         return fileInfo;
     }
 
-    public String createFile(String type, InputStream fileIn, String fileName, String username) throws Exception{
+    /**
+     * create actual file by inserting file information into file table, then write file stream into physical file
+     * The file information get 'committed' status after its completion
+     * @param type file type : blob or null
+     * @param fileIn input stream of a file
+     * @param fileName original file name
+     * @param userName user ID
+     * @return full path of file
+     * @throws Exception
+     */
+    public String createFile(String type, InputStream fileIn, String fileName, String userName) throws Exception{
         String rtnVal = null;
         FileOutputStream fileOut = null;
         try {
-            FileInfo fileInfo = this.createFileRecord(fileName, username);
+            FileInfo fileInfo = this.createFileRecord(fileName, userName);
 
-            String newFilePath = ToolPool.buildFilePath(uploadDirectoryPath, fileInfo.getPath(), fileInfo.getName());
+            String newFilePath = ToolPool.buildFilePath(fileStoragePath, fileInfo.getPath(), fileInfo.getName());
             fileOut = new FileOutputStream(newFilePath);
 
             int readBytes = 0;
@@ -113,8 +140,8 @@ public class FileTool {
 
             //TODO It might need to allow files to be uploaded to other blob containers than jobFiles
             if (type!=null && type.equals("blob")) {
-                fileInfo.setContainer("files"); //TODO may need to define blob container for files in properties resource file
-                boolean uploaded = services.uploadFileToBlob(fileInfo, newFilePath, false);
+                fileInfo.setContainer("files"); //TODO may need to define blob container for files in configuration file
+                boolean uploaded = storageServices.uploadFileToBlob(fileInfo, newFilePath, false);
 
                 if(!uploaded) {
                     File file = new File(newFilePath);
@@ -139,108 +166,134 @@ public class FileTool {
         return rtnVal;
     }
 
+    /**
+     * insert file information into file table
+     * @param fileinfo file information
+     * @return boolean result
+     * @throws Exception
+     */
     public boolean insertFileRecord(FileInfo fileinfo) throws Exception {
-        boolean rtnVal = false;
-        try {
-            rtnVal = services.insertSingleEnttity(fileTableName, fileinfo);
-        } catch (Exception ex) {
-            throw ex;
-        }
-        return rtnVal;
+        return storageServices.insertSingleEnttity(fileTableName, fileinfo);
     }
 
+    /**
+     * update file status to 'committed' after confirming the exist of physical file
+     * @param fileId file UUID
+     * @return boolean result
+     * @throws Exception
+     */
     public boolean commitFileRecord(String fileId) throws Exception {
         boolean rtnVal = false;
-        try {
-            FileInfo fileInfo = getFileInfoById(fileId);
-            if(fileInfo!=null) {
-                fileInfo.setStatus(StaticValues.FILE_STATUS_COMMITTED);
-                rtnVal = services.updateEntity(fileTableName, fileInfo);
-            } else
-                throw new Exception("File does not exist with ID:" + fileId);
-        } catch (Exception ex) {
-            throw ex;
+        FileInfo fileInfo = getFileInfoById(fileId);
+        if(fileInfo!=null) {
+            fileInfo.setStatus(StaticValues.FILE_STATUS_COMMITTED);
+            rtnVal = storageServices.updateEntity(fileTableName, fileInfo);
+        } else {
+            throw new Exception("File does not exist.");
         }
         return rtnVal;
     }
 
     public boolean deleteFileRecord(String fileId) throws Exception {
         boolean rtnVal = false;
-        try {
-
-        } catch (Exception ex) {
-            throw ex;
+        FileInfo fileInfo = this.getFileInfoById(fileId);
+        if(fileInfo!=null) {
+            storageServices.deleteEntity(fileTableName, fileInfo);
+            rtnVal = true;
         }
         return rtnVal;
     }
 
+    /**
+     * copies a file from one location to the other
+     * @param from full path of source
+     * @param to full path of target
+     * @return boolean result
+     * @throws Exception
+     */
     public boolean copy(String from, String to) throws Exception {
         boolean rtnVal = false;
-        try {
-            File fromFile = new File(from);
-            if(fromFile.exists() && fromFile.canRead()) {
-                FileUtils.copyFile(fromFile, new File(to));
-
-                /*FileInputStream in = new FileInputStream(from);
-                FileOutputStream out = new FileOutputStream(to);
-
-                int readBytes = 0;
-                int readBlockSize = 4 * 1024 * 1024;
-                byte[] buffer = new byte[readBlockSize];
-                while ((readBytes = in.read(buffer, 0, readBlockSize)) != -1) {
-                    out.write(buffer, 0, readBytes);
-                }
-
-                out.close();
-                in.close();*/
-
-                rtnVal = true;
-            }
-        } catch(Exception ex) {
-            throw ex;
+        File fromFile = new File(from);
+        if(fromFile.exists() && fromFile.canRead()) {
+            FileUtils.copyFile(fromFile, new File(to));
+            rtnVal = true;
         }
         return rtnVal;
     }
 
+    /**
+     * copy a file from file storage area to different directory ie. working directory
+     * @param path full path of source
+     * @param to full path of target
+     * @return boolean result
+     * @throws Exception
+     */
     public boolean copyFromDatastore(String path, String to) throws Exception {
-        return this.copy(ToolPool.buildFilePath(uploadDirectoryPath, path), to);
+        return this.copy(ToolPool.buildFilePath(fileStoragePath, path), to);
     }
 
+    /**
+     * get full path of a file with its UUID
+     * @param fileId file UUID
+     * @return full path of a file
+     * @throws Exception
+     */
     public String getFilePath(String fileId) throws Exception {
         String filePath;
         FileInfo fileInfo = this.getFileInfoById(fileId);
         if(fileInfo==null)
             throw new Exception("File record does not exist!");
         else
-            filePath = ToolPool.buildFilePath(uploadDirectoryPath, fileInfo.getPath(), fileInfo.getName());
+            filePath = ToolPool.buildFilePath(fileStoragePath, fileInfo.getPath(), fileInfo.getName());
 
         return filePath;
     }
 
-    public boolean delete(String fileId, String username) throws Exception {
+    /**
+     * delete actual file by UUID as well as record in file table
+     * @param fileId file UUID
+     * @param userName user ID
+     * @return boolean result
+     * @throws Exception
+     */
+    public boolean delete(String fileId, String userName) throws Exception {
         boolean rtnVal = false;
         try {
-            FileInfo info = (FileInfo)services.queryEntityBySearchKey(fileTableName, StaticValues.COLUMN_ROW_KEY, fileId, FileInfo.class);
+            FileInfo fileInfo = this.getFileInfoById(fileId);
 
-            if(info!=null) {
-                if(!username.equals(info.getUserId()))
+            if(fileInfo!=null) {
+                if(!userName.equals(fileInfo.getUserId()))
                     throw new Exception("The file belongs to another user");
 
-                services.deleteEntity(fileTableName, info);
+                this.deleteFileRecord(fileId);
 
-                String filePath = uploadDirectoryPath + info.getName();
+                String filePath = ToolPool.buildFilePath(fileStoragePath, fileInfo.getPath(), fileInfo.getName());
                 File file = new File(filePath);
                 if(file.exists())
-                    file.delete();
-
-                //TODO files are stored in Azure drive: provide a way to delete file either in blob storage or drive
-                //rtnVal = services.deleteBlob(conf.getStringProperty("BLOB_CONTAINER_FILES"), info.getName());
-                rtnVal = true;
+                    rtnVal = file.delete();
             }
         } catch(Exception ex) {
             throw ex;
         }
 
         return rtnVal;
+    }
+
+    /**
+     * get list of files that belong to given user
+     * @param userName user ID
+     * @return list of files information objects
+     * @throws Exception
+     */
+    public List<FileInfo> getFileList(String userName) throws Exception {
+        List<FileInfo> files = null;
+        List<ITableServiceEntity> fileList = storageServices.queryListBySearchKey(fileTableName, StaticValues.COLUMN_USER_ID, userName, FileInfo.class);
+        if(fileList!=null && fileList.size()>0) {
+            files = new ArrayList<FileInfo>();
+            for(ITableServiceEntity entity : fileList) {
+                files.add((FileInfo)entity);
+            }
+        }
+        return files;
     }
 }

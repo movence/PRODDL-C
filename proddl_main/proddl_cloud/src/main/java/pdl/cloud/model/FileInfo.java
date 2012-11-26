@@ -23,6 +23,7 @@ package pdl.cloud.model;
 
 import org.soyatec.windowsazure.table.AbstractTableServiceEntity;
 import org.soyatec.windowsazure.table.Guid;
+import pdl.common.StaticValues;
 
 /**
  * Created by IntelliJ IDEA.
@@ -119,6 +120,12 @@ public class FileInfo extends AbstractTableServiceEntity {
 
     public void setStatus(int status) {
         this.status = status;
+    }
+
+    public String getStatusInString() {
+        return status== StaticValues.FILE_STATUS_COMMITTED?"committed"
+                :status==StaticValues.FILE_STATUS_RESERVED?"reserved"
+                :"N/A";
     }
 
     public String getOriginalName() {

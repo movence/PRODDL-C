@@ -166,8 +166,9 @@ public class TableOperator {
     }
 
     public List<ITableServiceEntity> queryListBySearchKey(
-            String tableName, String searchColumn, Object searchKey,
-            String order, String orderColumn, Class model) throws StorageException, Exception {
+            String tableName, String searchColumn,
+            Object searchKey, String order,
+            String orderColumn, Class model) {
         List<ITableServiceEntity> entityList = null;
         ITable table;
 
@@ -191,16 +192,15 @@ public class TableOperator {
                 entityList = table.getTableServiceContext().retrieveEntities(sql.toAzureQuery(), model);
 
         } catch (StorageException ex) {
-            throw ex;
+            ex.printStackTrace();
         } catch (Exception ex) {
-            throw ex;
+            ex.printStackTrace();
         }
 
         return entityList;
     }
 
-    public AbstractTableServiceEntity queryEntityByCondition(
-            String tableName, String condition, Class model) {
+    public AbstractTableServiceEntity queryEntityByCondition(String tableName, String condition, Class model) {
         AbstractTableServiceEntity entity = null;
         List<ITableServiceEntity> entityList;
         try {

@@ -80,7 +80,7 @@ public class CertificateManager {
             String ext = type!=null&&type.equals("pfx")?".pfx":".cer";
             FileTool fileTool = new FileTool();
             FileInfo pfxFileInfo = fileTool.getFileInfoById(fileId);
-            filePath = ToolPool.buildFilePath(fileTool.getUploadDirectoryPath(), StaticValues.CERTIFICATE_NAME+ext);
+            filePath = ToolPool.buildFilePath(fileTool.getFileStoragePath(), StaticValues.CERTIFICATE_NAME+ext);
             if(pfxFileInfo!=null) {
                 gotCertificate = fileTool.copyFromDatastore(ToolPool.buildFilePath(pfxFileInfo.getPath(), pfxFileInfo.getName()), filePath);
 

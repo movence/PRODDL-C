@@ -29,6 +29,8 @@ import pdl.cloud.storage.TableOperator;
 import pdl.common.StaticValues;
 import pdl.common.ToolPool;
 
+import java.util.List;
+
 /**
  * Created by IntelliJ IDEA.
  * User: hkim
@@ -64,6 +66,10 @@ public class StorageServices {
 
     public ITableServiceEntity queryEntityBySearchKey(String tableName, String column, String key, Class model) {
         return getTableOperator().queryEntityBySearchKey(tableName, column, key, model);
+    }
+
+    public List<ITableServiceEntity> queryListBySearchKey(String tableName, String column, String key, Class model) {
+        return getTableOperator().queryListBySearchKey(tableName, column, key, null, null, model);
     }
 
     public boolean updateEntity(String tableName, ITableServiceEntity entity) {
