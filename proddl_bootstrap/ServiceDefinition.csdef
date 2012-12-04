@@ -44,10 +44,6 @@
       </InternalEndpoint>
       <InputEndpoint name="HttpIn" protocol="tcp" port="80" />
     </Endpoints>
-    <Imports>
-      <Import moduleName="RemoteAccess" />
-      <Import moduleName="RemoteForwarder" />
-    </Imports>
   </WorkerRole>
   <WorkerRole name="PRODDLJobRunner" vmsize="Small">
     <Runtime executionContext="elevated" />
@@ -64,8 +60,5 @@
     <Endpoints>
       <InternalEndpoint name="OpenAll" protocol="tcp" port="*" />
     </Endpoints>
-    <Imports>
-      <Import moduleName="RemoteAccess" />
-    </Imports>
   </WorkerRole>
 </ServiceDefinition>
