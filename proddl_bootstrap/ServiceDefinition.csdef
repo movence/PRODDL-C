@@ -21,7 +21,7 @@
 * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 *
 -->
-<ServiceDefinition name="proddl_bootstrap" xmlns="http://schemas.microsoft.com/ServiceHosting/2008/10/ServiceDefinition">
+<ServiceDefinition name="proddl_bootstrap" xmlns="http://schemas.microsoft.com/ServiceHosting/2008/10/ServiceDefinition" schemaVersion="2012-10.1.8">
   <WorkerRole name="PRODDLMaster" vmsize="Large">
     <Runtime executionContext="elevated" />
     <LocalResources>
@@ -37,8 +37,7 @@
       <Setting name="BlobContainer" />
       <Setting name="SubscriptionId" />
     </ConfigurationSettings>
-    <Certificates>
-    </Certificates>
+    <Certificates></Certificates>
     <Endpoints>
       <InternalEndpoint name="CatalogServer" protocol="tcp">
         <FixedPortRange max="40000" min="9000" />
@@ -61,8 +60,7 @@
     <LocalResources>
       <LocalStorage name="LocalStorage" cleanOnRoleRecycle="true" sizeInMB="2048" />
     </LocalResources>
-    <Certificates>
-    </Certificates>
+    <Certificates></Certificates>
     <Endpoints>
       <InternalEndpoint name="OpenAll" protocol="tcp" port="*" />
     </Endpoints>

@@ -64,7 +64,7 @@ namespace PRODDLJobRunner
                 dmc.PerformanceCounters.DataSources.Add(pcc);
                 dmc.PerformanceCounters.ScheduledTransferPeriod = TimeSpan.FromMinutes(3.0);
 
-                DiagnosticMonitor.AllowInsecureRemoteConnections = true;
+                //DiagnosticMonitor.AllowInsecureRemoteConnections = true;
                 DiagnosticMonitor.Start("StorageConnectionString", dmc);
 
                 SharedTools.createPropertyFile(new Dictionary<string,string>());
