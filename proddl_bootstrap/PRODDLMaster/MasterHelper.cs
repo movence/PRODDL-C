@@ -100,14 +100,13 @@ namespace PRODDLMaster
             storageHelper = new StorageService(RoleEnvironment.GetConfigurationSettingValue("StorageConnectionString"));
 
             string vhdName = RoleEnvironment.GetConfigurationSettingValue("VHDName");
-            string blobContainer = RoleEnvironment.GetConfigurationSettingValue("BlobContainer");
 
             if (!this.IsMasterDriveExist())
             {
                 String vhdFilePath = createDriveFromCMD(vhdName);
                 if (!String.IsNullOrEmpty(vhdFilePath))
                 {
-                    if (storageHelper.uploadCloudDrive(vhdFilePath, blobContainer, vhdName))
+                    if (storageHelper.uploadCloudDrive(vhdFilePath, SharedTools.BLOB_CONTAINER_NAME, vhdName))
                     {
                         this.updateMasterDriveData(DYNAMIC_TABLE_DRIVE_KEY_NAME, "true");
                         File.Delete(vhdFilePath);
@@ -123,7 +122,7 @@ namespace PRODDLMaster
                 Trace.WriteLine("Azure drive file already exist");
             }
 
-            String drivePath = storageHelper.getMountedDrivePath(String.Format("{0}/{1}", blobContainer, vhdName));
+            String drivePath = storageHelper.getMountedDrivePath(String.Format("{0}/{1}", SharedTools.BLOB_CONTAINER_NAME, vhdName));
             //this.updateMasterDriveData(DYNAMIC_TABLE_DRIVE_PATH, drivePath);
 
             String webServerPort = RoleEnvironment.CurrentRoleInstance.InstanceEndpoints["HttpIn"].IPEndpoint.Port.ToString();
@@ -132,11 +131,6 @@ namespace PRODDLMaster
             Dictionary<string, string> properties = new Dictionary<string, string>();
             properties.Add(SharedTools.KEY_SUBSCRIPTION_ID, RoleEnvironment.GetConfigurationSettingValue(SharedTools.KEY_SUBSCRIPTION_ID));
             properties.Add(SharedTools.KEY_WORKER_NAME, SharedTools.KEY_WORKER_NAME_VALUE);
-            /*
-            properties.Add(SharedTools.KEY_CERTIFICATE_NAME, RoleEnvironment.GetConfigurationSettingValue(SharedTools.KEY_CERTIFICATE_NAME));
-            properties.Add(SharedTools.KEY_CERT_PASSWORD, RoleEnvironment.GetConfigurationSettingValue(SharedTools.KEY_CERT_PASSWORD));
-            properties.Add(SharedTools.KEY_CERT_ALIAS, RoleEnvironment.GetConfigurationSettingValue(SharedTools.KEY_CERT_ALIAS));
-            */
             properties.Add(SharedTools.KEY_MASTER_INSTANCE, "true");
             properties.Add(SharedTools.KEY_WEBSERVER_PORT, webServerPort);
             properties.Add(SharedTools.KEY_INTERNAL_ADDR, internalAddress.Address.ToString());
@@ -145,7 +139,6 @@ namespace PRODDLMaster
 
             SharedTools.createPropertyFile(properties);
             SharedTools.startJavaMainOperator("[Master]", localStoragePath);
-            //startJavaMainOperator(); //this call never return, it's on JAVA's hand now
         }
 
         private void initializeTableContext()

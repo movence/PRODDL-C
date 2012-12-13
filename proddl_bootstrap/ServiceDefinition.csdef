@@ -34,10 +34,10 @@
       <Setting name="VHDSize" />
       <Setting name="DeploymentName" />
       <Setting name="ConfigurationFinalized" />
-      <Setting name="BlobContainer" />
       <Setting name="SubscriptionId" />
     </ConfigurationSettings>
-    <Certificates></Certificates>
+    <Certificates>
+    </Certificates>
     <Endpoints>
       <InternalEndpoint name="CatalogServer" protocol="tcp">
         <FixedPortRange max="40000" min="9000" />
@@ -51,12 +51,12 @@
       <Setting name="StorageConnectionString" />
       <Setting name="DeploymentName" />
       <Setting name="ConfigurationFinalized" />
-      <Setting name="BlobContainer" />
     </ConfigurationSettings>
     <LocalResources>
       <LocalStorage name="LocalStorage" cleanOnRoleRecycle="true" sizeInMB="2048" />
     </LocalResources>
-    <Certificates></Certificates>
+    <Certificates>
+    </Certificates>
     <Endpoints>
       <InternalEndpoint name="OpenAll" protocol="tcp" port="*" />
     </Endpoints>

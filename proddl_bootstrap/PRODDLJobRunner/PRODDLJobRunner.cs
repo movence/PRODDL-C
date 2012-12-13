@@ -69,7 +69,6 @@ namespace PRODDLJobRunner
 
                 SharedTools.createPropertyFile(new Dictionary<string,string>());
                 SharedTools.startJavaMainOperator("[Worker]", localStoragePath);
-                //startJavaMainOperator();
             }
             catch (Exception ex)
             {

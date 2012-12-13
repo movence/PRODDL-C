@@ -95,7 +95,7 @@ namespace CommonTool
             return _cloudDrivePath;
         }
 
-        public Boolean uploadCloudDrive(string filePath, String blobName, String vhdName)
+        public Boolean uploadCloudDrive(string filePath, String bloblContainer, String vhdName)
         {
             int PageBlobPageSize = 512;
             int OneMegabyteAsBytes = 1024 * 1024;
@@ -105,7 +105,7 @@ namespace CommonTool
             {
                 FileInfo vhdFileInfo = new FileInfo(filePath);
 
-                CloudBlobContainer cloudBlobContainer = _account.CreateCloudBlobClient().GetContainerReference(blobName);
+                CloudBlobContainer cloudBlobContainer = _account.CreateCloudBlobClient().GetContainerReference(bloblContainer);
                 cloudBlobContainer.CreateIfNotExist();
                 CloudPageBlob cloudPageBlob = cloudBlobContainer.GetPageBlobReference(vhdName);
                 cloudPageBlob.Properties.ContentType = "binary/octet-stream";

@@ -25,10 +25,9 @@
   <Role name="PRODDLJobRunner">
     <Instances count="1" />
     <ConfigurationSettings>
-      <Setting name="StorageConnectionString" value="DefaultEndpointsProtocol=http;AccountName=-;AccountKey=dGhpc2lzZW1wdHk=" />
+      <Setting name="StorageConnectionString" value="DefaultEndpointsProtocol=https;AccountName=-;AccountKey=dGhpc2lzZW1wdHk=" />
       <Setting name="DeploymentName" value="" />
       <Setting name="ConfigurationFinalized" value="0" />
-      <Setting name="BlobContainer" value="" />
     </ConfigurationSettings>
   </Role>
   <Role name="PRODDLMaster">
@@ -39,7 +38,6 @@
       <Setting name="VHDSize" value="" />
       <Setting name="DeploymentName" value="" />
       <Setting name="ConfigurationFinalized" value="0" />
-      <Setting name="BlobContainer" value="" />
       <Setting name="SubscriptionId" value="" />
     </ConfigurationSettings>
   </Role>
