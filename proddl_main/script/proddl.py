@@ -196,7 +196,7 @@ class JobSubmitter:
                         elif idx==1:
                             makeflowFileName = "test.makeflow" 
                             writer = MakeflowWriter(makeflowFileName)
-                            writer.createJobList(50, timerFile) #makeflow job iteration count
+                            writer.createJobList(5, timerFile) #makeflow job iteration count
                             writer.close()
                             fileData = makeflowFileName
                         else:
@@ -242,13 +242,13 @@ class JobSubmitter:
                         else:
                             if 'execute' in job and 'id' in keys:
                                 currJobId = returnJson['id']
-                            elif 'file' in job and 'AccessId' in keys:
+                            elif 'file' in job and 'id' in keys:
                                 if idx==0:
-                                    timerFile = returnJson['AccessId']
+                                    timerFile = returnJson['id']
                                 elif idx==1:
-                                    scriptFile = returnJson['AccessId']
+                                    scriptFile = returnJson['id']
                                 else:
-                                    inputFile = returnJson['AccessId']
+                                    inputFile = returnJson['id']
                             break;
                         
                 
@@ -370,9 +370,20 @@ def main():
     for o, a in opts:
         if o in ("-h", "--help"):
             print __doc__
-            exit(0)
+            exit(0) 
+            
+    """ ARGS
+    [0] - host
+    [1] - iteration count
+    [2] - id/path identifier for files
+    [3] - timer.py
+    [4] - input file
+    """
     tester = JobSubmitter()
     tester.testCycle(args)
+    
+    #logger = LogParser("someID")
+    #logger.test()
     
 if __name__ == "__main__":
     main()
