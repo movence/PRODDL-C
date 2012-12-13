@@ -61,6 +61,7 @@ namespace CommonTool
         public static readonly string KEY_VHD_NAME = "VHDName";
 
         public static readonly string BLOB_CONTAINER_NAME = "tools";
+        private static readonly string ROLE_DIRECTORY_TOOLS = "tools";
 
         public static Process buildCloudProcess(String fileName, String args, String outputTag)
         {
@@ -92,7 +93,7 @@ namespace CommonTool
 
             try
             {
-                string sevenZipPath = Path.Combine(Directory.GetCurrentDirectory(), @"tools\7z64.dll");
+                string sevenZipPath = Path.Combine(Directory.GetCurrentDirectory(), ROLE_DIRECTORY_TOOLS, "7z64.dll");
                 SevenZipExtractor.SetLibraryPath(sevenZipPath);
                 SevenZipExtractor extractor = new SevenZipExtractor(filePath);
                 extractor.ExtractArchive(extractTo);
@@ -144,7 +145,7 @@ namespace CommonTool
                 {
                     lines.Add(pair.Key + "=" + pair.Value);
                 }
-                File.WriteAllLines(Path.Combine(Directory.GetCurrentDirectory(), @"tools\proddl.properties"), lines.ToArray<string>());
+                File.WriteAllLines(Path.Combine(Directory.GetCurrentDirectory(), ROLE_DIRECTORY_TOOLS, "proddl.properties"), lines.ToArray<string>());
                 rtnVal = true;
             }
             catch (Exception ex)
@@ -161,7 +162,7 @@ namespace CommonTool
 
             try
             {
-                extractZipFile(Path.Combine(Directory.GetCurrentDirectory(), @"tools\jre6x64.zip"),storagePath);
+                extractZipFile(Path.Combine(Directory.GetCurrentDirectory(), ROLE_DIRECTORY_TOOLS, "jre6x64.zip"),storagePath);
                 rtnVal = true;
             }
             catch (Exception ex)
@@ -181,8 +182,8 @@ namespace CommonTool
                 extractJRE(storagePath);
 
                 string currDir = Directory.GetCurrentDirectory();
-                string classPath = Path.Combine(currDir, BLOB_CONTAINER_NAME)
-                    + Path.PathSeparator+Path.Combine(currDir, @"tools\proddl_core-1.0.jar");
+                string classPath = Path.Combine(currDir, ROLE_DIRECTORY_TOOLS)
+                    + Path.PathSeparator+Path.Combine(currDir, ROLE_DIRECTORY_TOOLS, "proddl_core-1.0.jar");
                 Process proc = buildCloudProcess(
                     Path.Combine(storagePath + @"jre\bin\java.exe"),
                     String.Format("-cp {0} {1}", classPath, "pdl.operator.ServiceOperator"),
