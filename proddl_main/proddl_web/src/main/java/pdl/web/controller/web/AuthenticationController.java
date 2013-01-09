@@ -43,19 +43,13 @@ import java.util.Map;
 @RequestMapping(value = "w")
 public class AuthenticationController {
     @RequestMapping(value = "login", method = RequestMethod.GET)
-    public String getLoginPage(@RequestParam(value = "error", required = false) boolean error, ModelMap model) {
-        if (error == true) {
-            model.put("error", "true");
-        } else {
-            model.put("error", "");
-        }
+    public String getLoginPage(@RequestParam(value = "err", required = false) boolean error, ModelMap model) {
+        model.put("err", error?1:0);
         return "common/login";
     }
 
     @RequestMapping(value = "auth", method = RequestMethod.POST)
-    public
-    @ResponseBody
-    Map<String, String> processLoginInJson(
+    public @ResponseBody Map<String, String> processLoginInJson(
             @RequestParam(value = "userId", required = true) String userId,
             @RequestParam(value = "userPass", required = true) String userPass, Model model) {
         Map<String, String> resultMap = new HashMap<String, String>();

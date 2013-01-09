@@ -21,10 +21,7 @@
 
 package pdl.web.service;
 
-import org.apache.log4j.Logger;
 import org.springframework.dao.DataAccessException;
-import org.springframework.security.authentication.encoding.PasswordEncoder;
-import org.springframework.security.authentication.encoding.ShaPasswordEncoder;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.GrantedAuthorityImpl;
 import org.springframework.security.core.userdetails.User;
@@ -44,29 +41,27 @@ import java.util.List;
  * Time: 9:34 AM
  */
 public class UserManagementService implements UserDetailsService {
-    protected static Logger logger = Logger.getLogger("UserManagementService");
 
     @Override
     public UserDetails loadUserByUsername(String userId) throws UsernameNotFoundException, DataAccessException {
-        PasswordEncoder passwordEncoder = new ShaPasswordEncoder();
         UserDetails user = null;
         try {
             UserService pdlUserService = new UserService();
             pdl.cloud.model.User pdlUser = pdlUserService.getUserById(userId);
 
-            user = new User(
-                    pdlUser.getUserid(),
-                    pdlUser.getUserpass(),
-                    true,
-                    true,
-                    true,
-                    true,
-                    getAuthorities(pdlUser.getAdmin())
-            );
-
+            if(pdlUser!=null) {
+                user = new User(
+                        pdlUser.getUserId(),
+                        pdlUser.getUserpass(),
+                        true,
+                        true,
+                        true,
+                        true,
+                        getAuthorities(pdlUser.getAdmin())
+                );
+            }
         } catch (Exception e) {
             e.printStackTrace();
-            logger.error("Error in retrieving user");
         }
         return user;
     }

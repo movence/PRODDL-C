@@ -31,6 +31,7 @@ import pdl.common.ToolPool;
 import javax.servlet.http.HttpServletResponse;
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -57,13 +58,13 @@ public class FileService {
             String fileUid = null;
             if (theFile.getSize() > 0) {
                 InputStream fileIn = theFile.getInputStream();
-                fileUid = fileTool.createFile(type, fileIn, username);
+                fileUid = fileTool.createFile(type, fileIn, theFile.getOriginalFilename(), username);
             }
 
             if (fileUid == null)
                 throw new Exception();
 
-            rtnJson.put("AccessId", fileUid);
+            rtnJson.put("id", fileUid);
         } catch (Exception ex) {
             rtnJson.put("error", "File upload failed for " + theFile.getOriginalFilename());
             rtnJson.put("message", ex.toString());
@@ -100,9 +101,9 @@ public class FileService {
     public Map<String, String> createFile(String userName) {
         Map<String, String> rtnJson = new TreeMap<String, String>();
         try {
-            FileInfo fileInfo = fileTool.createFileRecord(userName);
+            FileInfo fileInfo = fileTool.createFileRecord(null, userName);
             fileTool.insertFileRecord(fileInfo);
-            rtnJson.put("AccessId", fileInfo.getIuuid());
+            rtnJson.put("id", fileInfo.getIuuid());
             rtnJson.put("path", fileInfo.getPath() + fileInfo.getName());
         } catch (Exception ex) {
             rtnJson.put("error", "Creating file failed");
@@ -144,5 +145,15 @@ public class FileService {
         }
 
         return rtnJson;
+    }
+
+    public List<FileInfo> getFileList(String userName) {
+        List<FileInfo> rtnVal = null;
+        try {
+            rtnVal = fileTool.getFileList(userName);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        return rtnVal;
     }
 }

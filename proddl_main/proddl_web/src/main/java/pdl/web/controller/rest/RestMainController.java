@@ -27,8 +27,10 @@ import org.springframework.web.multipart.MultipartFile;
 import pdl.common.StaticValues;
 import pdl.web.service.JobRequestHandler;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.security.Principal;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -45,29 +47,42 @@ public class RestMainController {
         handler = new JobRequestHandler();
     }
 
+    @RequestMapping(value = "role", method = RequestMethod.GET)
+    public @ResponseBody Map<String, Object> getRoles(HttpServletRequest req, Principal principal) {
+        Map<String, Object> rtnJson = new HashMap<String, Object>();
+        rtnJson.put("hinder", req.isUserInRole("ROLE_ADMIN"));
+        rtnJson.put("c_u", principal.getName());
+        return rtnJson;
+    }
+
+    @RequestMapping(value = "instance", method = RequestMethod.GET)
+    public @ResponseBody Map<String, Object> getInstanceCount(Principal principal) {
+        Map<String, Object> rtnJson = handler.getInstanceCount();
+        return rtnJson;
+    }
+
     /**
-     * Returns list of job ids under current user
-     * @param principal
+     * Returns list of job ids for current user
+     * @param principal user principal
      * @return list of jobs of current user in json format
      * @format curl <ip address>:<port>/pdl/r/joblist -u <user id>:<pass>
      */
     @RequestMapping(value = "joblist", method = RequestMethod.GET)
     public @ResponseBody Map<String, Object> getJobList(Principal principal) {
-
         Map rtnJson = handler.getJobsForUser(principal.getName());
         return rtnJson;
     }
 
     /**
      * submit a job
-     * @param jobName
+     * @param jobName job identifier
      * @param inputInString json formate input
-     * @param principal
+     * @param principal user principal
      * @return job submission result in json format
      * @format curl <ip address>:<port>/pdl/r/job/<jobname> -d '{"key":"value"}' -u <user id>:<pass> -H "Content-Type: application/json" -X POST
      */
     @RequestMapping(value = "job/{name}", method = RequestMethod.POST)
-    public @ResponseBody Map<String, Object> jobRunner(
+    public @ResponseBody Map<String, Object> submitJob(
             @PathVariable("name") String jobName,
             //format '{"key":"value"}': {"interpreter":<name>, "script":<id>, "input":<id>, ...}
             @RequestBody() final String inputInString,
@@ -79,8 +94,8 @@ public class RestMainController {
 
     /**
      * submit a job
-     * @param jobName
-     * @param principal
+     * @param jobName job identifier
+     * @param principal user principal
      * @return job submission result in json format
      * @format curl <ip address>:<port>/pdl/r/job/<jobname> -u <user id>:<pass>
      */
@@ -93,7 +108,7 @@ public class RestMainController {
 
     /**
      * queries job status with given job id
-     * @param jobId
+     * @param jobId jobUUID
      * @return job status in json format
      * @format curl <ip address>:<port>/pdl/r/job/?jid=<jobid> -u <user id>:<pass>
      */
@@ -106,7 +121,7 @@ public class RestMainController {
 
     /**
      * get job result
-     * @param jobId
+     * @param jobId job UUID
      * @return job result in json format
      * @format curl <ip address>:<port>/pdl/r/result/?jid=<jobid> -u <user id>:<pass>
      */
@@ -119,7 +134,7 @@ public class RestMainController {
 
     /**
      * update job status to completed
-     * @param jobId
+     * @param jobId job UUID
      * @return result in json format
      * @format curl <ip address>:<port>/pdl/r/status/complete?jid=<jobid>  -u <user id>:<pass> -X POST|GET
      */
@@ -134,7 +149,7 @@ public class RestMainController {
 
     /**
      * update job status to failed
-     * @param jobId
+     * @param jobId job UUID
      * @return result in json format
      * @format curl <ip address>:<port>/pdl/r/status/complete?jid=<jobid>  -u <user id>:<pass> -X POST|GET
      */
@@ -146,7 +161,7 @@ public class RestMainController {
 
     /**
      * kills a job
-     * @param jobId
+     * @param jobId job UUID
      * @return result in json format
      * @format curl <ip address>:<port>/pdl/r/kill/?jid=<jobid> -u <user id>:<pass> -X POST|GET
      */
@@ -221,6 +236,18 @@ public class RestMainController {
     public @ResponseBody Map<String, String> fileDelete(@RequestParam("fileId") String fileId, Principal principal) {
 
         Map<String, String> rtnJson = handler.deleteFile(fileId, principal.getName());
+        return rtnJson;
+    }
+
+    /**
+     * Returns list of files for current user
+     * @param principal user principal
+     * @return list of files that belong to current user in json format
+     * @format curl <ip address>:<port>/pdl/r/filelist -u <user id>:<pass>
+     */
+    @RequestMapping(value = "filelist", method = RequestMethod.GET)
+    public @ResponseBody Map<String, Object> getFileList(Principal principal) {
+        Map rtnJson = handler.getFilesForUser(principal.getName());
         return rtnJson;
     }
 }

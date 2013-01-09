@@ -21,15 +21,14 @@
 
 package pdl.web.service;
 
-import org.soyatec.windowsazure.table.ITableServiceEntity;
 import org.springframework.web.multipart.MultipartFile;
+import pdl.cloud.management.CloudInstanceManager;
 import pdl.cloud.management.JobManager;
 import pdl.cloud.management.UserService;
+import pdl.cloud.model.FileInfo;
 import pdl.cloud.model.JobDetail;
 import pdl.cloud.model.User;
-import pdl.common.QueryTool;
-import pdl.common.StaticValues;
-import pdl.common.ToolPool;
+import pdl.common.*;
 import pdl.web.service.common.FileService;
 
 import javax.servlet.http.HttpServletResponse;
@@ -42,18 +41,25 @@ import java.util.*;
  * Time: 2:43 PM
  */
 public class JobRequestHandler {
-    JobManager manager;
-    UserService userService;
+    JobManager jobManager;
     FileService fileService;
+    FileTool fileTool;
     ArrayList<String> adminJobs;
 
     public JobRequestHandler() {
-        manager = new JobManager();
-        userService = new UserService();
+        jobManager = new JobManager();
         fileService = new FileService();
+        fileTool = new FileTool();
         adminJobs = null;
     }
 
+    /**
+     * submit user requested job
+     * @param jobName job identifier
+     * @param inputInString input data in json format
+     * @param userName user ID
+     * @return json object
+     */
     public Map<String, Object> submitJob(String jobName, String inputInString, String userName) {
         Map<String, Object> rtnVal = new TreeMap<String, Object> ();
         String result = null;
@@ -67,14 +73,14 @@ public class JobRequestHandler {
 
             Map<String, Object> inputInMap = ToolPool.jsonStringToMap(inputInString);
 
-            //add user by admin
+            //add user only by admin
             if(jobName.equals("adduser")) {
                 succeed = this.addUser(inputInMap, userService);
                 if(succeed)
                     result = "user is added";
                 else
                     result = "failed";
-            } else {
+            } else { //regular job submission
                 JobDetail jobDetail = new JobDetail(jobName);
                 jobDetail.setJobName(jobName);
                 jobDetail.setUserId(userName);
@@ -83,14 +89,11 @@ public class JobRequestHandler {
                 if(inputInMap==null) {
                     inputInMap = new HashMap<String, Object>();
                 }
-
-                //if (inputInMap!=null) {
                 inputInMap.put("job", jobName);
                 inputInMap.put("user", userName);
                 jobDetail.setInput(ToolPool.jsonMapToString(inputInMap));
-                //}
 
-                succeed = manager.submitJob(jobDetail);
+                succeed = jobManager.submitJob(jobDetail);
                 if(succeed) {
                     rtnVal.put("id", jobDetail.getJobUUID());
                     rtnVal.put("name", jobDetail.getJobName());
@@ -99,63 +102,32 @@ public class JobRequestHandler {
                     result = "failed";
                 }
             }
-
-            /*
-            if(jobName.equals("scaleup") || jobName.equals("scaledown")) {
-                CloudInstanceManager instanceManager = new CloudInstanceManager();
-                if(jobName.equals("scaleup"))
-                    succeed = instanceManager.scaleUp();
-                else
-                    succeed = instanceManager.scaleDown();
-
-                result = String.format("'%s' job has been %s.", jobName, succeed?"submitted":"failed");
-            } else {
-                Map<String, Object> inputInMap = ToolPool.jsonStringToMap(inputInString);
-
-                //add user by admin
-                if(jobName.equals("adduser")) {
-                    succeed = this.addUser(inputInMap, userService);
-                    if(succeed)
-                        result = "User '%s' has been added.";
-                    else
-                        result = "Failed to add user.";
-                } else {
-                    JobDetail jobDetail = new JobDetail(jobName);
-                    jobDetail.setJobName(jobName);
-                    jobDetail.setUserId(userName);
-                    jobDetail.setStatus(StaticValues.JOB_STATUS_SUBMITTED);
-
-                    if (inputInMap!=null) {
-                        inputInMap.put("job", jobName);
-                        inputInMap.put("user", userName);
-
-                        jobDetail.setInput(ToolPool.jsonMapToString(inputInMap));
-                    }
-
-                    succeed = manager.submitJob(jobDetail);
-                    if(succeed) {
-                        rtnVal.put("Job ID", jobDetail.getJobUUID());
-                        rtnVal.put("Job Name", jobDetail.getJobName());
-                        result = "Job submitted";
-                    } else {
-                        result = "Failed to submit the job.";
-                    }
-                }
-            }
-            */
             rtnVal.put("result", result);
         } catch (Exception ex) {
-            rtnVal.put("message", result==null?ex.toString():result);
+            //rtnVal.put("message", result==null?ex.toString():result);
             rtnVal.put("error", "job submission failed");
         }
 
         return rtnVal;
     }
 
+    /**
+     * check if user is admin for job privileges
+     * @param userName user ID
+     * @return boolean result
+     * @throws Exception
+     */
     private boolean isUserAdmin(String userName) throws Exception {
+        UserService userService = new UserService();
         return userService.isAdmin(userName);
     }
 
+    /**
+     * check if user has corresponding job privilege
+     * @param jobName job identifier
+     * @param userName user ID
+     * @throws Exception
+     */
     private void checkJobPrivilege(String jobName, String userName) throws Exception {
         if(adminJobs==null) {
             adminJobs = new ArrayList<String>(Arrays.asList(StaticValues.ADMIN_ONLY_JOBS));
@@ -167,11 +139,18 @@ public class JobRequestHandler {
             throw new Exception(String.format("access denied for %s", jobName));
     }
 
+    /**
+     * add new user - admin only
+     * @param inputInMap input data in json format
+     * @param userService user service object
+     * @return boolean result
+     * @throws Exception
+     */
     private boolean addUser(Map<String, Object> inputInMap, UserService userService) throws Exception {
         User user = new User();
 
         if(!inputInMap.containsKey("id") || !inputInMap.containsKey("password"))
-            throw new Exception("'adduser' requires 'id' and 'password' in input data.");
+            throw new Exception("'adduser' requires 'id' and 'password'");
 
         String givenUserId = (String)inputInMap.get("id");
         //check for duplicated user id
@@ -179,11 +158,11 @@ public class JobRequestHandler {
         if(dupUser!=null)
             throw new Exception("user already exist");
 
-        user.setUserid(givenUserId);
+        user.setUserId(givenUserId);
         user.setUserpass((String)inputInMap.get("password"));
-        user.setAdmin(inputInMap.containsKey("admin")?(Integer)inputInMap.get("admin"):0);
+        user.setAdmin(inputInMap.containsKey("admin")?Integer.parseInt(""+inputInMap.get("admin")):0);
 
-        user.setFirstName(inputInMap.containsKey("firstname")?(String)inputInMap.get("fristname"):null);
+        user.setFirstName(inputInMap.containsKey("firstname")?(String)inputInMap.get("firstname"):null);
         user.setLastName(inputInMap.containsKey("lastname")?(String)inputInMap.get("lastname"):null);
         user.setEmail(inputInMap.containsKey("email")?(String)inputInMap.get("email"):null);
         user.setPhone(inputInMap.containsKey("phone")?(String)inputInMap.get("phone"):null);
@@ -191,6 +170,25 @@ public class JobRequestHandler {
         return userService.loadUser(user);
     }
 
+    /**
+     * return current instance count of worker node
+     * @return json object
+     */
+    public Map<String, Object> getInstanceCount() {
+        HashMap<String, Object> rtnVal = new HashMap<String, Object>();
+        CloudInstanceManager instanceManager = new CloudInstanceManager();
+        Integer workers = instanceManager.getCurrentInstanceCount();
+        rtnVal.put("c_c", workers);
+        rtnVal.put("max", StaticValues.MAX_TOTAL_WORKER_INSTANCE);
+
+        return rtnVal;
+    }
+
+    /**
+     * get job information by UUID
+     * @param jobId job UUID
+     * @return json object
+     */
     public Map<String , Object> getJobInfo(String jobId) {
         HashMap<String, Object> rtnVal = new HashMap<String, Object>();
 
@@ -198,7 +196,7 @@ public class JobRequestHandler {
             if(jobId==null || jobId.isEmpty())
                 throw new Exception();
 
-            JobDetail job = manager.getJobByID(jobId);
+            JobDetail job = jobManager.getJobByID(jobId);
 
             Object jobInfo = null;
             if(job!=null) {
@@ -220,16 +218,21 @@ public class JobRequestHandler {
 
         } catch (Exception ex) {
             ex.printStackTrace();
-            rtnVal.put("error", String.format("failed to get job for '%s'", jobId));
+            rtnVal.put("error", "failed to get job");
         }
         return rtnVal;
     }
 
+    /**
+     * get current status of a job
+     * @param jobId job UUID
+     * @return json object
+     */
     public Map<String , String> getJobResult(String jobId) {
         HashMap<String, String> rtnVal = new HashMap<String, String>();
 
         try {
-            JobDetail job = manager.getJobByID(jobId);
+            JobDetail job = jobManager.getJobByID(jobId);
             /*rtnVal.put("status", job.getStatusInString());*/
 
             String result="";
@@ -239,7 +242,7 @@ public class JobRequestHandler {
                         result = job.getResult();
                         break;
                     case StaticValues.JOB_STATUS_FAILED:
-                        result = "Job Failed.";
+                        result = "failed";
                         break;
                     default:
                         result = String.format("status-'%s'", job.getStatusInString());
@@ -248,34 +251,48 @@ public class JobRequestHandler {
             rtnVal.put("result", result);
         } catch (Exception ex) {
             ex.printStackTrace();
-            rtnVal.put("error", String.format("failed to get job for '%s'", jobId));
+            rtnVal.put("error", String.format("failed to get job"));
         }
 
         return rtnVal;
     }
 
+    /**
+     * get list of jobs that belong to the user
+     * @param userName user ID
+     * @return json object
+     */
     public Map<String, Object> getJobsForUser(String userName) {
         Map<String, Object> rtnVal = new HashMap<String, Object>();
         try {
             List<String> jobIdWithStatus = new ArrayList<String>();
 
-            List<ITableServiceEntity> jobs = manager.getJobList(QueryTool.getSingleConditionalStatement(StaticValues.COLUMN_USER_ID, "eq", userName));
+            List<JobDetail> jobs = jobManager.getJobList(
+                    QueryTool.getSingleConditionalStatement(StaticValues.COLUMN_USER_ID, "eq", userName)
+            );
             if(jobs!=null && jobs.size()>0) {
-                for(ITableServiceEntity entity : jobs) {
-                    JobDetail job = (JobDetail)entity;
-                    jobIdWithStatus.add(job.getJobUUID()+":"+job.getStatusInString());
+                for(JobDetail job : jobs) {
+                    jobIdWithStatus.add(job.getJobName()+":"+job.getJobUUID()+":"+job.getStatusInString());
                 }
             }
             rtnVal.put("job", jobIdWithStatus);
 
         } catch(Exception ex) {
             ex.printStackTrace();
-            rtnVal.put("error", String.format("failed to get jobs for %s", userName));
+            rtnVal.put("error", "failed to get jobs");
         }
 
         return rtnVal;
     }
 
+    /**
+     * update job information
+     * @param jobId job UUID
+     * @param status job status
+     * @param resultFileId result file (outcome) UUID
+     * @param userName user ID
+     * @return json object
+     */
     public Map<String, String> updateJob(String jobId, int status, String resultFileId, String userName) {
         Map<String, String> rtnVal = new HashMap<String, String>();
         try {
@@ -284,7 +301,7 @@ public class JobRequestHandler {
 
             fileService.getFilePathById(resultFileId);
 
-            boolean result = manager.updateJobStatus(jobId, status, resultFileId, null);
+            boolean result = jobManager.updateJobStatus(jobId, status, resultFileId, null);
             rtnVal.put("result", ""+(result?1:0));
 
         } catch(Exception ex) {
@@ -298,6 +315,7 @@ public class JobRequestHandler {
 
     /*
     *    File handlers
+    *
     */
     public Map<String, String> uploadFile(MultipartFile file, String type, String userName) {
         Map<String, String> rtnVal = new HashMap<String, String>();
@@ -351,6 +369,27 @@ public class JobRequestHandler {
             ex.printStackTrace();
             rtnVal.put("error", ex.toString());
         }
+        return rtnVal;
+    }
+
+    public Map<String, Object> getFilesForUser(String userName) {
+        Map<String, Object> rtnVal = new HashMap<String, Object>();
+        try {
+            List<String> fileInfoList = null;
+            List<FileInfo> files = fileTool.getFileList(userName);
+            if(files!=null && files.size()>0) {
+                fileInfoList = new ArrayList<String>();
+                for(FileInfo fileInfo : files) {
+                    fileInfoList.add(fileInfo.getIuuid()+":"+fileInfo.getOriginalName()+":"+fileInfo.getStatusInString());
+                }
+            }
+            rtnVal.put("file", fileInfoList);
+
+        } catch(Exception ex) {
+            ex.printStackTrace();
+            rtnVal.put("error", "failed to get files");
+        }
+
         return rtnVal;
     }
 }

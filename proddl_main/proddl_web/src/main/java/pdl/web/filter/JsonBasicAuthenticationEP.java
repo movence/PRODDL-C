@@ -43,6 +43,6 @@ public class JsonBasicAuthenticationEP extends BasicAuthenticationEntryPoint {
         response.addHeader("WWW-Authenticate", "Basic realm=\"" + getRealmName() + "\"");
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         PrintWriter writer = response.getWriter();
-        writer.println("HTTP Status " + HttpServletResponse.SC_UNAUTHORIZED + " - " + authException.getMessage());
+        writer.printf("Error(%s) - %s",HttpServletResponse.SC_UNAUTHORIZED, "Bad credentials");
     }
 }

@@ -21,9 +21,11 @@
 
 package pdl.web.controller.web;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.client.RestTemplate;
 
 /**
  * Created by IntelliJ IDEA.
@@ -35,6 +37,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 @Controller
 @RequestMapping(value = "w/admin")
 public class AdminController {
+    private RestTemplate restTemplate;
 
     @RequestMapping(value = "common", method = RequestMethod.GET)
     public String getAdminPage() {
@@ -44,5 +47,10 @@ public class AdminController {
     @RequestMapping(value = "main", method = RequestMethod.GET)
     public String getAdminMainPage() {
         return "admin/main";
+    }
+
+    @Autowired
+    public void setRestTemplate(RestTemplate restTemplate) {
+        this.restTemplate = restTemplate;
     }
 }
