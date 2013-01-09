@@ -159,7 +159,7 @@ namespace CommonTool
                     }
                     vhdOffset += range.Length;
                 }
-                Trace.TraceInformation("uploadCloudDrive() DONE with upload vhd file at " + filePath);
+                Trace.WriteLine("uploadCloudDrive(): uploaded vhd file at " + filePath, this.ToString());
                 return true;
             }
             catch (Exception ex)

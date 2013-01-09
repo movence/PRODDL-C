@@ -48,8 +48,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="data\DynamicDataModel.cs" />
-    <Compile Include="data\DynamicDataServiceContext.cs" />
+    <Compile Include="data\InfoModel.cs" />
+    <Compile Include="data\InfoServiceContext.cs" />
     <Compile Include="data\PerformanceDataModel.cs" />
     <Compile Include="data\PerformanceDataServiceContext.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

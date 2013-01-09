@@ -41,23 +41,26 @@ namespace PRODDLMaster
     class MasterHelper
     {
         private StorageService storageHelper;
-        private DynamicDataServiceContext _dynamicDataContext;
+        private InfoServiceContext _infoContext;
         private PerformanceDataServiceContext _perfServiceContext;
         private String localStoragePath;
         private string logPath;
 
-        private const String DYNAMIC_TABLE_DRIVE_KEY_NAME = "MasterDriveIntialized";
-        private const String DYNAMIC_TABLE_CATALOG_ADDRESS = "CatalogServerAddress";
-        private const String DYNAMIC_TABLE_CATALOG_PORT = "CatalogServerPort";
+        private const String INFOS_TABLE_DRIVE_KEY_NAME = "MasterDriveIntialized";
+        private const String INFOS_TABLE_CATALOG_ADDRESS = "CatalogServerAddress";
+        private const String INFOS_TABLE_CATALOG_PORT = "CatalogServerPort";
+
+        private readonly string roleToolsPath;
 
         public MasterHelper(string logPath) {
             this.logPath = logPath;
+            roleToolsPath = Path.Combine(Environment.GetEnvironmentVariable("RoleRoot"), "approot", SharedTools.ROLE_DIRECTORY_TOOLS);
         }
 
-        private String[] DYNAMIC_TABLE_KEYS = 
+        private String[] INFOS_TABLE_KEYS = 
         { 
-            DYNAMIC_TABLE_CATALOG_ADDRESS, 
-            DYNAMIC_TABLE_CATALOG_PORT
+            INFOS_TABLE_CATALOG_ADDRESS, 
+            INFOS_TABLE_CATALOG_PORT
         };
 
         public void OnStop()
@@ -74,7 +77,7 @@ namespace PRODDLMaster
                     _perfServiceContext.deleteDataByDeploymentId(RoleEnvironment.DeploymentId);
 
                     //Clean up Dynamic Data table except azure drive information
-                    deleteDynamicData();
+                    this.deleteInfos();
 
                     Trace.Flush();
                     Trace.Close();
@@ -98,6 +101,7 @@ namespace PRODDLMaster
             localStoragePath = Path.GetPathRoot(localStorage.RootPath);
 
             storageHelper = new StorageService(RoleEnvironment.GetConfigurationSettingValue("StorageConnectionString"));
+            initializeTableContext();
 
             string vhdName = RoleEnvironment.GetConfigurationSettingValue("VHDName");
 
@@ -108,26 +112,26 @@ namespace PRODDLMaster
                 {
                     if (storageHelper.uploadCloudDrive(vhdFilePath, SharedTools.BLOB_CONTAINER_NAME, vhdName))
                     {
-                        this.updateMasterDriveData(DYNAMIC_TABLE_DRIVE_KEY_NAME, "true");
-                        File.Delete(vhdFilePath);
+                        _infoContext.insertInfoData("masterdrive_info", INFOS_TABLE_DRIVE_KEY_NAME, "true");
+                        File.Delete(@vhdFilePath);
                     }
                 }
                 else
                 {
-                    Trace.TraceError("master.vhd does not exist");
+                    Trace.TraceError("vhd file does not exist");
                 }
             }
             else
             {
-                Trace.WriteLine("Azure drive file already exist");
+                Trace.WriteLine("Azure drive file already exist", this.ToString());
             }
 
             String drivePath = storageHelper.getMountedDrivePath(String.Format("{0}/{1}", SharedTools.BLOB_CONTAINER_NAME, vhdName));
-            //this.updateMasterDriveData(DYNAMIC_TABLE_DRIVE_PATH, drivePath);
 
             String webServerPort = RoleEnvironment.CurrentRoleInstance.InstanceEndpoints["HttpIn"].IPEndpoint.Port.ToString();
             IPEndPoint internalAddress = RoleEnvironment.CurrentRoleInstance.InstanceEndpoints["CatalogServer"].IPEndpoint;
 
+            //create property file for java application
             Dictionary<string, string> properties = new Dictionary<string, string>();
             properties.Add(SharedTools.KEY_SUBSCRIPTION_ID, RoleEnvironment.GetConfigurationSettingValue(SharedTools.KEY_SUBSCRIPTION_ID));
             properties.Add(SharedTools.KEY_WORKER_NAME, SharedTools.KEY_WORKER_NAME_VALUE);
@@ -136,8 +140,9 @@ namespace PRODDLMaster
             properties.Add(SharedTools.KEY_INTERNAL_ADDR, internalAddress.Address.ToString());
             properties.Add(SharedTools.KEY_INTERNAL_PORT, internalAddress.Port.ToString());
             properties.Add(SharedTools.KEY_DATASTORE_PATH, drivePath+Path.DirectorySeparatorChar);
-
+            properties.Add(SharedTools.KEY_ROLE_TOOLS_PATH, roleToolsPath);
             SharedTools.createPropertyFile(properties);
+
             SharedTools.startJavaMainOperator("[Master]", localStoragePath);
         }
 
@@ -145,13 +150,13 @@ namespace PRODDLMaster
         {
             try
             {
-                _dynamicDataContext = new DynamicDataServiceContext(
+                _infoContext = new InfoServiceContext(
                     storageHelper._account.TableEndpoint.ToString(), 
                     storageHelper._account.Credentials
                     );
-                _dynamicDataContext.RetryPolicy = RetryPolicies.Retry(3, TimeSpan.FromSeconds(3));
+                _infoContext.RetryPolicy = RetryPolicies.Retry(3, TimeSpan.FromSeconds(3));
 
-                storageHelper._account.CreateCloudTableClient().CreateTableIfNotExist(_dynamicDataContext.getDynamicTableName());
+                storageHelper._account.CreateCloudTableClient().CreateTableIfNotExist(_infoContext.getInfosTableName());
 
                 _perfServiceContext = new PerformanceDataServiceContext(
                     storageHelper._account.TableEndpoint.ToString(),
@@ -167,41 +172,29 @@ namespace PRODDLMaster
 
         private Boolean IsMasterDriveExist()
         {
-            if (_dynamicDataContext == null)
-                initializeTableContext();
-
-            DynamicDataModel driveData = _dynamicDataContext.getDynamicData(DYNAMIC_TABLE_DRIVE_KEY_NAME);
-            if (driveData != null && !String.IsNullOrEmpty(driveData.dataValue))
+            InfoModel driveData = _infoContext.getInfoData(INFOS_TABLE_DRIVE_KEY_NAME);
+            if (driveData != null && !String.IsNullOrEmpty(driveData.iKey))
             {
-                if (driveData.dataValue.Equals("true"))
+                if (driveData.iValue.Equals("true"))
                     return true;
             }
             return false;
         }
 
-        private void updateMasterDriveData(String key, String value)
+        private void deleteInfos()
         {
-            if (_dynamicDataContext == null)
-                initializeTableContext();
-            _dynamicDataContext.insertDynamicData("dynamicdata_masterdrive", key, value);
-        }
-
-        private void deleteDynamicData()
-        {
-            if (_dynamicDataContext == null)
-                initializeTableContext();
-
-            for (int i = 0; i < DYNAMIC_TABLE_KEYS.Length; i++)
+            for (int i = 0; i < INFOS_TABLE_KEYS.Length; i++)
             {
-                _dynamicDataContext.deleteDynamicData(DYNAMIC_TABLE_KEYS[i]);
+                _infoContext.deleteInfoData(INFOS_TABLE_KEYS[i]);
             }
         }
 
         private String createDriveFromCMD(string vhdName)
         {
+            string vhdFilePath = null;
             try
             {
-                string vhdFilePath = Path.Combine(localStoragePath, vhdName);
+                vhdFilePath = Path.Combine(localStoragePath, vhdName);
                 String scriptPath = createVHDScriptFile(localStoragePath, vhdFilePath);
 
                 Process proc = SharedTools.buildCloudProcessWithError(
@@ -213,19 +206,19 @@ namespace PRODDLMaster
                 proc.BeginErrorReadLine();
                 proc.WaitForExit();
 
-                Trace.WriteLine("DONE: createDriveFromCMD()");
-                return vhdFilePath;
+                Trace.WriteLine("DONE: createDriveFromCMD()", this.ToString());
             }
             catch (Exception ex)
             {
                 Trace.TraceError("createDriveFromCMD() - " + ex.ToString());
+                vhdFilePath = null;
             }
-            return null;
+            return vhdFilePath;
         }
 
         private String createVHDScriptFile(String resourcePath, String vhdPath)
         {
-            String scriptPath = Path.Combine(resourcePath, @"vhd.txt");
+            String scriptPath = Path.Combine(resourcePath, "vhd.txt");
             TextWriter tw = new StreamWriter(scriptPath);
             tw.WriteLine(String.Format("create vdisk file={0} type=fixed maximum={1}", vhdPath, RoleEnvironment.GetConfigurationSettingValue("VHDSize")));
             tw.WriteLine(String.Format("select vdisk file={0}", vhdPath));
@@ -243,15 +236,14 @@ namespace PRODDLMaster
         {
             try
             {
-                Trace.WriteLine("START: startJavaMainOperator()");
+                Trace.WriteLine("START: startJavaMainOperator()", this.ToString());
 
                 String jettyPort = RoleEnvironment.CurrentRoleInstance.InstanceEndpoints["HttpIn"].IPEndpoint.Port.ToString();
                 String deploymentId = RoleEnvironment.DeploymentId;
                 IPEndPoint internalAddress = RoleEnvironment.CurrentRoleInstance.InstanceEndpoints["CatalogServer"].IPEndpoint;
-                String roleRoot = Environment.GetEnvironmentVariable("RoleRoot");
 
-                String jarPath = roleRoot + @"\approot\tools\proddl_core-1.0.jar";
-                String jreHome = localStoragePath + @"jre";
+                String jarPath = Path.Combine(roleToolsPath, "proddl_core-1.0.jar");
+                String jreHome = Path.Combine(localStoragePath, "jre");
 
                 Process proc = SharedTools.buildCloudProcess(
                     String.Format("\"{0}\\bin\\java.exe\"", jreHome),
@@ -267,7 +259,6 @@ namespace PRODDLMaster
                 proc.BeginErrorReadLine();
                 proc.WaitForExit();
 
-                Trace.WriteLine("DONE: startJavaMainOperator()");
                 return true;
             }
             catch (Exception ex)

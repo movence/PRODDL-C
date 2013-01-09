@@ -44,6 +44,7 @@ namespace CommonTool
         public static readonly string KEY_STORAGE_PKEY = "StorageAccountPkey";
         public static readonly string KEY_STORAGE_PATH = "StoragePath";
         public static readonly string KEY_DATASTORE_PATH = "DataStorePath";
+        public static readonly string KEY_ROLE_TOOLS_PATH = "RoleToolsPath";
 
         public static readonly string KEY_WORKER_NAME = "CloudRoleWorkerName";
         public static readonly string KEY_WORKER_NAME_VALUE = "PRODDLJobRunner";
@@ -61,7 +62,7 @@ namespace CommonTool
         public static readonly string KEY_VHD_NAME = "VHDName";
 
         public static readonly string BLOB_CONTAINER_NAME = "tools";
-        private static readonly string ROLE_DIRECTORY_TOOLS = "tools";
+        public static readonly string ROLE_DIRECTORY_TOOLS = "tools";
 
         public static Process buildCloudProcess(String fileName, String args, String outputTag)
         {
@@ -181,9 +182,8 @@ namespace CommonTool
             {
                 extractJRE(storagePath);
 
-                string currDir = Directory.GetCurrentDirectory();
-                string classPath = Path.Combine(currDir, ROLE_DIRECTORY_TOOLS)
-                    + Path.PathSeparator+Path.Combine(currDir, ROLE_DIRECTORY_TOOLS, "proddl_core-1.0.jar");
+                string toolsDir = Path.Combine(Directory.GetCurrentDirectory(), ROLE_DIRECTORY_TOOLS);
+                string classPath = toolsDir + Path.PathSeparator + Path.Combine(toolsDir, "proddl_core-1.0.jar");
                 Process proc = buildCloudProcess(
                     Path.Combine(storagePath + @"jre\bin\java.exe"),
                     String.Format("-cp {0} {1}", classPath, "pdl.operator.ServiceOperator"),

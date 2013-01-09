@@ -42,7 +42,7 @@ namespace PRODDLMaster
 
 		public override void Run()
         {
-            //check configuration status before doing anything
+            //check configuration status before starting any process
             while (true)
             {
                 string c_finalized = RoleEnvironment.GetConfigurationSettingValue("ConfigurationFinalized");

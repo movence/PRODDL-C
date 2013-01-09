@@ -31,44 +31,42 @@ using Microsoft.WindowsAzure.ServiceRuntime;
 
 namespace CommonTool.data
 {
-    public class DynamicDataServiceContext : TableServiceContext
+    public class InfoServiceContext : TableServiceContext
     {
-        private static readonly String dynamicDataTableName = "dynamicData"+RoleEnvironment.GetConfigurationSettingValue("DeploymentName");
+        private static readonly String infosTableName = "infos" + RoleEnvironment.GetConfigurationSettingValue("DeploymentName");
 
-        public DynamicDataServiceContext(String baseAddress, StorageCredentials credentials) : base(baseAddress, credentials) { }
+        public InfoServiceContext(String baseAddress, StorageCredentials credentials) : base(baseAddress, credentials) { }
 
-        public IQueryable<DynamicDataModel> DynamicDataTable
+        public IQueryable<InfoModel> InfosTable
         {
             get
             {
-                return CreateQuery<DynamicDataModel>(dynamicDataTableName);
+                return CreateQuery<InfoModel>(infosTableName);
             }
         }
 
-        public String getDynamicTableName()
+        public String getInfosTableName()
         {
-            return dynamicDataTableName;
+            return infosTableName;
         }
         
-        public void insertDynamicData(String partitionKey, String key, String value)
+        public void insertInfoData(String partitionKey, String key, String value)
         {
-            DynamicDataModel data = new DynamicDataModel(partitionKey);
-            data.dataKey = key;
-            data.dataValue = value;
+            InfoModel data = new InfoModel(partitionKey);
+            data.iKey = key;
+            data.iValue = value;
 
-            this.AddObject(dynamicDataTableName, data);
+            this.AddObject(infosTableName, data);
             this.SaveChanges();
         }
 
-        public DynamicDataModel getDynamicData(String key)
+        public InfoModel getInfoData(String key)
         {
             try
             {
 
-                DynamicDataModel driveData = (from d in this.DynamicDataTable
-                                              where d.dataKey == key
-                                              select d).FirstOrDefault();
-                return driveData;
+                InfoModel info = (from i in this.InfosTable where i.iKey == key select i).FirstOrDefault();
+                return info;
             }
             catch (Exception ex)
             {
@@ -77,11 +75,11 @@ namespace CommonTool.data
             return null;
         }
 
-        public void deleteDynamicData(String key)
+        public void deleteInfoData(String key)
         {
             try
             {
-                DynamicDataModel data = this.getDynamicData(key);
+                InfoModel data = this.getInfoData(key);
                 this.IgnoreResourceNotFoundException = true;
                 this.DeleteObject(data);
                 this.SaveChanges();

@@ -74,11 +74,6 @@ namespace PRODDLJobRunner
             {
                 Trace.TraceError(ex.Message);
             }
-
-            //while (true)
-            //{
-            //   Thread.Sleep(10000);4
-            //}
         }
 
         public override bool OnStart()
@@ -101,11 +96,6 @@ namespace PRODDLJobRunner
             Trace.Listeners.Add(twtl);
             Trace.Listeners.Add(ctl);
             Trace.AutoFlush = true;
-
-            /*
-            dmc.Logs.ScheduledTransferPeriod = TimeSpan.FromMinutes(3.0);
-            dmc.Logs.ScheduledTransferLogLevelFilter = LogLevel.Verbose;
-            */
 
             RoleEnvironment.Changing += RoleEnvironmentChanging;
             CloudStorageAccount.SetConfigurationSettingPublisher((configName, configSetter) =>

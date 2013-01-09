@@ -29,13 +29,13 @@ using Microsoft.WindowsAzure.StorageClient;
 
 namespace CommonTool.data
 {
-    public class DynamicDataModel : TableServiceEntity
+    public class InfoModel : TableServiceEntity
     {
-        public String dataKey { get; set; }
-        public String dataValue { get; set; }
+        public String iKey { get; set; }
+        public String iValue { get; set; }
 
-        public DynamicDataModel(String partitionKey, String rowKey) : base(partitionKey, rowKey) {}
-        public DynamicDataModel(String partitionKey) : this(partitionKey, Guid.NewGuid().ToString()) {}
-        public DynamicDataModel() : this("generic_dynamic", Guid.NewGuid().ToString()) {}
+        public InfoModel(String partitionKey, String rowKey) : base(partitionKey, rowKey) {}
+        public InfoModel(String partitionKey) : this(partitionKey, Guid.NewGuid().ToString()) {}
+        public InfoModel() : this("generic_dynamic", Guid.NewGuid().ToString()) { }
     }
 }
