@@ -21,7 +21,7 @@
 
 package pdl.operator.app;
 
-import pdl.cloud.model.DynamicData;
+import pdl.cloud.model.Info;
 import pdl.cloud.storage.TableOperator;
 import pdl.common.Configuration;
 import pdl.common.StaticValues;
@@ -40,7 +40,7 @@ import java.util.Map;
  * Time: 9:08 AM
  * To change this template use File | Settings | File Templates.
  */
-public class CctoolsOperator extends AbstractApplicationOperator {
+public class CctoolsOperator extends ToolOperator {
     private static final String KEY_DYNAMIC_DATA_CATALOGSERVERADDRESS = "CatalogServerAddress";
     private static final String KEY_DYNAMIC_DATA_CATALOGSERVERPORT = "CatalogServerPort";
     private static final String LOOKUP_KEY_CATALOGSERVER_INFO = "$catalogServer";
@@ -250,13 +250,6 @@ public class CctoolsOperator extends AbstractApplicationOperator {
 
             ProcessBuilder pb = this.buildProcessBuilder(null, processArgs, false);
             process = pb.start();
-            /*process = Runtime.getRuntime().exec(cctoolsBinPath+"catalog_server" + " -p " + catalogServerPort);
-            processes.add(process);*/
-
-            /*LogStreamReader errorGobbler = new LogStreamReader(process.getErrorStream(), "CS ERROR");
-            LogStreamReader outputGobbler = new LogStreamReader(process.getInputStream(), "CS OUTPUT");
-            errorGobbler.start();
-            outputGobbler.start();*/
 
             System.out.println("CctoolsOperator : STARTING CATALOG_SERVER DONE");
             rtnVal = true;
@@ -282,16 +275,16 @@ public class CctoolsOperator extends AbstractApplicationOperator {
 
     public boolean isCatalogServerInfoAvailable() {
         try {
-            DynamicData info;
+            Info info;
             if (this.catalogServerAddress == null || this.catalogServerAddress.isEmpty()) {
                 info = this.getCatalogServerInfo(KEY_DYNAMIC_DATA_CATALOGSERVERADDRESS);
                 if(info !=null)
-                    this.catalogServerAddress = info.getDataValue();
+                    this.catalogServerAddress = info.getiValue();
             }
             if (this.catalogServerPort == null || this.catalogServerPort.isEmpty()) {
                 info = this.getCatalogServerInfo(KEY_DYNAMIC_DATA_CATALOGSERVERPORT);
                 if(info !=null)
-                    this.catalogServerPort = info.getDataValue();
+                    this.catalogServerPort = info.getiValue();
             }
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -303,31 +296,31 @@ public class CctoolsOperator extends AbstractApplicationOperator {
         try {
             TableOperator tableOperator = new TableOperator(conf);
 
-            DynamicData catalogServerInfo = this.getCatalogServerInfo(key);
+            Info catalogServerInfo = this.getCatalogServerInfo(key);
             if(catalogServerInfo!=null)
-                tableOperator.deleteEntity(ToolPool.buildTableName(StaticValues.TABLE_NAME_DYNAMIC_DATA), catalogServerInfo);
+                tableOperator.deleteEntity(ToolPool.buildTableName(StaticValues.TABLE_NAME_INFOS), catalogServerInfo);
 
-            catalogServerInfo = new DynamicData("catalogserver_info");
-            catalogServerInfo.setDataKey(key);
-            catalogServerInfo.setDataValue(value);
+            catalogServerInfo = new Info("catalogserver_info");
+            catalogServerInfo.setiKey(key);
+            catalogServerInfo.setiValue(value);
 
-            tableOperator.insertSingleEntity(ToolPool.buildTableName(StaticValues.TABLE_NAME_DYNAMIC_DATA), catalogServerInfo);
+            tableOperator.insertSingleEntity(ToolPool.buildTableName(StaticValues.TABLE_NAME_INFOS), catalogServerInfo);
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    public DynamicData getCatalogServerInfo(String key) {
-        DynamicData catalogServerInfo = null;
+    public Info getCatalogServerInfo(String key) {
+        Info catalogServerInfo = null;
 
         try {
             TableOperator tableOperator = new TableOperator(conf);
 
-            catalogServerInfo = (DynamicData) tableOperator.queryEntityBySearchKey(
-                    ToolPool.buildTableName(StaticValues.TABLE_NAME_DYNAMIC_DATA),
-                    StaticValues.COLUMN_DYNAMIC_DATA_KEY,
+            catalogServerInfo = (Info) tableOperator.queryEntityBySearchKey(
+                    ToolPool.buildTableName(StaticValues.TABLE_NAME_INFOS),
+                    StaticValues.COLUMN_INFOS_KEY,
                     key,
-                    DynamicData.class
+                    Info.class
             );
 
         } catch (Exception e) {

@@ -58,7 +58,7 @@ public class JettyThreadedOperator extends Thread {
             connector.setPort(Integer.parseInt(jettyPort));
             jettyServer.setConnectors(new Connector[]{connector});
 
-            ProtectionDomain protectionDomain = JettyOperator.class.getProtectionDomain();
+            ProtectionDomain protectionDomain = this.getClass().getProtectionDomain();
             String warFile = protectionDomain.getCodeSource().getLocation().toExternalForm();
 
             WebAppContext context = new WebAppContext(warFile, "/");

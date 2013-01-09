@@ -22,10 +22,16 @@
 package pdl.operator.app;
 
 
-import pdl.cloud.StorageServices;
+import org.apache.commons.io.FileUtils;
+import pdl.cloud.storage.BlobOperator;
+import pdl.common.Configuration;
+import pdl.common.FileTool;
+import pdl.common.StaticValues;
+import pdl.common.ToolPool;
+import pdl.utils.ZipHandler;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.io.File;
+import java.net.URL;
 
 /**
  * Created by IntelliJ IDEA.
@@ -33,22 +39,82 @@ import java.util.List;
  * Date: 8/31/12
  * Time: 2:49 PM
  */
-public class ToolOperator extends AbstractApplicationOperator {
-    public volatile List<String> currentTools;
-    public ToolOperator(String storagePath, String packageName) {
-        super(storagePath, packageName, null, null);
+public class ToolOperator implements IApplicationOperator {
+    //public volatile List<String> currentTools;
+    protected String storagePath;
+    protected String toolPath;
+    protected String toolName;
+    protected String arg;
+    protected String flagFile;
+
+    public ToolOperator(String storagePath, String toolName) {
+        this(storagePath, toolName, null, null);
     }
 
-    private void process(StorageServices storageServices) {
-        try {
-            if(currentTools==null)
-                currentTools = new ArrayList<String>();
-            boolean alreadyExist = currentTools.contains(toolName);
-            if(!alreadyExist) {
-                run(storageServices);
+    public ToolOperator(String storagePath, String toolName, String flagFile, String arg) {
+        this.storagePath = storagePath;
+        this.toolName = toolName;
+        toolPath = ToolPool.buildDirPath(storagePath, toolName);
+        this.flagFile = flagFile;
+        this.arg = arg;
+    }
+
+    public void run() throws Exception {
+        boolean result = false;
+
+        String toolFileName = toolName + StaticValues.FILE_EXTENSION_ZIP;
+        String toolFilePath = ToolPool.buildFilePath(storagePath, toolFileName);
+
+        if(!ToolPool.isDirectoryExist(toolPath)) {
+            while(this.isToolReady(toolFilePath, toolFileName)) { //waits until any of three sources have the tool available
+                Thread.sleep(10 * 60 * 1000);
             }
-        } catch(Exception ex) {
-            ex.printStackTrace();
+            result = this.unzip(toolFilePath);
+            File toolFile = new File(toolFilePath);
+            toolFile.delete();
         }
+
+        if (!result)
+            throw new Exception(String.format("Failed to obtain tool - %s%n", toolName));
+
+    }
+
+    public boolean isToolReady(String toolFileName, String toolFilePath) throws Exception {
+        return ToolPool.canReadFile(toolFilePath)
+                || this.getFromRoleTools(toolFileName, toolFilePath)
+                || this.downloadFromBlob(toolFileName)
+                || this.downloadFromUrl("", toolFilePath);
+    }
+
+    private boolean getFromRoleTools(String toolFileName, String toolFilePath) throws Exception {
+        FileTool fileTool = new FileTool();
+        String fromPath = ToolPool.buildFilePath(
+                Configuration.getInstance().getStringProperty(StaticValues.CONFIG_KEY_ROLE_TOOLS_PATH),
+                toolFileName
+        );
+        return fileTool.copy(fromPath, toolFilePath);
+    }
+
+    private boolean downloadFromBlob(String toolFileName) throws Exception {
+        BlobOperator blobOperator = new BlobOperator();
+        return blobOperator.getBlob(StaticValues.BLOB_CONTAINER_TOOLS, toolFileName, ToolPool.buildFilePath(storagePath, toolFileName), false);
+    }
+
+    private boolean downloadFromUrl(String url, String toolFilePath) throws Exception {
+        File tool = new File(toolFilePath);
+        FileUtils.copyURLToFile(new URL(url), tool);
+        return tool.exists() && tool.isFile();
+    }
+
+    public boolean unzip(String toolFilePath) throws Exception {
+        boolean rtnVal = false;
+
+        ZipHandler zipOperator = new ZipHandler();
+        if (zipOperator.unZip(toolFilePath, storagePath)) {
+            if (ToolPool.isDirectoryExist(toolPath) && (new File(ToolPool.buildFilePath(toolPath, flagFile))).exists())
+                rtnVal = true;
+        }
+
+        return rtnVal;
     }
 }

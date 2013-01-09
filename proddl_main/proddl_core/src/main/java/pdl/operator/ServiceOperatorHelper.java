@@ -21,11 +21,12 @@
 
 package pdl.operator;
 
-import pdl.cloud.StorageServices;
 import pdl.cloud.model.JobDetail;
 import pdl.common.Configuration;
 import pdl.common.StaticValues;
-import pdl.operator.app.*;
+import pdl.operator.app.CctoolsOperator;
+import pdl.operator.app.JettyThreadedOperator;
+import pdl.operator.app.ToolOperator;
 import pdl.operator.service.*;
 
 import java.io.File;
@@ -43,14 +44,12 @@ import java.util.concurrent.TimeUnit;
 public class ServiceOperatorHelper {
 
     private Configuration conf;
-    private StorageServices storageServices;
     private CctoolsOperator cctoolsOperator;
 
     private String storagePath;
 
     public ServiceOperatorHelper() {
         conf = Configuration.getInstance();
-        storageServices = new StorageServices();
     }
 
     /**
@@ -64,43 +63,6 @@ public class ServiceOperatorHelper {
 
             String isMaster = conf.getStringProperty(StaticValues.CONFIG_KEY_MASTER_INSTANCE);
             if (isMaster != null && isMaster.equals("true")) { //Master Instance
-                /*
-                 * Storage and datastore information are supplied with properties file by bootstrap
-                 * by hkim 9/6/2012
-                 *
-                String dynamicTable = ToolPool.buildTableName(StaticValues.TABLE_NAME_DYNAMIC_DATA);
-
-                //remove odl storage path data in dynamic table
-                ITableServiceEntity oldPath = storageServices.queryEntityBySearchKey(
-                        dynamicTable,
-                        StaticValues.COLUMN_DYNAMIC_DATA_KEY,
-                        StaticValues.CONFIG_KEY_STORAGE_PATH,
-                        DynamicData.class);
-                if (oldPath != null) {
-                    storageServices.deleteEntity(dynamicTable, oldPath);
-                }
-
-                DynamicData storageData = new DynamicData("storage_info");
-                storageData.setDataKey(StaticValues.CONFIG_KEY_STORAGE_PATH);
-                storageData.setDataValue(storagePath);
-                storageServices.insertSingleEnttity(dynamicTable, storageData);
-
-                //file storage space, provided by c# bootstrap application
-                String datastorePath = conf.getStringProperty(StaticValues.CONFIG_KEY_DATASTORE_PATH);
-                if (datastorePath == null) {
-                    storageData = (DynamicData) storageServices.queryEntityBySearchKey(
-                            dynamicTable,
-                            StaticValues.COLUMN_DYNAMIC_DATA_KEY, StaticValues.KEY_DYNAMIC_DATA_DRIVE_PATH,
-                            DynamicData.class);
-
-                    if (storageData == null)
-                        datastorePath = storagePath;
-                    else
-                        datastorePath = storageData.getDataValue();
-
-                    conf.setProperty(StaticValues.CONFIG_KEY_DATASTORE_PATH, ToolPool.buildFilePath(datastorePath, null));
-                }
-                */
                 String webServerPort = conf.getStringProperty(StaticValues.CONFIG_KEY_WEBSERVER_PORT);
                 String internalAddress = conf.getStringProperty(StaticValues.CONFIG_KEY_INTERNAL_ADDR);
                 String internalPort = conf.getStringProperty(StaticValues.CONFIG_KEY_INTERNAL_PORT);
@@ -119,15 +81,16 @@ public class ServiceOperatorHelper {
      * @throws Exception
      */
     private void runOperators() throws Exception {
-         //TODO need more dynamic way to handle 3rd party package
-        AbstractApplicationOperator pythonOperator = new PythonOperator(storagePath, "python", "python.exe");
-        pythonOperator.run(storageServices);
+        ToolOperator pythonOperator = new ToolOperator(storagePath, "python", "python.exe", null);
+        //AbstractApplicationOperator pythonOperator = new PythonOperator(storagePath, "python", "python.exe");
+        pythonOperator.run();
 
-        AbstractApplicationOperator cygwinOperator = new CygwinOperator(storagePath, "cygwin", "cygwin.bat");
-        cygwinOperator.run(storageServices);
+        ToolOperator cygwinOperator = new ToolOperator(storagePath, "cygwin", "cygwin.bat", null);
+        //AbstractApplicationOperator cygwinOperator = new CygwinOperator(storagePath, "cygwin", "cygwin.bat");
+        cygwinOperator.run();
 
         cctoolsOperator = new CctoolsOperator(storagePath, "cctools-3.5.1", "bin" + File.separator + "makeflow.exe");
-        cctoolsOperator.run(storageServices);
+        cctoolsOperator.run();
     }
 
     /**
@@ -229,35 +192,5 @@ public class ServiceOperatorHelper {
             WorkerExecutor worker = new WorkerExecutor(cctoolsOperator);
             workerPool.execute(worker);
         }
-
-        /*final List<WorkerExecutor> workers = Collections.synchronizedList(new ArrayList<WorkerExecutor>(maxWorkerCount));
-        ArrayList<WorkerExecutor> completedWorkers = new ArrayList<WorkerExecutor>();
-        boolean allWorkersAlive;
-        while (true) {
-            allWorkersAlive = true;
-            if(workers.size() == maxWorkerCount) {
-                for(int i=0;i<maxWorkerCount;i++) {
-                    WorkerExecutor aWorker = workers.get(i);
-                    if(!aWorker.isAlive()) {
-                        allWorkersAlive = false;
-                        completedWorkers.add(aWorker);
-                    }
-                }
-
-                if(allWorkersAlive)
-                    Thread.sleep(conf.getIntegerProperty("MAX_KEEP_ALIVE_VALUE_JOB_EXECUTOR") * 60 * 1000);
-                else {
-                    workers.removeAll(completedWorkers);
-                    completedWorkers.clear();
-                }
-            }
-
-            if(workers.size() < maxWorkerCount) {
-                WorkerExecutor worker = new WorkerExecutor(cctoolsOperator);
-                workers.add(worker);
-                worker.start();
-                //threadExecutor.execute(worker);
-            }
-        }*/
     }
 }
