@@ -30,23 +30,26 @@
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <title>PRODDL-C Login</title>
 
-    <script src="/resources/js/jquery-1.6.2.min.js"></script>
-    <script src="/resources/js/jquery-ui-1.8.16.custom.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/jqueryui/1.8.24/jquery-ui.min.js"></script>
     <script>
         $(document).ready(function() {
-            var $iserror = '${error}';
-            if ($iserror != 'true')
-                $(".ui-state-error").hide();
+            var $iserror = '${err}';
+            if ($iserror==='1')
+                $(".ui-state-error").show();
 
             $("#btnLogin").click(function() {
-                //TODO needs some validation check here!!
+                window.sessionStorage.setItem('proddl_u_c', window.btoa($('input#j_username').val()+':'+$('input#j_password').val()));
+                //TODO needs some validation here!!
                 $("form").submit();
             });
         });
 
     </script>
-    <link href="/resources/css/redmond/jquery-ui-1.8.16.custom.css" rel="stylesheet" type="text/css"/>
-    <link href="/resources/css/main.css" rel="stylesheet" type="text/css"/>
+    <style type="text/css">
+        @import "/resources/css/redmond/jquery-ui-1.8.16.custom.css";
+        @import "/resources/css/proddl.css";
+    </style>
     <style type="text/css">
         #login #content {
             width: 500px;
@@ -73,9 +76,9 @@
         <section class="ui-widget ui-corner-all">
             <header class="h1 ui-widget-header ui-corner-top">PRODDL-C Login</header>
             <div class="ui-widget-content ui-corner-bottom">
-                <h1>Please use the login form below to login to PRODDL-C Cloud Management</h1>
+                <h1>Please use the login form below to access PRODDL-C Cloud Management</h1>
 
-                <div class="ui-state-error" style="padding: 0 .7em;margin-top: 15px">
+                <div class="ui-state-error" style="padding: 0 .7em;margin-top: 15px;display:none">
                     <p><span class="ui-icon ui-icon-alert" style="float: left; margin-right: .3em;"></span>
                         <strong>Alert:</strong> Login username/password incorrect.</p>
                 </div>
@@ -90,7 +93,7 @@
                         <input id="j_password" name="j_password" type="password"/>
                     </div>
                     <div style="text-align: center;margin-top: 15px">
-                        <input type="submit"
+                        <input type="button"
                                id="btnLogin"
                                class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only"
                                role="button"

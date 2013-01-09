@@ -45,7 +45,8 @@
             <map>
                 <entry key="hasHeader('User-Agent','Mozilla')
                             or hasHeader('User-Agent','Opera')
-                            or hasHeader('User-Agent','Explorer')"
+                            or hasHeader('User-Agent','Explorer')
+                            or hasHeader('User-Agent','Chrome')"
                        value-ref="formAuthenticationEntryPoint"/>
             </map>
         </constructor-arg>
@@ -55,8 +56,8 @@
     <!--<security:http pattern="/pdl/r/**" create-session="stateless" >
         <security:intercept-url pattern="*" access="ROLE_USER" />
         <security:http-basic />
-        &lt;!&ndash;<security:custom-filter ref="restAuthenticationFilter" after="BASIC_AUTH_FILTER"/>&ndash;&gt;
-        &lt;!&ndash;<security:custom-filter ref="digestFilter" before="BASIC_AUTH_FILTER" />&ndash;&gt;
+        <security:custom-filter ref="restAuthenticationFilter" after="BASIC_AUTH_FILTER"/>
+        <security:custom-filter ref="digestFilter" before="BASIC_AUTH_FILTER" />
     </security:http>
     <bean id="restAuthenticationFilter" class="pdl.web.filter.RestAuthenticationFilter" />-->
 
@@ -70,7 +71,7 @@
 
         <security:form-login
                 login-page="/pdl/w/login"
-                authentication-failure-url="/pdl/w/login?error=true"
+                authentication-failure-url="/pdl/w/login?err=1"
                 default-target-url="/pdl/w/main"/>
 
         <security:logout
@@ -88,5 +89,4 @@
     </security:authentication-manager>
     <bean id="passwordShaEncoder" class="org.springframework.security.authentication.encoding.ShaPasswordEncoder"/>
     <bean id="userManagementService" class="pdl.web.service.UserManagementService"/>
-
 </beans>

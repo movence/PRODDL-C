@@ -19,13 +19,65 @@
   ~ along with this program.  If not, see <http://www.gnu.org/licenses/>.
   -->
 
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
-        "http://www.w3.org/TR/html4/loose.dtd">
+<!DOCTYPE html>
 <html>
 <head>
-    <title>PRODDL-C Administrator</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>PRODDL-C Admin Main</title>
+
+    <script src="/resources/js/jquery-1.6.2.min.js"></script>
+    <script src="/resources/js/jquery-ui-1.8.16.custom.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            var curr;
+            $("#accordion").accordion({
+                header: "h3",
+                create: function(e, ui) {
+                    curr = $('h3[aria-expanded="true"][aria-selected="true"] > a').text().trim();
+                    console.log(curr);
+                },
+                change: function(e, ui) {
+                    curr = ui.newHeader[0].innerText.trim();
+                    if(curr==='Cloud Management') {
+                        adminFuncs.g_ic(ui);
+                    }
+                }
+            });
+        });
+
+        var adminFuncs = {
+            g_ic: function(ui) {
+            }
+        }
+    </script>
+    <link href="/resources/css/redmond/jquery-ui-1.8.16.custom.css" rel="stylesheet" type="text/css"/>
+    <link href="/resources/css/main.css" rel="stylesheet" type="text/css"/>
+    <style type="text/css">
+    </style>
 </head>
 <body>
-Admin page main!!
+<div id="adminMainAccordion">
+    <div id="accordion">
+        <div>
+            <h3><a href="#">Cloud Management</a></h3>
+            <div>
+                <input type="button" onclick="callRest();" value="REST" />
+            </div>
+        </div>
+        <div>
+            <h3><a href="#">User Management</a></h3>
+
+            <div>Phasellus mattis tincidunt nibh.  <%= request.getUserPrincipal().getName() %></div>
+        </div>
+        <div>
+            <h3><a href="#">Upload PyRosetta</a></h3>
+
+            <div>This page allows administrator to upload PyRosetta application to the cloud.</div>
+        </div>
+    </div>
+
+</div>
+
+
 </body>
 </html>

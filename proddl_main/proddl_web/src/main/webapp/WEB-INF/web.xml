@@ -77,7 +77,7 @@
 
     <error-page>
         <error-code>404</error-code>
-        <location>/error/404.html</location>
+        <location>/html/404.html</location>
     </error-page>
     <welcome-file-list>
         <welcome-file>/jsp/index.jsp</welcome-file>

@@ -25,11 +25,19 @@
 <html>
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-    <title>Insert title here</title>
+    <title>access denied</title>
+
+    <link href="/resources/css/redmond/jquery-ui-1.8.16.custom.css" rel="stylesheet" type="text/css"/>
+    <link href="/resources/css/main.css" rel="stylesheet" type="text/css"/>
 </head>
 <body>
-<h1>Access Denied!</h1>
-
-<p>Only admins can see this page!</p>
+<div class="ui-widget-content ui-corner-bottom">
+    <div class="ui-widget">
+        <div class="ui-state-error ui-corner-all" style="padding: 0 .7em;">
+            <p><span class="ui-icon ui-icon-alert" style="float: left; margin-right: .3em;"></span>
+                <strong>Alert:</strong> Access denied!</p>
+        </div>
+    </div>
+</div>
 </body>
 </html>

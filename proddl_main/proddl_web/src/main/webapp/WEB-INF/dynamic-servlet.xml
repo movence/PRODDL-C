@@ -34,39 +34,31 @@
         <property name="maxUploadSize" value="99999999999"/>
     </bean>
 
-    <!--<beans:beans xmlns="http://www.springframework.org/schema/mvc"
-           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-           xmlns:beans="http://www.springframework.org/schema/beans"
-           xmlns:context="http://www.springframework.org/schema/context"
-           xmlns:mvc="http://www.springframework.org/schema/mvc" xmlns:tx="http://www.springframework.org/schema/tx"
-           xsi:schemaLocation="http://www.springframework.org/schema/mvc
-              http://www.springframework.org/schema/mvc/spring-mvc-3.1.xsd
-              http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
-              http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.5.xsd"
->
-    <context:component-scan base-package="pdl.web.controller" />
-    <tx:annotation-driven />
-    <mvc:annotation-driven /> -->
 
-    <!--Enables the Spring MVC @Controller programming model
-    <annotation-driven conversion-service="conversionService">
-        <argument-resolvers>
-            <beans:bean class="org.springframework.samples.mvc.data.custom.CustomArgumentResolver"/>
-        </argument-resolvers>
-    </annotation-driven>
+    <!--rest-->
+
+    <!--
+    <bean id="httpClient" class="org.apache.commons.httpclient.HttpClient">
+        <constructor-arg ref="httpClientParams"/>
+        <property name="state" ref="httpState"/>
+    </bean>
+
+    <bean id="httpState" class="pdl.web.CustomHttpState">
+        <property name="credentials" ref="credentials"/>
+    </bean>
+
+    <bean id="credentials" class="org.apache.commons.httpclient.UsernamePasswordCredentials">
+        <constructor-arg value="${rest.username}"/>
+        <constructor-arg value="${rest.password}"/>
+    </bean>
+
+    <bean id="httpClientFactory" class="org.springframework.http.client.CommonsClientHttpRequestFactory">
+        <constructor-arg ref="httpClient"/>
+    </bean>
+
+
+    <bean class="org.springframework.web.client.RestTemplate">
+        <constructor-arg ref="httpClientFactory"/>
+    </bean>
     -->
-
-    <!-- Resolves views selected for rendering by @Controllers to .jsp resources in the /WEB-INF/views directory -->
-    <!--<beans:bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
-        <beans:property name="prefix" value="/jsp/" />
-        <beans:property name="suffix" value=".jsp" />
-    </beans:bean>-->
-
-    <!-- Only needed because we install custom converters to support the examples in the org.springframewok.samples.mvc.convert package
-    <beans:bean id="conversionService" class="org.springframework.format.support.FormattingConversionServiceFactoryBean">
-       <beans:property name="formatters">
-           <beans:bean class="org.springframework.samples.mvc.convert.MaskFormatAnnotationFormatterFactory" />
-       </beans:property>
-    </beans:bean>
-    </beans:beans>-->
 </beans>

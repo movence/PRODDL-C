@@ -39,11 +39,28 @@
 
     <script src="/resources/js/jquery-1.6.2.min.js"></script>
     <script src="/resources/js/jquery-ui-1.8.16.custom.min.js"></script>
+    <script src="/resources/js/proddl.js"></script>
     <script>
         $(document).ready(function() {
-            $("#accordion").accordion({ header: "h3" });
+            var curr;
+            $("#accordion").accordion({
+                header: "h3",
+                create: function(e, ui) {
+                    curr = $('h3[aria-expanded="true"][aria-selected="true"] > a').text().trim();
+                },
+                change: function(e, ui) {
+                    curr = ui.newHeader[0].innerText.trim();
+                    if(curr==='Cloud Management') {
+                        adminFuncs.g_ic(ui);
+                    }
+                }
+            });
         });
 
+        var adminFuncs = {
+            g_ic: function(ui) {
+            }
+        }
     </script>
     <link href="/resources/css/redmond/jquery-ui-1.8.16.custom.css" rel="stylesheet" type="text/css"/>
     <link href="/resources/css/main.css" rel="stylesheet" type="text/css"/>
@@ -51,12 +68,11 @@
     </style>
 </head>
 <body>
-<div id="adminMainAccordian">
+<div id="adminMainAccordion">
     <div id="accordion">
         <div>
             <h3><a href="#">Cloud Management</a></h3>
 
-            <div>Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet.</div>
         </div>
         <div>
             <h3><a href="#">User Management</a></h3>
