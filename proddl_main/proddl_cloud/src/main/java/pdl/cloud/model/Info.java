@@ -31,38 +31,34 @@ import org.soyatec.windowsazure.table.Guid;
  * Time: 12:45 PM
  * To change this template use File | Settings | File Templates.
  */
-public class DynamicData extends AbstractTableServiceEntity {
-    private String dataKey;
-    private String dataValue;
+public class Info extends AbstractTableServiceEntity {
+    private String iKey;
+    private String iValue;
     private String dataType;
 
 
-    public DynamicData(String partitionKey, String rowKey) {
+    public Info(String partitionKey, String rowKey) {
         super(partitionKey, rowKey);
     }
 
-    public DynamicData(String partitionKey) {
+    public Info(String partitionKey) {
         this(partitionKey, new Guid().getValue());
     }
 
-    public DynamicData() {
-        this("generic_dynamicdata");
+    public String getiKey() {
+        return iKey;
     }
 
-    public String getDataKey() {
-        return dataKey;
+    public void setiKey(String iKey) {
+        this.iKey = iKey;
     }
 
-    public void setDataKey(String dataKey) {
-        this.dataKey = dataKey;
+    public String getiValue() {
+        return iValue;
     }
 
-    public String getDataValue() {
-        return dataValue;
-    }
-
-    public void setDataValue(String dataValue) {
-        this.dataValue = dataValue;
+    public void setiValue(String iValue) {
+        this.iValue = iValue;
     }
 
     public String getDataType() {

@@ -56,6 +56,13 @@ public class UserService {
             tableOperator = new TableOperator(conf);
     }
 
+    /**
+     * get user information by user id
+     * this method adds admin user in fresh system where no user or user table exist
+     * @param userId user id
+     * @return user information
+     * @throws Exception
+     */
     public User getUserById(String userId) throws Exception {
         User rtnVal = null;
 
@@ -85,6 +92,12 @@ public class UserService {
         return rtnVal;
     }
 
+    /**
+     * add new user
+     * @param user user information
+     * @return boolean of result
+     * @throws Exception
+     */
     public boolean loadUser(User user) throws Exception {
         boolean rtnVal = false;
         initializeTableOperator();
@@ -97,6 +110,15 @@ public class UserService {
         return rtnVal;
     }
 
+    /**
+     * update user password
+     * @param userId user id
+     * @param oldPass old password
+     * @param newPass new password
+     * @param encrypted boolean of whether new password is encrypted
+     * @return boolean of result
+     * @throws Exception
+     */
     public boolean updateUserPassword(String userId, String oldPass, String newPass, boolean encrypted) throws Exception {
         boolean rtnVal = false;
 
@@ -121,6 +143,12 @@ public class UserService {
         return rtnVal;
     }
 
+    /**
+     * check whether the user has admin priviliege
+     * @param userId user id
+     * @return boolean of if the user has admin privilege
+     * @throws Exception
+     */
     public boolean isAdmin(String userId) throws Exception {
         boolean rtnVal = false;
         try {

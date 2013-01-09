@@ -109,8 +109,8 @@ public class JobManager {
     /**
      * insert job information to job table
      *
-     * @param jobDetail
-     * @return boolean
+     * @param jobDetail job information
+     * @return boolean boolean of job submission result
      * @throws Exception
      */
     public boolean submitJob(JobDetail jobDetail) throws Exception {
@@ -133,10 +133,10 @@ public class JobManager {
     }
 
     /**
-     * Retrieves job by its UUID
+     * Retrieves job by its uid
      *
-     * @param jobId
-     * @return JobDetail corresponding to given jobUUID
+     * @param jobId job uid
+     * @return JobDetail job information for job UUID
      * @throws Exception
      */
     public JobDetail getJobByID(String jobId) throws Exception {
@@ -170,7 +170,7 @@ public class JobManager {
      * Retrieves JobDetail Object by condition -
      * condition1: "submitted", condition2: priority == 1
      *
-     * @return JobDetail
+     * @return JobDetail job information
      * @throws Exception
      */
     public synchronized JobDetail getSingleSubmittedJob() throws Exception {
@@ -224,10 +224,10 @@ public class JobManager {
     /**
      * Updates status of a job with given UUID (String) and status (Integer)
      *
-     * @param jobId  UUID of a job
+     * @param jobId  job uid
      * @param status integer value of job status (defined in StaticValues object)
      * @param resultFileName uid of result output file
-     * @return boolean
+     * @return boolean boolean of status update result
      * @throws Exception
      */
     public boolean updateJobStatus(String jobId, int status, String resultFileName, String logFile) throws Exception {
@@ -255,6 +255,12 @@ public class JobManager {
         return rtnVal;
     }
 
+    /**
+     * batch job status update
+     * @param prevStatus integer of previous job status
+     * @param newStatus integer of new job status
+     * @throws Exception
+     */
     public void updateMultipleJobStatus(int prevStatus, int newStatus) throws Exception {
         try {
             List<JobDetail> jobList = getJobList(
@@ -271,6 +277,13 @@ public class JobManager {
         }
     }
 
+    /**
+     * update job table entity for working directory change
+     * @param jobId job uid
+     * @param path working directory for the job
+     * @return boolean of update result
+     * @throws Exception
+     */
     public boolean updateWorkDirectory(String jobId, String path) throws Exception {
         boolean rtnVal = false;
 

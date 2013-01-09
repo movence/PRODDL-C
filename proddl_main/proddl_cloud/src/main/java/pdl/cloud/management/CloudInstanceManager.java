@@ -35,7 +35,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
-import pdl.cloud.model.DynamicData;
+import pdl.cloud.model.Info;
 import pdl.cloud.model.PerformanceData;
 import pdl.cloud.storage.TableOperator;
 import pdl.common.Configuration;
@@ -70,6 +70,10 @@ public class CloudInstanceManager {
         initializeManager();
     }
 
+    /**
+     * initialize cloud instance manager with certificates and password from infos table
+     * configuration document is xml configuration file for current deployment
+     */
     private void initializeManager() {
         try {
             String dataStorePath = conf.getStringProperty(StaticValues.CONFIG_KEY_DATASTORE_PATH);
@@ -82,12 +86,12 @@ public class CloudInstanceManager {
 
             String certPass = conf.getStringProperty(StaticValues.CONFIG_KEY_CERT_PASSWORD);
             if (certPass == null) {
-                DynamicData passData = (DynamicData) tableOperator.queryEntityBySearchKey(
-                        ToolPool.buildTableName(StaticValues.TABLE_NAME_DYNAMIC_DATA),
-                        StaticValues.COLUMN_DYNAMIC_DATA_KEY,
+                Info passData = (Info) tableOperator.queryEntityBySearchKey(
+                        ToolPool.buildTableName(StaticValues.TABLE_NAME_INFOS),
+                        StaticValues.COLUMN_INFOS_KEY,
                         StaticValues.CONFIG_KEY_CERT_PASSWORD,
-                        DynamicData.class);
-                certPass = passData.getDataValue();
+                        Info.class);
+                certPass = passData.getiValue();
             }
             manager = new ServiceManagementRest(
                     conf.getStringProperty(StaticValues.CONFIG_KEY_SUBSCRIPTION_ID),
@@ -101,6 +105,12 @@ public class CloudInstanceManager {
         }
     }
 
+    /**
+     * get hosted cloud service name for current deployment
+     * This method assumes that there is only one available hosted service
+     * @return current hosted service name
+     * @throws Exception
+     */
     public String getHostedServiceName() throws Exception {
         String serviceName = null;
         try {
@@ -117,6 +127,11 @@ public class CloudInstanceManager {
         return serviceName;
     }
 
+    /**
+     * get a list of deployed instances
+     * @return list of deployments
+     * @throws Exception
+     */
     private List<Deployment> getDeploymentList() throws Exception {
         List<Deployment> deploymentList = null;
         try {
@@ -133,6 +148,12 @@ public class CloudInstanceManager {
         return deploymentList;
     }
 
+    /**
+     * get configuration values for a deployment by matching deployment ID
+     * This method should return null in case of the instance is in "transitioning" stage
+     * @return string of deployment name
+     * @throws Exception
+     */
     private String getDeploymentName() throws Exception {
         String deploymentName = null;
 
@@ -158,6 +179,10 @@ public class CloudInstanceManager {
         return deploymentName;
     }
 
+    /**
+     * get number of current role instances by navigating configuration document
+     * @return integer of current role count
+     */
     public int getCurrentInstanceCount() {
         int count = 0;
 
@@ -185,6 +210,11 @@ public class CloudInstanceManager {
         return count;
     }
 
+    /**
+     * change the number of worker role
+     * @param count target number of instance count
+     * @return boolean of job result
+     */
     public boolean scaleService(int count) {
         boolean rtnVal = false;
         try {
@@ -211,6 +241,11 @@ public class CloudInstanceManager {
         return rtnVal;
     }
 
+    /**
+     * !currently not used
+     * scale worker role by averaging CPU usage of all available workers
+     * add another worker when average CPU usage is greater than 50%, scale down by half when the usage is below 15%
+     */
     public void executeScalingByProcessorTime() {
         try {
             /*

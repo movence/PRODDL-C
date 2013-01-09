@@ -47,6 +47,8 @@ public class StaticValues {
 
     public static final String CONFIG_KEY_DATASTORE_PATH = "DataStorePath";
     public static final String CONFIG_KEY_STORAGE_PATH = "StoragePath";
+    public static final String CONFIG_KEY_ROLE_TOOLS_PATH = "RoleToolsPath";
+
     public static final String CONFIG_KEY_CSTORAGE_NAME = "StorageAccountName";
     public static final String CONFIG_KEY_CSTORAGE_PKEY = "StorageAccountPkey";
     public static final String CONFIG_KEY_MASTER_INSTANCE = "IsMaster";
@@ -56,14 +58,15 @@ public class StaticValues {
 
     //STORAGE
     public static final String BLOB_CONTAINER_TOOLS = "tools";
-    public static final String TABLE_NAME_JOB_DETAIL = "jobDetail";
-    public static final String TABLE_NAME_DYNAMIC_DATA = "dynamicData";
+    public static final String BLOB_CONTAINER_FILES = "files";
+    public static final String TABLE_NAME_JOB_DETAIL = "jobs";
+    public static final String TABLE_NAME_INFOS = "infos";
     public static final String TABLE_NAME_FILES = "files";
-    public static final String TABLE_NAME_USER = "user";
+    public static final String TABLE_NAME_USER = "users";
 
     public static final String COLUMN_ROW_KEY = "RowKey";
     public static final String COLUMN_USER_ID = "userId";
-    public static final String COLUMN_DYNAMIC_DATA_KEY = "dataKey";
+    public static final String COLUMN_INFOS_KEY = "iKey";
     public static final String COLUMN_JOB_DETAIL_PRIORITY = "priority";
     public static final String COLUMN_JOB_DETAIL_STATUS = "status";
 
@@ -82,8 +85,8 @@ public class StaticValues {
     //FILE
     public static final int FILE_STATUS_RESERVED = 0;
     public static final int FILE_STATUS_COMMITTED = 1;
-    public static final String FILE_ZIP_EXTENTION = ".zip";
-    public static final String FILE_DAT_EXTENSION = ".dat";
+    public static final String FILE_EXTENSION_ZIP = ".zip";
+    public static final String FILE_EXTENSION_DAT = ".dat";
     public static final String FILE_JOB_INPUT = "input.json";
     public static final int MAX_FILE_COUNT_PER_DIRECTORY = 500;
 
@@ -93,8 +96,6 @@ public class StaticValues {
             "execute",
             "adduser",
             "scale",
-            //"scaleup",
-            //"scaledown",
             "cert"
         };
     public static final String SPECIAL_EXECUTION_JOB = "execute";

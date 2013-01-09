@@ -165,10 +165,13 @@ public class TableOperator {
         return entity;
     }
 
+    public List<ITableServiceEntity> queryListBySearchKey(String tableName, String searchColumn, Object searchKey, Class model) {
+        return this.queryListBySearchKey(tableName, searchColumn, searchKey, null, null, model);
+    }
+
     public List<ITableServiceEntity> queryListBySearchKey(
-            String tableName, String searchColumn,
-            Object searchKey, String order,
-            String orderColumn, Class model) {
+            String tableName, String searchColumn, Object searchKey, String order, String orderColumn, Class model
+    ) {
         List<ITableServiceEntity> entityList = null;
         ITable table;
 

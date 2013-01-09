@@ -22,8 +22,8 @@
 package pdl.cloud.management;
 
 import pdl.cloud.StorageServices;
-import pdl.cloud.model.DynamicData;
 import pdl.cloud.model.FileInfo;
+import pdl.cloud.model.Info;
 import pdl.common.Configuration;
 import pdl.common.FileTool;
 import pdl.common.StaticValues;
@@ -54,6 +54,13 @@ public class CertificateManager {
         conf = Configuration.getInstance();
     }
 
+    /**
+     * generate keystore and trustcacert certificates for use in azure management API
+     * @param pfxFileId file id for pfx file
+     * @param cerFileId file id for cer file
+     * @param password  password for certificate
+     * @return boolean of job result
+     */
     public boolean execute(String pfxFileId, String cerFileId, String password) {
         boolean rtnVal = false;
         String keystorePath = this.getKeystorePath(pfxFileId, password);
@@ -63,16 +70,34 @@ public class CertificateManager {
         return rtnVal;
     }
 
+    /**
+     * generate keystore with pfx
+     * @param fileId file id for pfx file
+     * @param password password for certificate
+     * @return string of path keystore certificate
+     */
     public String getKeystorePath(String fileId, String password) {
         String pfxPath = getPfxCertificate(fileId);
         return this.createKeystoreCertificate(pfxPath, password);
     }
 
+    /**
+     * generate trustcacert with cer
+     * @param fileId file id for cer file
+     * @param javaPath path to JRE
+     * @return string of path trustcacert certificate
+     */
     public String getTrustPath(String fileId, String javaPath) {
         String cerPath = this.getCerCertificate(fileId);
         return this.createTrustCertificate(javaPath, cerPath);
     }
 
+    /**
+     * copy a certificate from file area to datastore area
+     * @param fileId file id for a certificate
+     * @param type pfx or cer
+     * @return string of path to a certificcate file
+     */
     private String getCertificate(String fileId, String type) {
         String filePath = null;
         try {
@@ -101,6 +126,12 @@ public class CertificateManager {
         return this.getCertificate(fileId, "cer");
     }
 
+    /**
+     * generate keystore with pfx using Java's security module
+     * @param pfxPath path to pfx file
+     * @param password certificate password
+     * @return string of path to keystore file
+     */
     private String createKeystoreCertificate(String pfxPath, String password) {
         String keystorePath = null;
 
@@ -144,10 +175,10 @@ public class CertificateManager {
 
             //store certificate password in dynamic data table in case cloud instance gets rebootes
             StorageServices storageServices = new StorageServices();
-            DynamicData passData = new DynamicData("cert_info");
-            passData.setDataKey(StaticValues.CONFIG_KEY_CERT_PASSWORD);
-            passData.setDataValue(password);
-            storageServices.insertSingleEnttity(ToolPool.buildTableName(StaticValues.TABLE_NAME_DYNAMIC_DATA), passData);
+            Info passData = new Info("cert_info");
+            passData.setiKey(StaticValues.CONFIG_KEY_CERT_PASSWORD);
+            passData.setiValue(password);
+            storageServices.insertSingleEnttity(ToolPool.buildTableName(StaticValues.TABLE_NAME_INFOS), passData);
 
             conf.setProperty(StaticValues.CONFIG_KEY_CERT_PASSWORD, password);
         } catch(Exception ex) {
@@ -157,6 +188,12 @@ public class CertificateManager {
         return keystorePath;
     }
 
+    /**
+     * generate trustcacert with cer file using JRE's keytool
+     * @param javaPath path to local jre
+     * @param cerPath path to cer file
+     * @return string of path to trustcacert file
+     */
     private String createTrustCertificate(String javaPath, String cerPath) {
         String trustPath;
         try {

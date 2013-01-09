@@ -41,30 +41,30 @@ import java.util.Properties;
  * Sample Configuration file
  *
  * <Master>
-      IsMaster={master|worker identifier}
-      DeploymentName={postfix to blob directory and table names}
-      DeploymentId={deployment ID}
-      StoragePath={path to general storage area}
-      DataStorePath={path to storage area for task and files}
-      StorageAccountName={storage container name}
-      StorageAccountPkey={primary access key to storage container}
-      SubscriptionId={AZURE subscription ID: can be found in Azure portal}
-      CloudRoleWorkerName={worker role name}
-      CertificateName={certificate file name of keystore and trustcacert}
-      CertificatePassword={password for certificate file}
-      CertificateAlias={alias for certificate file}
-      WebserverPort={web container port}
-      InternalAddress={internal IP address}
-      InternalPort={internal port number}
+ IsMaster={master|worker identifier}
+ DeploymentName={postfix to blob directory and table names}
+ DeploymentId={deployment ID}
+ StoragePath={path to general storage area}
+ DataStorePath={path to storage area for task and files}
+ StorageAccountName={storage container name}
+ StorageAccountPkey={primary access key to storage container}
+ SubscriptionId={AZURE subscription ID: can be found in Azure portal}
+ CloudRoleWorkerName={worker role name}
+ CertificateName={certificate file name of keystore and trustcacert}
+ CertificatePassword={password for certificate file}
+ CertificateAlias={alias for certificate file}
+ WebserverPort={web container port}
+ InternalAddress={internal IP address}
+ InternalPort={internal port number}
  * </Master>
  *
  * <Worker>
-      IsMaster={master|worker identifier, can be omitted}
-      DeploymentName={postfix to blob directory and table names}
-      DeploymentId={deployment ID}
-      StoragePath={path to general storage area}
-      StorageAccountName={storage container name}
-      StorageAccountPkey={primary access key to storage container}
+ IsMaster={master|worker identifier, can be omitted}
+ DeploymentName={postfix to blob directory and table names}
+ DeploymentId={deployment ID}
+ StoragePath={path to general storage area}
+ StorageAccountName={storage container name}
+ StorageAccountPkey={primary access key to storage container}
  * </Worker>
  *
  */
@@ -92,32 +92,41 @@ public class Configuration {
 
     public static Configuration load() throws IOException {
         Configuration config = new Configuration();
+        InputStream in = null;
 
         try {
-            ClassLoader loader = ClassLoader.getSystemClassLoader();
-            if(loader != null) {
-                URL url = loader.getResource(StaticValues.CONFIG_FILENAME);
-                if(url == null) {
-                    url = loader.getResource("/"+StaticValues.CONFIG_FILENAME);
-                }
+            in = Configuration.class.getClassLoader().getResourceAsStream(StaticValues.CONFIG_FILENAME);
 
-                if(url != null) {
-                    InputStream in = url.openStream();
-                    Properties props = new Properties();
-                    props.load(in);
-                    for (Object key : props.keySet()) {
-                        config.setProperty(key.toString(), props.get(key));
+            if(in==null) {
+                URL url = null;
+                ClassLoader loader = ClassLoader.getSystemClassLoader();
+                if(loader!=null) {
+                    url = loader.getResource(StaticValues.CONFIG_FILENAME);
+                    if(url == null) {
+                        url = loader.getResource("/"+StaticValues.CONFIG_FILENAME);
                     }
-                    in.close();
-
-                } else {
-                    System.err.println(StaticValues.CONFIG_FILENAME + " cannot be found.");
+                    if(url != null) {
+                        in = url.openStream();
+                    }
                 }
+            }
+
+            if(in!=null) {
+                Properties props = new Properties();
+                props.load(in);
+                for (Object key : props.keySet()) {
+                    config.setProperty(key.toString(), props.get(key));
+                }
+            } else {
+                System.err.println(StaticValues.CONFIG_FILENAME + " cannot be found.");
             }
         } catch(IOException ioe) {
             ioe.printStackTrace();
         } catch(Exception ex) {
             ex.printStackTrace();
+        } finally {
+            if(in!=null)
+                in.close();
         }
 
         return config;

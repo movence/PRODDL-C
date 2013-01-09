@@ -20,6 +20,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #############################################################################
 
+##
+# This resource file has been deprecated as Azure role creates the resource file
+# by hkim
+##
+
 SUBSCRIPTION_ID=
 # certificates for management API
 KEYSTORE_FILE_NAME=<youKeystoreFileName>.keystore

@@ -23,8 +23,9 @@ package pdl.common;
 
 import org.apache.commons.io.FileUtils;
 import org.soyatec.windowsazure.table.ITableServiceEntity;
-import pdl.cloud.StorageServices;
 import pdl.cloud.model.FileInfo;
+import pdl.cloud.storage.BlobOperator;
+import pdl.cloud.storage.TableOperator;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -40,12 +41,11 @@ import java.util.List;
  */
 public class FileTool {
     Configuration conf;
-    StorageServices storageServices;
+    TableOperator tableOperator;
     String fileStoragePath;
     String fileTableName;
 
     public FileTool() {
-        storageServices = new StorageServices();
         this.initialize();
     }
 
@@ -59,6 +59,7 @@ public class FileTool {
     private void initialize() {
         if(conf==null)
             conf = Configuration.getInstance();
+        tableOperator = new TableOperator(conf);
 
         fileTableName = ToolPool.buildTableName(StaticValues.TABLE_NAME_FILES);
 
@@ -78,7 +79,7 @@ public class FileTool {
      */
     public FileInfo createFileRecord(String originalFileName, String userName) {
         FileInfo fileInfo = new FileInfo();
-        fileInfo.setName(fileInfo.getIuuid()+StaticValues.FILE_DAT_EXTENSION);
+        fileInfo.setName(fileInfo.getIuuid()+StaticValues.FILE_EXTENSION_DAT);
         fileInfo.setUserId(userName);
         fileInfo.setStatus(StaticValues.FILE_STATUS_RESERVED);
         fileInfo.setOriginalName(originalFileName);
@@ -100,7 +101,7 @@ public class FileTool {
     public FileInfo getFileInfoById(String fileId) throws Exception{
         FileInfo fileInfo = null;
 
-        ITableServiceEntity entity = storageServices.queryEntityBySearchKey(fileTableName, StaticValues.COLUMN_ROW_KEY, fileId, FileInfo.class);
+        ITableServiceEntity entity = tableOperator.queryEntityBySearchKey(fileTableName, StaticValues.COLUMN_ROW_KEY, fileId, FileInfo.class);
         if(entity!=null)
             fileInfo = (FileInfo)entity;
 
@@ -140,8 +141,11 @@ public class FileTool {
 
             //TODO It might need to allow files to be uploaded to other blob containers than jobFiles
             if (type!=null && type.equals("blob")) {
-                fileInfo.setContainer("files"); //TODO may need to define blob container for files in configuration file
-                boolean uploaded = storageServices.uploadFileToBlob(fileInfo, newFilePath, false);
+                fileInfo.setContainer("files");
+
+                BlobOperator blobOperator = new BlobOperator(conf);
+                boolean uploaded = blobOperator.uploadFileToBlob(fileInfo.getContainer(), fileInfo.getName(), newFilePath, fileInfo.getType(), false);
+                //boolean uploaded = storageServices.uploadFileToBlob(fileInfo, newFilePath, false);
 
                 if(!uploaded) {
                     File file = new File(newFilePath);
@@ -173,7 +177,7 @@ public class FileTool {
      * @throws Exception
      */
     public boolean insertFileRecord(FileInfo fileinfo) throws Exception {
-        return storageServices.insertSingleEnttity(fileTableName, fileinfo);
+        return tableOperator.insertSingleEntity(fileTableName, fileinfo);
     }
 
     /**
@@ -187,7 +191,7 @@ public class FileTool {
         FileInfo fileInfo = getFileInfoById(fileId);
         if(fileInfo!=null) {
             fileInfo.setStatus(StaticValues.FILE_STATUS_COMMITTED);
-            rtnVal = storageServices.updateEntity(fileTableName, fileInfo);
+            rtnVal = tableOperator.updateSingleEntity(fileTableName, fileInfo);
         } else {
             throw new Exception("File does not exist.");
         }
@@ -198,7 +202,7 @@ public class FileTool {
         boolean rtnVal = false;
         FileInfo fileInfo = this.getFileInfoById(fileId);
         if(fileInfo!=null) {
-            storageServices.deleteEntity(fileTableName, fileInfo);
+            tableOperator.deleteEntity(fileTableName, fileInfo);
             rtnVal = true;
         }
         return rtnVal;
@@ -287,7 +291,7 @@ public class FileTool {
      */
     public List<FileInfo> getFileList(String userName) throws Exception {
         List<FileInfo> files = null;
-        List<ITableServiceEntity> fileList = storageServices.queryListBySearchKey(fileTableName, StaticValues.COLUMN_USER_ID, userName, FileInfo.class);
+        List<ITableServiceEntity> fileList = tableOperator.queryListBySearchKey(fileTableName, StaticValues.COLUMN_USER_ID, userName, null, null, FileInfo.class);
         if(fileList!=null && fileList.size()>0) {
             files = new ArrayList<FileInfo>();
             for(ITableServiceEntity entity : fileList) {

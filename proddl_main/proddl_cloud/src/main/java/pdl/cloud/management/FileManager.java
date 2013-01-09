@@ -44,17 +44,12 @@ public class FileManager {
         filesTableName = ToolPool.buildTableName(StaticValues.TABLE_NAME_FILES);
     }
 
-    public boolean submitJob(FileInfo fileInfo) throws Exception {
-        boolean rtnVal = false;
-        try {
-            rtnVal = tableOperator.insertSingleEntity(filesTableName, fileInfo);
-
-        } catch (Exception ex) {
-            throw ex;
-        }
-        return rtnVal;
-    }
-
+    /**
+     * get original file name by file uid
+     * @param id file uid
+     * @return string of file uid
+     * @throws Exception
+     */
     public String getFileNameById(String id) throws Exception {
         String name = null;
         try {
