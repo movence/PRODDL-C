@@ -29,12 +29,10 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.servlet.ModelAndView;
 import pdl.web.service.common.FileService;
 import pdl.web.utils.AjaxUtils;
 
 import java.security.Principal;
-import java.util.UUID;
 
 @Controller
 @RequestMapping(value = "w")
@@ -73,12 +71,5 @@ public class GenericController {
         model.addAttribute("message", "File '" + file.getOriginalFilename() + "' uploaded successfully");
 
         return "fileupload";
-    }
-
-    @RequestMapping("test")
-    public ModelAndView test() {
-        String uuid1 = UUID.randomUUID().toString();
-        String uuid2 = UUID.randomUUID().toString();
-        return new ModelAndView("test", "message", uuid1 + "::::" + uuid2);
     }
 }
