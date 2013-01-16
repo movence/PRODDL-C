@@ -177,7 +177,7 @@ public class FileTool {
      * @throws Exception
      */
     public boolean insertFileRecord(FileInfo fileinfo) throws Exception {
-        return tableOperator.insertSingleEntity(fileTableName, fileinfo);
+        return tableOperator.insertEntity(fileTableName, fileinfo);
     }
 
     /**
@@ -191,7 +191,7 @@ public class FileTool {
         FileInfo fileInfo = getFileInfoById(fileId);
         if(fileInfo!=null) {
             fileInfo.setStatus(StaticValues.FILE_STATUS_COMMITTED);
-            rtnVal = tableOperator.updateSingleEntity(fileTableName, fileInfo);
+            rtnVal = tableOperator.updateEntity(fileTableName, fileInfo);
         } else {
             throw new Exception("File does not exist.");
         }

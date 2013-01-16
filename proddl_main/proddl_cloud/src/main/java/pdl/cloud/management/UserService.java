@@ -21,11 +21,11 @@
 
 package pdl.cloud.management;
 
-import pdl.cloud.model.User;
-import pdl.cloud.storage.TableOperator;
-import org.soyatec.windowsazure.table.AbstractTableServiceEntity;
+import org.soyatec.windowsazure.table.ITableServiceEntity;
 import org.springframework.security.authentication.encoding.PasswordEncoder;
 import org.springframework.security.authentication.encoding.ShaPasswordEncoder;
+import pdl.cloud.model.User;
+import pdl.cloud.storage.TableOperator;
 import pdl.common.Configuration;
 import pdl.common.StaticValues;
 import pdl.common.ToolPool;
@@ -68,10 +68,10 @@ public class UserService {
 
         try {
             initializeTableOperator();
-            AbstractTableServiceEntity rtnEntity = tableOperator.queryEntityBySearchKey(userTableName, StaticValues.COLUMN_USER_ID, userId, User.class);
+            ITableServiceEntity rtnEntity = tableOperator.queryEntityBySearchKey(userTableName, StaticValues.COLUMN_USER_ID, userId, User.class);
 
             if(rtnEntity != null) {
-                rtnVal = (User) rtnEntity;
+                rtnVal = (User)rtnEntity;
             } else { //if admin does not exist(in case of fresh start), create one with default password ("pdlAdmin")
                 if("admin".equals(userId)) {
                     User admin = new User();
@@ -103,7 +103,7 @@ public class UserService {
         initializeTableOperator();
 
         user.setUserpass(passwordEncoder.encodePassword(user.getUserpass(), null));
-        rtnVal = tableOperator.insertSingleEntity(userTableName, user);
+        rtnVal = tableOperator.insertEntity(userTableName, user);
         if (!rtnVal)
             throw new Exception("Failed to load User.");
 
@@ -132,7 +132,7 @@ public class UserService {
 
             if (oldPass.equals(currUser.getUserpass())) {
                 currUser.setUserpass(newPass);
-                tableOperator.updateSingleEntity(userTableName, currUser);
+                tableOperator.updateEntity(userTableName, currUser);
                 rtnVal = true;
             }
 

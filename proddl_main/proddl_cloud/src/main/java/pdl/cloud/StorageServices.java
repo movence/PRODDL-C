@@ -53,7 +53,7 @@ public class StorageServices {
     }
 
     public boolean insertSingleEnttity(String tableName, ITableServiceEntity entity) {
-        return getTableOperator().insertSingleEntity(tableName, entity);
+        return getTableOperator().insertEntity(tableName, entity);
     }
 
     public String getFileNameById(String fileId) {
@@ -73,7 +73,7 @@ public class StorageServices {
     }
 
     public boolean updateEntity(String tableName, ITableServiceEntity entity) {
-        return getTableOperator().updateSingleEntity(tableName, entity);
+        return getTableOperator().updateEntity(tableName, entity);
     }
 
     public void deleteEntity(String tableName, ITableServiceEntity entity) {

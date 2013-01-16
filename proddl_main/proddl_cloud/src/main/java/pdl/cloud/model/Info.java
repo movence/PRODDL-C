@@ -45,6 +45,10 @@ public class Info extends AbstractTableServiceEntity {
         this(partitionKey, new Guid().getValue());
     }
 
+    public Info() {
+        this("proddl_info");
+    }
+
     public String getiKey() {
         return iKey;
     }

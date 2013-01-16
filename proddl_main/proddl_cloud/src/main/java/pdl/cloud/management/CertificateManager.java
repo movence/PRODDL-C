@@ -102,7 +102,7 @@ public class CertificateManager {
         String filePath = null;
         try {
             boolean gotCertificate = false;
-            String ext = type!=null&&type.equals("pfx")?".pfx":".cer";
+            String ext = type!=null && type.equals("pfx")?".pfx":".cer";
             FileTool fileTool = new FileTool();
             FileInfo pfxFileInfo = fileTool.getFileInfoById(fileId);
             filePath = ToolPool.buildFilePath(fileTool.getFileStoragePath(), StaticValues.CERTIFICATE_NAME+ext);
@@ -175,7 +175,7 @@ public class CertificateManager {
 
             //store certificate password in dynamic data table in case cloud instance gets rebootes
             StorageServices storageServices = new StorageServices();
-            Info passData = new Info("cert_info");
+            Info passData = new Info();
             passData.setiKey(StaticValues.CONFIG_KEY_CERT_PASSWORD);
             passData.setiValue(password);
             storageServices.insertSingleEnttity(ToolPool.buildTableName(StaticValues.TABLE_NAME_INFOS), passData);

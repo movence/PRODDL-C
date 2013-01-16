@@ -119,7 +119,7 @@ public class JobManager {
         try {
             jobDetail.setStatus(StaticValues.JOB_STATUS_SUBMITTED);
             jobDetail.setPriority(0);
-            rtnVal = tableOperator.insertSingleEntity(jobDetailTableName, jobDetail);
+            rtnVal = tableOperator.insertEntity(jobDetailTableName, jobDetail);
             if(rtnVal)
                 this.reorderSubmittedJobs();
             else
@@ -136,7 +136,7 @@ public class JobManager {
      * Retrieves job by its uid
      *
      * @param jobId job uid
-     * @return JobDetail job information for job UUID
+     * @return JobDetail job information
      * @throws Exception
      */
     public JobDetail getJobByID(String jobId) throws Exception {
@@ -246,7 +246,7 @@ public class JobManager {
                 if(logFile!=null && !logFile.isEmpty())
                     entity.setLog(logFile);
 
-                rtnVal = tableOperator.updateSingleEntity(jobDetailTableName, entity);
+                rtnVal = tableOperator.updateEntity(jobDetailTableName, entity);
             }
         } catch (Exception ex) {
             throw ex;
@@ -292,7 +292,7 @@ public class JobManager {
 
             if (entity != null) {
                 entity.setJobDirectory(path);
-                rtnVal = tableOperator.updateSingleEntity(jobDetailTableName, entity);
+                rtnVal = tableOperator.updateEntity(jobDetailTableName, entity);
             }
 
         } catch (Exception ex) {

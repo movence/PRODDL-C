@@ -31,6 +31,7 @@ import pdl.common.Configuration;
 import pdl.common.StaticValues;
 
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
 
@@ -63,7 +64,7 @@ public class TableOperator {
                     conf.getStringProperty(StaticValues.CONFIG_KEY_CSTORAGE_PKEY)
             );
 
-            tableStorageClient.setRetryPolicy(RetryPolicies.retryN(3, TimeSpan.fromSeconds(3)));
+            tableStorageClient.setRetryPolicy(RetryPolicies.retryN(5, TimeSpan.fromSeconds(3)));
             /*IRetryPolicy retryPolicy = new TableRetryPolicy();
             tableStorageClient.setRetryPolicy(retryPolicy);*/
         } catch (Exception ex) {
@@ -78,13 +79,13 @@ public class TableOperator {
                 initTableClient();
 
             table = tableStorageClient.getTableReference(tableName);
-            if (null == table) {
-                throw new NullPointerException(String.format("TableStorageClient returned null ITable '%s'.", tableName));
+            if (table==null) {
+                throw new NullPointerException("failed to get table: " + tableName);
             }
             if (!table.isTableExist()) {
                 table.createTable();
                 if (!table.isTableExist())
-                    throw new Exception("Table - " + tableName + " is not created.");
+                    throw new Exception("failed to create table: " + tableName);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -92,26 +93,29 @@ public class TableOperator {
         return table;
     }
 
-    public boolean insertSingleEntity(String tableName, ITableServiceEntity entity) {
+    public boolean deleteTable(String tableName) {
         boolean rtnVal = false;
         try {
-
-            if (tableStorageClient == null)
+            if(tableStorageClient==null) {
                 initTableClient();
-
+            }
             ITable table = tableStorageClient.getTableReference(tableName);
-            if (!table.isTableExist())
-                table = createTable(tableName);
-
-            table.getTableServiceContext().insertEntity(entity);
-            rtnVal = true;
-        } catch (Exception e) {
-            e.printStackTrace();
+            if(table!=null && table.isTableExist()) {
+                rtnVal = table.deleteTable();
+            }
+        } catch(Exception ex) {
+            ex.printStackTrace();
         }
         return rtnVal;
     }
 
-    public boolean insertMultipleEntities(String tableName, List<ITableServiceEntity> entityList) {
+    public <B extends ITableServiceEntity> boolean insertEntity(String tableName, B entity) {
+        List<B> entities = new ArrayList<B>(1);
+        entities.add(entity);
+        return this.insertMultipleEntities(tableName, entities);
+    }
+
+    public <B extends ITableServiceEntity> boolean insertMultipleEntities(String tableName, List<B> entities) {
         boolean rtnVal = false;
         try {
 
@@ -119,16 +123,14 @@ public class TableOperator {
                 initTableClient();
 
             ITable table = tableStorageClient.getTableReference(tableName);
-            if (!table.isTableExist())
+            if (table==null || !table.isTableExist())
                 table = createTable(tableName);
 
             TableServiceContext context = table.getTableServiceContext();
-            context.setModelClass(entityList.get(0).getClass());
+            context.setModelClass(entities.get(0).getClass());
             context.startBatch();
-
-            for (ITableServiceEntity entity : entityList)
-                context.updateEntity(entity);
-
+            for (ITableServiceEntity entity : entities)
+                context.insertEntity(entity);
             context.executeBatch();
 
             rtnVal = true;
@@ -138,23 +140,14 @@ public class TableOperator {
         return rtnVal;
     }
 
-    public AbstractTableServiceEntity queryEntityBySearchKey(
-            String tableName, String searchColumn,
-            Object searchKey, Class model) {
-        AbstractTableServiceEntity entity = null;
+    public ITableServiceEntity queryEntityBySearchKey(String tableName, String searchColumn, Object searchKey, Class model) {
+        ITableServiceEntity entity = null;
 
         try {
             List<ITableServiceEntity> entityList = this.queryListBySearchKey(tableName, searchColumn, searchKey, null, null, model);
 
             if (entityList != null && entityList.size() > 0) {
-                /*if( entityList.size() > 1 )
-                    throw new Exception(
-                            String.format(
-                                    "More than 1 record has been found for %s(%s) in %s" ,
-                                    searchKey, searchColumn, tableName )
-                    );*/
-
-                entity = (AbstractTableServiceEntity) entityList.get(0);
+                entity = (ITableServiceEntity) entityList.get(0);
             }
         } catch (StorageException ex) {
             ex.printStackTrace();
@@ -165,35 +158,37 @@ public class TableOperator {
         return entity;
     }
 
-    public List<ITableServiceEntity> queryListBySearchKey(String tableName, String searchColumn, Object searchKey, Class model) {
+    public List<ITableServiceEntity> queryListBySearchKey(String tableName, String searchColumn, Object searchKey, Class<? extends ITableServiceEntity> model) {
         return this.queryListBySearchKey(tableName, searchColumn, searchKey, null, null, model);
     }
 
     public List<ITableServiceEntity> queryListBySearchKey(
-            String tableName, String searchColumn, Object searchKey, String order, String orderColumn, Class model
-    ) {
+            String tableName,
+            String searchColumn, Object searchKey,
+            String order, String orderColumn,
+            Class model) {
         List<ITableServiceEntity> entityList = null;
-        ITable table;
 
         try {
             if (tableStorageClient == null)
                 initTableClient();
 
-            CloudTableQuery sql = CloudTableQuery.select();
-            if (searchColumn != null && searchKey != null)
-                sql.eq(searchColumn, searchKey);
-            /*if( order != null && orderColumn != null ) {
-                if( order.equals( "asc" ) )
-                    sql.orderAsc( orderColumn );
-                else if( order.equals( "desc" ) )
-                    sql.orderDesc( orderColumn );
-            }*/
+            ITable table = tableStorageClient.getTableReference(tableName);
 
-            table = tableStorageClient.getTableReference(tableName);
+            if (table!=null && table.isTableExist()) {
+                CloudTableQuery sql = CloudTableQuery.select();
+                if (searchColumn != null && searchKey != null)
+                    sql.eq(searchColumn, searchKey);
+                /*if( order != null && orderColumn != null ) {
+                    if( order.equals( "asc" ) )
+                        sql.orderAsc( orderColumn );
+                    else if( order.equals( "desc" ) )
+                        sql.orderDesc( orderColumn );
+                }*/
 
-            if (table.isTableExist())
+
                 entityList = table.getTableServiceContext().retrieveEntities(sql.toAzureQuery(), model);
-
+            }
         } catch (StorageException ex) {
             ex.printStackTrace();
         } catch (Exception ex) {
@@ -203,14 +198,13 @@ public class TableOperator {
         return entityList;
     }
 
-    public AbstractTableServiceEntity queryEntityByCondition(String tableName, String condition, Class model) {
-        AbstractTableServiceEntity entity = null;
-        List<ITableServiceEntity> entityList;
+    public ITableServiceEntity queryEntityByCondition(String tableName, String condition, Class model) {
+        ITableServiceEntity entity = null;
         try {
-            entityList = this.queryListByCondition(tableName, condition, model);
+            List<ITableServiceEntity> entityList = this.queryListByCondition(tableName, condition, model);
 
             if (entityList != null && entityList.size() >= 1)
-                entity = (AbstractTableServiceEntity) entityList.get(0);
+                entity = (ITableServiceEntity)entityList.get(0);
 
         } catch (StorageException ex) {
             ex.printStackTrace();
@@ -221,10 +215,8 @@ public class TableOperator {
         return entity;
     }
 
-    public List<ITableServiceEntity> queryListByCondition(String tableName, String condition, Class model) {
+    public List<ITableServiceEntity> queryListByCondition(String tableName, String condition, Class<? extends ITableServiceEntity> model) {
         List<ITableServiceEntity> entityList = null;
-        ITable table;
-
         try {
             if (tableStorageClient == null)
                 initTableClient();
@@ -232,9 +224,9 @@ public class TableOperator {
             CloudTableQuery sql = CloudTableQuery.select();
             sql.where(condition);
 
-            table = tableStorageClient.getTableReference(tableName);
+            ITable table = tableStorageClient.getTableReference(tableName);
 
-            if (table.isTableExist())
+            if (table!=null && table.isTableExist())
                 entityList = table.getTableServiceContext().retrieveEntities(sql.toAzureQuery(), model);
 
         } catch (StorageException ex) {
@@ -246,18 +238,28 @@ public class TableOperator {
         return entityList;
     }
 
-    public void deleteEntity(String tableName, ITableServiceEntity entity) {
-        ITable table;
+    public <B extends ITableServiceEntity> void deleteEntity(String tableName, B entity) {
+        List<B> entities = new ArrayList<B>(1);
+        entities.add(entity);
+        this.deleteMultipleEntities(tableName, entities);
+    }
 
+    public <B extends ITableServiceEntity> void deleteMultipleEntities(String tableName, List<B> entities) {
         try {
             if(tableStorageClient == null)
                 initTableClient();
 
-            table = tableStorageClient.getTableReference(tableName);
+            ITable table = tableStorageClient.getTableReference(tableName);
 
-            if (table != null && table.isTableExist())
-                table.getTableServiceContext().deleteEntity(entity);
-
+            if (table != null && table.isTableExist())  {
+                TableServiceContext tableContext = new TableServiceContext(table);
+                tableContext.setModelClass(entities.get(0).getClass());
+                tableContext.startBatch();
+                for(B entity : entities) {
+                    tableContext.deleteEntity(entity);
+                }
+                tableContext.executeBatch();
+            }
         } catch (StorageException ex) {
             ex.printStackTrace();
         } catch (Exception ex) {
@@ -265,7 +267,13 @@ public class TableOperator {
         }
     }
 
-    public boolean updateSingleEntity(String tableName, ITableServiceEntity entity) {
+    public <B extends ITableServiceEntity> boolean updateEntity(String tableName, B entity) {
+        List<B> entities = new ArrayList<B>(1);
+        entities.add(entity);
+        return this.updateMultipleEntities(tableName, entities);
+    }
+
+    public <B extends ITableServiceEntity> boolean updateMultipleEntities(String tableName, List<B> entities) {
         boolean rtnVal = false;
 
         try {
@@ -273,42 +281,21 @@ public class TableOperator {
                 initTableClient();
 
             ITable table = tableStorageClient.getTableReference(tableName);
-            if (!table.isTableExist())
-                throw new Exception("updateEntity - Table does not exist: " + tableName);
-
-            entity.setValues(null);
-            table.getTableServiceContext().updateEntity(entity);
-
+            if (table!=null && table.isTableExist()) {
+                TableServiceContext tableContext = table.getTableServiceContext();
+                tableContext.setModelClass(entities.get(0).getClass());
+                tableContext.startBatch();
+                for (B entity : entities) {
+                    entity.setValues(null);
+                    tableContext.updateEntity(entity);
+                }
+                tableContext.executeBatch();
+            }
             rtnVal = true;
         } catch (Exception e) {
             e.printStackTrace();
         }
-
         return rtnVal;
-    }
-
-    public <B extends ITableServiceEntity> void updateMultipleEntities(String tableName, List<B> entityList) {
-        try {
-            if (tableStorageClient == null)
-                initTableClient();
-
-            ITable table = tableStorageClient.getTableReference(tableName);
-            if (!table.isTableExist())
-                throw new Exception("updateEntity - Table does not exist: " + tableName);
-
-            TableServiceContext context = table.getTableServiceContext();
-            context.setModelClass(entityList.get(0).getClass());
-            context.startBatch();
-
-            for (B entity : entityList) {
-                entity.setValues(null);
-                context.updateEntity(entity);
-            }
-
-            context.executeBatch();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
     }
 
     /*

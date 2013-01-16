@@ -41,9 +41,7 @@ public class StaticValues {
     public static final String CONFIG_KEY_DEPLOYMENT_NAME = "DeploymentName";
     public static final String CONFIG_KEY_WORKER_NAME = "CloudRoleWorkerName";
 
-    public static final String CONFIG_KEY_CERTIFICATE_NAME = "CertificateName";
     public static final String CONFIG_KEY_CERT_PASSWORD = "CertificatePassword";
-    public static final String CONFIG_KEY_CERT_ALIAS = "CertificateAlias";
 
     public static final String CONFIG_KEY_DATASTORE_PATH = "DataStorePath";
     public static final String CONFIG_KEY_STORAGE_PATH = "StoragePath";
@@ -69,8 +67,6 @@ public class StaticValues {
     public static final String COLUMN_INFOS_KEY = "iKey";
     public static final String COLUMN_JOB_DETAIL_PRIORITY = "priority";
     public static final String COLUMN_JOB_DETAIL_STATUS = "status";
-
-    public static final String KEY_DYNAMIC_DATA_DRIVE_PATH="MasterDrivePath";
 
     public static final String DIRECTORY_TASK_AREA = "task";
     public static final String DIRECTORY_FILE_AREA = "datastore";
