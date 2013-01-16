@@ -112,7 +112,7 @@ namespace PRODDLMaster
                 {
                     if (storageHelper.uploadCloudDrive(vhdFilePath, SharedTools.BLOB_CONTAINER_NAME, vhdName))
                     {
-                        _infoContext.insertInfoData("masterdrive_info", INFOS_TABLE_DRIVE_KEY_NAME, "true");
+                        _infoContext.insertInfoData("proddl_info", INFOS_TABLE_DRIVE_KEY_NAME, "1");
                         File.Delete(@vhdFilePath);
                     }
                 }
@@ -175,7 +175,7 @@ namespace PRODDLMaster
             InfoModel driveData = _infoContext.getInfoData(INFOS_TABLE_DRIVE_KEY_NAME);
             if (driveData != null && !String.IsNullOrEmpty(driveData.iKey))
             {
-                if (driveData.iValue.Equals("true"))
+                if (driveData.iValue.Equals("1"))
                     return true;
             }
             return false;
