@@ -31,6 +31,7 @@
                 <configuration>
                     <skipTests>false</skipTests>
                     <useFile>false</useFile>
+                    <printSummary>true</printSummary>
                     <!--<debugForkedProcess>true</debugForkedProcess>-->
                 </configuration>
             </plugin>
