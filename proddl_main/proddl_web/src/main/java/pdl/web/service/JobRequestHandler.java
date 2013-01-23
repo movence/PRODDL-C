@@ -301,7 +301,7 @@ public class JobRequestHandler {
 
             fileService.getFilePathById(resultFileId);
 
-            boolean result = jobManager.updateJobStatus(jobId, status, resultFileId, null);
+            boolean result = jobManager.updateJob(jobId, status, resultFileId, null);
             rtnVal.put("result", ""+(result?1:0));
 
         } catch(Exception ex) {
