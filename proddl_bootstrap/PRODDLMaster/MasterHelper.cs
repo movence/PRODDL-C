@@ -118,12 +118,8 @@ namespace PRODDLMaster
                 }
                 else
                 {
-                    Trace.TraceError("vhd file does not exist");
+                    Trace.TraceError("failed to get vhd file.");
                 }
-            }
-            else
-            {
-                Trace.WriteLine("Azure drive file already exist", this.ToString());
             }
 
             String drivePath = storageHelper.getMountedDrivePath(String.Format("{0}/{1}", SharedTools.BLOB_CONTAINER_NAME, vhdName));
@@ -230,42 +226,6 @@ namespace PRODDLMaster
             tw.Close();
 
             return scriptPath;
-        }
-
-        private bool startJavaMainOperator()
-        {
-            try
-            {
-                Trace.WriteLine("START: startJavaMainOperator()", this.ToString());
-
-                String jettyPort = RoleEnvironment.CurrentRoleInstance.InstanceEndpoints["HttpIn"].IPEndpoint.Port.ToString();
-                String deploymentId = RoleEnvironment.DeploymentId;
-                IPEndPoint internalAddress = RoleEnvironment.CurrentRoleInstance.InstanceEndpoints["CatalogServer"].IPEndpoint;
-
-                String jarPath = Path.Combine(roleToolsPath, "proddl_core-1.0.jar");
-                String jreHome = Path.Combine(localStoragePath, "jre");
-
-                Process proc = SharedTools.buildCloudProcess(
-                    String.Format("\"{0}\\bin\\java.exe\"", jreHome),
-                    String.Format(
-                        "-jar {0} {1} {2} {3} {4} {5} {6}",
-                        jarPath, "true", localStoragePath, internalAddress.Address, internalAddress.Port, jettyPort, RoleEnvironment.DeploymentId
-                    ),
-                    "[Master]"
-                );
-
-                proc.Start();
-                proc.BeginOutputReadLine();
-                proc.BeginErrorReadLine();
-                proc.WaitForExit();
-
-                return true;
-            }
-            catch (Exception ex)
-            {
-                Trace.TraceError("EXCEPTION: startJavaMainOperator() - " + ex.ToString());
-                return false;
-            }
         }
     }
 }

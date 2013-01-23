@@ -66,7 +66,7 @@ namespace CommonTool
             }
             catch (Exception ex)
             {
-                Trace.TraceError("mountMasterDrive() - " + ex.ToString());
+                Trace.TraceError("failed to mount a drive.");
             }
 
             return rtnVal;
@@ -81,7 +81,7 @@ namespace CommonTool
             }
             catch (Exception ex)
             {
-                Trace.TraceError("unMountMasterDrive() - " + ex.ToString());
+                Trace.TraceError("failed to unmount a drive.");
             }
         }
 
@@ -100,6 +100,7 @@ namespace CommonTool
             int PageBlobPageSize = 512;
             int OneMegabyteAsBytes = 1024 * 1024;
             int FourMegabytesAsBytes = 4 * OneMegabyteAsBytes;
+            Boolean rtnVal = false;
 
             try
             {
@@ -159,15 +160,20 @@ namespace CommonTool
                     }
                     vhdOffset += range.Length;
                 }
-                Trace.WriteLine("uploadCloudDrive(): uploaded vhd file at " + filePath, this.ToString());
-                return true;
+                Trace.WriteLine("uploaded vhd file at " + filePath, this.ToString());
+                reader.Close();
+                stream.Close();
+
+                rtnVal = true;
             }
             catch (Exception ex)
             {
                 Trace.TraceError(ex.Message);
-                return false;
             }
+
+            return rtnVal;
         }
+
         private static bool IsAllZero(byte[] range, long rangeOffset, long size)
         {
             for (long offset = 0; offset < size; offset++)

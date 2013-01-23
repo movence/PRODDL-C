@@ -78,7 +78,6 @@ namespace PRODDLJobRunner
 
         public override bool OnStart()
         {
-            //ServicePointManager.UseNagleAlgorithm = false;
             ServicePointManager.UseNagleAlgorithm = false;
 
             LocalResource localStorage = RoleEnvironment.GetLocalResource("LocalStorage");
@@ -122,37 +121,6 @@ namespace PRODDLJobRunner
             if (e.Changes.Any(change => change is RoleEnvironmentConfigurationSettingChange))
             {
                 e.Cancel = true;
-            }
-        }
-
-        private bool startJavaMainOperator()
-        {
-            try
-            {
-                Trace.Write("START: startJavaMainOperator()");
-
-                string roleRoot = Environment.GetEnvironmentVariable("RoleRoot");
-
-                string jarPath = roleRoot + @"\approot\tools\proddl_core-1.0.jar";
-                string jreHome = localStoragePath + @"jre";
-
-                Process proc = SharedTools.buildCloudProcess(
-                    String.Format("\"{0}\\bin\\java.exe\"", jreHome),
-                    String.Format("-jar {0} {1} {2} {3} {4} {5} {6}", jarPath, "false", localStoragePath, "-", "-", "-", RoleEnvironment.DeploymentId),
-                    "[JobRunner]");
-
-                proc.Start();
-                proc.BeginOutputReadLine();
-                proc.BeginErrorReadLine();
-                proc.WaitForExit();
-
-                Trace.Write("DONE: startJavaMainOperator()");
-                return true;
-            }
-            catch (Exception ex)
-            {
-                Trace.TraceError("EXCEPTION: startJavaMainOperator() - " + ex.ToString());
-                return false;
             }
         }
 
