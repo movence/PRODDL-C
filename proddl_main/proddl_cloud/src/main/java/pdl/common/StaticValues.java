@@ -53,6 +53,9 @@ public class StaticValues {
     public static final String CONFIG_KEY_WEBSERVER_PORT = "WebserverPort";
     public static final String CONFIG_KEY_INTERNAL_ADDR = "InternalAddress";
     public static final String CONFIG_KEY_INTERNAL_PORT = "InternalPort";
+    //--OPTIONAL
+    public static final String CONFIG_KEY_URLS_WITH_COMMA = "ToolsURL";
+    public static final String CONFIG_KEY_URL_CCTOOLS = "CctoolsURL";
 
     //STORAGE
     public static final String BLOB_CONTAINER_TOOLS = "tools";

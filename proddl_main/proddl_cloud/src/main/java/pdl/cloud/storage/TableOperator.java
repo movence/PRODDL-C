@@ -64,7 +64,7 @@ public class TableOperator {
                     conf.getStringProperty(StaticValues.CONFIG_KEY_CSTORAGE_PKEY)
             );
 
-            tableStorageClient.setRetryPolicy(RetryPolicies.retryN(5, TimeSpan.fromSeconds(3)));
+            tableStorageClient.setRetryPolicy(RetryPolicies.retryN(3, TimeSpan.fromSeconds(3)));
             /*IRetryPolicy retryPolicy = new TableRetryPolicy();
             tableStorageClient.setRetryPolicy(retryPolicy);*/
         } catch (Exception ex) {

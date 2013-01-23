@@ -210,7 +210,7 @@ public class JobManager {
 
             if (retrievedJob != null && retrievedJob.getClass() == JobDetail.class) {
                 job = (JobDetail) retrievedJob;
-                this.updateJobStatus(job.getJobUUID(), StaticValues.JOB_STATUS_PENDING, null, null);
+                this.updateJobStatus(job.getJobUUID(), StaticValues.JOB_STATUS_PENDING);
                 this.reorderSubmittedJobs();
             }
 
@@ -230,28 +230,38 @@ public class JobManager {
      * @return boolean boolean of status update result
      * @throws Exception
      */
-    public boolean updateJobStatus(String jobId, int status, String resultFileName, String logFile) throws Exception {
+    public boolean updateJob(String jobId, int status, String resultFileName, String logFile) throws Exception {
         boolean rtnVal = false;
 
         try {
-            JobDetail entity = getJobByID(jobId);
+            JobDetail job = this.getJobByID(jobId);
 
-            if (entity != null && entity.getStatus() != status) {
-                entity.setStatus(status);
+            if (job != null && job.getStatus() != status) {
+                job.setStatus(status);
                 if (status != StaticValues.JOB_STATUS_SUBMITTED)
-                    entity.setPriority(0);
+                    job.setPriority(0);
 
                 if(resultFileName!=null && !resultFileName.isEmpty())
-                    entity.setResult(resultFileName);
+                    job.setResult(resultFileName);
                 if(logFile!=null && !logFile.isEmpty())
-                    entity.setLog(logFile);
+                    job.setLog(logFile);
 
-                rtnVal = tableOperator.updateEntity(jobDetailTableName, entity);
+                rtnVal = tableOperator.updateEntity(jobDetailTableName, job);
             }
         } catch (Exception ex) {
             throw ex;
         }
 
+        return rtnVal;
+    }
+
+    public boolean updateJobStatus(String jobId, int status) {
+        boolean rtnVal = false;
+        try {
+         rtnVal = this.updateJob(jobId, status, null, null);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
         return rtnVal;
     }
 
@@ -263,14 +273,14 @@ public class JobManager {
      */
     public void updateMultipleJobStatus(int prevStatus, int newStatus) throws Exception {
         try {
-            List<JobDetail> jobList = getJobList(
-                    QueryTool.getSingleConditionalStatement(StaticValues.COLUMN_JOB_DETAIL_STATUS, "eq", prevStatus)
-            );
+            List<JobDetail> jobList = getJobList(QueryTool.getSingleConditionalStatement(StaticValues.COLUMN_JOB_DETAIL_STATUS, "eq", prevStatus));
 
             if(jobList!=null && jobList.size()>0) {
                 for (JobDetail currJob : jobList) {
-                    updateJobStatus(currJob.getJobUUID(), newStatus, null, null);
+                    //updateJobStatus(currJob.getJobUUID(), newStatus, null, null);
+                    currJob.setStatus(newStatus);
                 }
+                tableOperator.updateMultipleEntities(jobDetailTableName, jobList);
             }
         } catch (Exception ex) {
             throw ex;

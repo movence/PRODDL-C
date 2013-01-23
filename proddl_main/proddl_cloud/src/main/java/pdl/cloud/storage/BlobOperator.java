@@ -62,83 +62,66 @@ public class BlobOperator {
         this.conf = conf;
     }
 
-    private void initBlobClient() {
-        try {
-            blobStorageClient = BlobStorageClient.create(
-                    URI.create(StaticValues.AZURE_BLOB_HOST_NAME),
-                    false,
-                    conf.getStringProperty(StaticValues.CONFIG_KEY_CSTORAGE_NAME),
-                    conf.getStringProperty(StaticValues.CONFIG_KEY_CSTORAGE_PKEY)
-            );
-            //blobStorageClient.setRetryPolicy( RetryPolicies.retryN( 1, TimeSpan.fromSeconds( 5 ) ) );
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
+    private void initBlobClient() throws Exception {
+        blobStorageClient = BlobStorageClient.create(
+                URI.create(StaticValues.AZURE_BLOB_HOST_NAME),
+                false,
+                conf.getStringProperty(StaticValues.CONFIG_KEY_CSTORAGE_NAME),
+                conf.getStringProperty(StaticValues.CONFIG_KEY_CSTORAGE_PKEY)
+        );
+        //blobStorageClient.setRetryPolicy( RetryPolicies.retryN( 1, TimeSpan.fromSeconds( 5 ) ) );
     }
 
-    private IBlobContainer initBlobContainer(String containerName) {
+    private IBlobContainer initBlobContainer(String containerName) throws Exception {
         IBlobContainer container = null;
-        try {
-            if (blobStorageClient == null)
-                initBlobClient();
+        if (blobStorageClient == null)
+            initBlobClient();
 
-            if (!blobStorageClient.isContainerExist(containerName))
-                container = blobStorageClient.createContainer(containerName);
-            else
-                container = blobStorageClient.getBlobContainer(containerName);
-            container.setAccessControl(publicAccessACL);
+        if (!blobStorageClient.isContainerExist(containerName))
+            container = blobStorageClient.createContainer(containerName);
+        else
+            container = blobStorageClient.getBlobContainer(containerName);
+        container.setAccessControl(publicAccessACL);
 
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
         return container;
     }
 
     private IBlobContainer getBlobContainer(String containerName) throws Exception {
         IBlobContainer container = null;
-        try {
-            container = initBlobContainer(containerName);
-            if (!container.isContainerExist())
-                throw new IllegalArgumentException("IBlobContainer does not exist!");
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            throw ex;
-        }
+        container = initBlobContainer(containerName);
+        if (!container.isContainerExist())
+            throw new IllegalArgumentException("container does not exist. - " + containerName);
         return container;
     }
 
     public boolean getBlob(String containerName, String blobName, String filePath, boolean isOverwrite) {
         boolean fSuccess = false;
-
-        if (blobName == null || blobName.isEmpty())
-            throw new IllegalArgumentException("Blob Name parameter is invalid!");
-        if (filePath == null || filePath.isEmpty())
-            throw new IllegalArgumentException("File Path parameter is invalid!");
-
         try {
-            IBlobContainer theContainer = getBlobContainer(containerName);
-            if (!theContainer.isBlobExist(blobName))
-                throw new Exception("Blob " + blobName + " does not exist in Container: " + containerName + "!");
+            if(blobName!=null && !blobName.isEmpty() && filePath!=null && !filePath.isEmpty()) {
+                IBlobContainer theContainer = getBlobContainer(containerName);
+                if (!theContainer.isBlobExist(blobName))
+                    throw new Exception("Blob " + blobName + " does not exist in Container: " + containerName + "!");
 
-            File objFile = new File(filePath);
-            if (null != objFile && objFile.exists()) {
-                if (!isOverwrite)
-                    throw new Exception(String.format("Cannot overwrite, File '%s' exists!", filePath));
-                if (!objFile.delete())
-                    throw new Exception(String.format("File '%s' was not deleted!", filePath));
+                File objFile = new File(filePath);
+                if (null != objFile && objFile.exists()) {
+                    if (!isOverwrite)
+                        throw new Exception(String.format("Cannot overwrite, File '%s' exists!", filePath));
+                    if (!objFile.delete())
+                        throw new Exception(String.format("File '%s' was not deleted!", filePath));
+                }
+
+                BlobFileStream objStream = new BlobFileStream(filePath);
+
+                IBlockBlob blob = theContainer.getBlockBlobReference(blobName);
+                blob.getContents(objStream);
+
+                objFile = new File(filePath);
+                if (null == objFile || !objFile.exists()) {
+                    throw new Exception(String.format("File '%s' was not created!", filePath));
+                }
+
+                fSuccess = true;
             }
-
-            BlobFileStream objStream = new BlobFileStream(filePath);
-
-            IBlockBlob blob = theContainer.getBlockBlobReference(blobName);
-            blob.getContents(objStream);
-
-            objFile = new File(filePath);
-            if (null == objFile || !objFile.exists()) {
-                throw new Exception(String.format("File '%s' was not created!", filePath));
-            }
-
-            fSuccess = true;
         } catch (SecurityException e) {
             e.printStackTrace();
         } catch (IOException e) {
