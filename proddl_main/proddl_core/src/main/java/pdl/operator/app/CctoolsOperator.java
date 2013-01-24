@@ -264,8 +264,8 @@ public class CctoolsOperator extends ToolOperator {
 
             ProcessBuilder pb = this.buildProcessBuilder(null, processArgs, false);
             process = pb.start();
+            processes.add(process);
 
-            System.out.println("CctoolsOperator : catalog server is running.");
             rtnVal = true;
         } catch (Exception e) {
             e.printStackTrace();

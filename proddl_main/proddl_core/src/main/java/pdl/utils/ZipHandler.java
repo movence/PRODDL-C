@@ -40,11 +40,10 @@ public class ZipHandler {
     }
 
     public boolean unZip(String filePath, String parentPath) throws Exception {
-        ZipFile zipFile = null;
         boolean rtnVal = false;
 
         try {
-            zipFile = new ZipFile(filePath);
+            ZipFile zipFile = new ZipFile(filePath);
             Enumeration files = zipFile.entries();
 
             while (files.hasMoreElements()) {
@@ -59,17 +58,13 @@ public class ZipHandler {
                     f.createNewFile();
                 }
                 FileUtils.copyInputStreamToFile(eis, f);
+                eis.close();
             }
+            zipFile.close();
             rtnVal = true;
         } catch (Exception ex) {
             ex.printStackTrace();
             throw new Exception("unzip process failed.");
-        } finally {
-            try {
-                if(zipFile!=null) {
-                    zipFile.close();
-                }
-            } catch (Exception e) {}
         }
         return rtnVal;
     }

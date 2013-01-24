@@ -70,8 +70,12 @@ public class ToolOperator implements IApplicationOperator {
                 Thread.sleep(10 * 60 * 1000);
             }
             result = this.unzip(toolFilePath);
-            File toolFile = new File(toolFilePath);
-            toolFile.delete();
+            if(result) {
+                File toolFile = new File(toolFilePath);
+                FileUtils.deleteQuietly(toolFile);
+            } else {
+                throw new Exception("ToolOperator failed - " + toolName);
+            }
         }
     }
 
