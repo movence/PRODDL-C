@@ -62,6 +62,8 @@ public class CctoolsOperator extends ToolOperator {
     private String catalogServerAddress;
     private String catalogServerPort;
 
+    private String tmpPath;
+
     private final String[] makeflowArgs = {
             "-T", "wq", //batch system
             "-p", LOOKUP_KEY_PORT, //random port
@@ -93,6 +95,7 @@ public class CctoolsOperator extends ToolOperator {
 
             cctoolsBinPath = ToolPool.buildDirPath(toolPath, "bin");
             cygwinBinPath = ToolPool.buildDirPath(storagePath, "cygwin", "bin");
+            tmpPath = ToolPool.buildDirPath(toolPath, "tmp");
 
             processes = new ArrayList<Process>();
             Runtime.getRuntime().addShutdownHook(new Thread() {
@@ -141,6 +144,8 @@ public class CctoolsOperator extends ToolOperator {
         //set the range of port numbers for internal communication, http://www.cse.nd.edu/~ccl/software/manuals/man/makeflow.html
         env.put("TCP_LOW_PORT", "9001");
         env.put("TCP_MAX_PORT", "40000");
+        //mutes cygwin warning for using DOS style path
+        env.put("nodosfilewarning", "1");
 
         return pb;
     }
@@ -204,12 +209,6 @@ public class CctoolsOperator extends ToolOperator {
         Process process = null;
 
         try {
-            //create /tmp directory under cctools
-            File tmpDir = new File(ToolPool.buildDirPath(toolPath, "tmp"));
-            if(!tmpDir.exists() || !tmpDir.isDirectory()) {
-                tmpDir.mkdir();
-            }
-
             //this.isCatalogServerInfoAvailable(); - the availability check for catalog server is done by ServiceOperatorHelper
 
             //String taskName = storageOperator.dequeue( StaticValues.QUEUE_JOBQUEUE_NAME, true );
@@ -219,7 +218,7 @@ public class CctoolsOperator extends ToolOperator {
             processArgs.addAll(Arrays.asList(workerArgs));
             processArgs.set(processArgs.indexOf(LOOKUP_KEY_CATALOGSERVER_INFO), catalogServerAddress + ":" + catalogServerPort);
             processArgs.set(processArgs.indexOf(LOOKUP_KEY_TASK_NAME), GENERIC_TASK_NAME);
-            processArgs.set(processArgs.indexOf(LOOKUP_KEY_TMP_PATH), tmpDir.getAbsolutePath());
+            processArgs.set(processArgs.indexOf(LOOKUP_KEY_TMP_PATH), tmpPath);
 
             ProcessBuilder pb = this.buildProcessBuilder(null, processArgs, false);
             process = pb.start();
@@ -240,6 +239,14 @@ public class CctoolsOperator extends ToolOperator {
                 process.destroy();
         }
         return rtnVal;
+    }
+
+    public void createTmpForWorker() {
+        //create /tmp directory under cctools
+        File tmpDir = new File(tmpPath);
+        if(!tmpDir.exists() || !tmpDir.isDirectory()) {
+            tmpDir.mkdir();
+        }
     }
 
     public boolean startCatalogServer(String catalogServerAddress, String catalogServerPort) {
@@ -320,23 +327,6 @@ public class CctoolsOperator extends ToolOperator {
             e.printStackTrace();
         }
         return (this.catalogServerAddress!=null && this.catalogServerPort!=null);
-    }
-
-    public Info getCatalogServerInfo(TableOperator tableOperator, String key) {
-        Info catalogServerInfo = null;
-
-        try {
-            catalogServerInfo = (Info) tableOperator.queryEntityBySearchKey(
-                    ToolPool.buildTableName(StaticValues.TABLE_NAME_INFOS),
-                    StaticValues.COLUMN_INFOS_KEY,
-                    key,
-                    Info.class
-            );
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return catalogServerInfo;
     }
 
     public boolean startBash(String taskFileName, String taskDirectory) {

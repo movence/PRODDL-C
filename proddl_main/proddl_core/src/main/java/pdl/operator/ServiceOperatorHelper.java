@@ -160,16 +160,18 @@ public class ServiceOperatorHelper {
      * @throws Exception
      */
     private void runJobRunner() throws Exception {
-        int maxWorkerCount = StaticValues.MAX_WORKER_INSTANCE_PER_NODE;
+        int maxWorkerCountPerNode = StaticValues.MAX_WORKER_INSTANCE_PER_NODE;
 
         //waits until master is available
         while (!cctoolsOperator.isCatalogServerInfoAvailable()) {
             Thread.sleep(10000);
         }
 
+        cctoolsOperator.createTmpForWorker();
+
         final ThreadPoolExecutor workerPool = new ThreadPoolExecutor(
-                maxWorkerCount,
-                maxWorkerCount,
+                maxWorkerCountPerNode,
+                maxWorkerCountPerNode,
                 StaticValues.MAX_KEEP_ALIVE_VALUE_JOB_EXECUTOR,
                 StaticValues.MAX_KEEP_ALIVE_UNIT_JOB_EXECUTOR.equals("min") ? TimeUnit.MINUTES : TimeUnit.SECONDS,
                 new SynchronousQueue<Runnable>(),
@@ -189,7 +191,7 @@ public class ServiceOperatorHelper {
             }
         });
 
-        for (int i = 0; i < maxWorkerCount; i++) {
+        for (int i = 0; i < maxWorkerCountPerNode; i++) {
             WorkerExecutor worker = new WorkerExecutor(cctoolsOperator);
             workerPool.execute(worker);
         }
