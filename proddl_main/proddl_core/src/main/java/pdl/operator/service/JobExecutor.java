@@ -24,6 +24,7 @@ package pdl.operator.service;
 import org.apache.commons.io.FileUtils;
 import pdl.cloud.management.CertificateManager;
 import pdl.cloud.management.CloudInstanceManager;
+import pdl.cloud.management.JobManager;
 import pdl.cloud.model.FileInfo;
 import pdl.cloud.model.JobDetail;
 import pdl.common.Configuration;
@@ -44,27 +45,23 @@ import java.util.Map;
  * Time: 10:19 AM
  */
 public class JobExecutor extends Thread {
-    private final String WORKER_INSTANCE_COUNT_KEY = "n_worker";  //for scale
-    private final String CER_CERTIFICATE_KEY = "cer_fid"; // file UUID for cer
-    private final String PFX_CERTIFICATE_KEY = "pfx_fid"; // file UUID for pfx
-    private final String CERTIFICATE_PASSWORD_KEY = "c_password"; //certification password
     private CctoolsOperator cctoolsOperator;
     private JobDetail currJob;
-    private JobHandler jobHandler;
+    private JobManager jobManager;
 
-    public JobExecutor(ThreadGroup group, JobDetail currJob, CctoolsOperator operator) {
+    public JobExecutor(ThreadGroup group, JobDetail currJob, CctoolsOperator operator, JobManager jobManager) {
         super(group, currJob.getJobUUID() + "_job");
         this.currJob=currJob;
         this.cctoolsOperator = operator;
-        this.jobHandler = new JobHandler();
+        this.jobManager = jobManager;
     }
 
     public JobExecutor(JobDetail currJob, CctoolsOperator operator) {
-        this(new ThreadGroup("worker"), currJob, operator);
+        this(new ThreadGroup("worker"), currJob, operator, new JobManager());
     }
 
     /**
-     * returns id of current job so that the status can be updated in thread pool in case of failure
+     * returns current job id so that the status can be updated at failure
      * @return current job id
      */
     @Override
@@ -81,9 +78,10 @@ public class JobExecutor extends Thread {
      */
     public void run() {
         if (currJob != null && currJob.getJobUUID() != null) {
-            boolean jobExecuted = executeJob();
+            boolean jobExecuted = this.executeJob();
             if (!jobExecuted) {
-                System.err.printf("Job Execution Failed for UUID: '%s'%n", this.toString());
+                jobManager.updateJobStatus(currJob.getJobUUID(), StaticValues.JOB_STATUS_FAILED);
+                System.out.printf("job failed - id:%s%n", this.toString());
             }
         }
     }
@@ -96,34 +94,30 @@ public class JobExecutor extends Thread {
         boolean rtnVal = false;
 
         try {
-            if (currJob != null) {
-                String jobID = currJob.getJobUUID();
+            if (currJob != null) { //TODO check if job has input(json format)
+                String jobId = currJob.getJobUUID();
                 String jobName = currJob.getJobName();
 
-                System.out.printf(
-                        "Job Executor('%s') is processing a job - UUID: '%s' JobName: '%s'%n",
-                        Thread.currentThread().getName(), jobID, jobName
-                );
+                System.out.printf("starting a job - %s:%s%n", jobName, jobId);
 
-                if(jobName.equals("scale")) { //if(jobName.equals("scaleup") || jobName.equals("scaledown")) {
+                if(jobName.equals("scale")) {
                     rtnVal = this.executeScaleJob();
                 } else if(jobName.equals("cert")) {
                     rtnVal = this.executeCertificateJob();
                 } else {
-                    String workDirPath = createJobDirectoryIfNotExist(jobID);
+                    String workDirPath = createJobDirectoryIfNotExist(jobId);
                     if (workDirPath != null) {
-                        if(currJob.getInput()!=null)
+                        if(currJob.getInput()!=null) {
                             this.createInputJsonFile(workDirPath);
+                        }
 
-                        if(jobName.equals(StaticValues.SPECIAL_EXECUTION_JOB))
-                            this.genericJobExecution(workDirPath);
-                        else
+                        if(jobName.equals(StaticValues.SPECIAL_EXECUTION_JOB)) {
+                            rtnVal = this.genericJob(workDirPath);
+                        } else {
                             //executes universal job script then waits until its execution finishes
                             //TODO This part should be replaced to python execution code
-                            this.tempExecuteJob(workDirPath);
-                        rtnVal = true;
-                    } else
-                        throw new Exception("Creating task area failed!");
+                        }
+                    }
                 }
             }
         } catch (Exception ex) {
@@ -135,55 +129,34 @@ public class JobExecutor extends Thread {
 
     /**
      * creates a directory for current job
-     * @param jobUUID current job id
+     * @param jobId current job id
      * @return path to job directory
      * @throws Exception
      */
-    private String createJobDirectoryIfNotExist(String jobUUID) throws Exception {
-        String jobDir = null;
-        String storagePath = Configuration.getInstance().getStringProperty(StaticValues.CONFIG_KEY_DATASTORE_PATH);
-        boolean jobAreaExist = false;
+    private String createJobDirectoryIfNotExist(String jobId) throws Exception {
+        String dataStorePath = Configuration.getInstance().getStringProperty(StaticValues.CONFIG_KEY_DATASTORE_PATH);
+        File taskArea = new File(ToolPool.buildDirPath(dataStorePath + StaticValues.DIRECTORY_TASK_AREA));
+        if (!ToolPool.isDirectoryExist(taskArea.getPath())) {
+            taskArea.mkdir();
+        }
 
-        File jobArea = new File(ToolPool.buildDirPath(storagePath + StaticValues.DIRECTORY_TASK_AREA));
-        if (!ToolPool.isDirectoryExist(jobArea.getPath()))
-            jobAreaExist = jobArea.mkdir();
-        else
-            jobAreaExist = true;
+        File currJobDirectory = new File(ToolPool.buildDirPath(taskArea.getPath(), jobId));
+        if (!ToolPool.isDirectoryExist(currJobDirectory.getPath())) {
+            currJobDirectory.mkdir();
+        }
 
-        if (jobAreaExist) {
-            File currJobDirectory = new File(ToolPool.buildDirPath(jobArea.getPath(),jobUUID));
-            if (!ToolPool.isDirectoryExist(currJobDirectory.getPath())) {
-                if (currJobDirectory.mkdir())
-                    jobDir = currJobDirectory.getPath();
-                else
-                    throw new Exception(String.format("Job Executor: Failed to create job(%s) directory", jobUUID));
-            } else
-                jobDir = currJobDirectory.getPath();
-        } else
-            throw new Exception(String.format("Job Executor: There is no storage area at '%s'", jobArea.getPath()));
-
-        return jobDir;
+        return currJobDirectory.getPath();
     }
-
     /**
      * writes input data to .json file in job directory
      * @param workDir job directory path
      * @return boolean value for creating json file
      * @throws Exception
      */
-    private boolean createInputJsonFile(String workDir) throws Exception {
-        boolean rtnVal;
-
-        try {
-            String jsonInputPath = ToolPool.buildFilePath(workDir, StaticValues.FILE_JOB_INPUT);
-            FileUtils.writeStringToFile(new File(jsonInputPath), currJob.getInput());
-
-            rtnVal = ToolPool.canReadFile(jsonInputPath);
-        } catch(Exception ex) {
-            throw ex;
-        }
-
-        return rtnVal;
+    private void createInputJsonFile(String workDir) throws Exception {
+        String jsonInputPath = ToolPool.buildFilePath(workDir, StaticValues.FILE_JOB_INPUT);
+        FileUtils.writeStringToFile(new File(jsonInputPath), currJob.getInput());
+        //ToolPool.canReadFile(jsonInputPath);
     }
 
     /**
@@ -193,11 +166,12 @@ public class JobExecutor extends Thread {
      */
     private boolean executeScaleJob() throws Exception {
         boolean rtnVal = false;
-        Map<String, Object> inputInMap = null;
+
+        final String WORKER_INSTANCE_COUNT_KEY = "n_worker";  //for scale
         int workerCount = -1;
 
         if(currJob.getInput()!=null) {
-            inputInMap = ToolPool.jsonStringToMap(currJob.getInput());
+            Map<String, Object> inputInMap = ToolPool.jsonStringToMap(currJob.getInput());
             if(inputInMap.containsKey(WORKER_INSTANCE_COUNT_KEY)) {
                 String strCount = (String)inputInMap.get(WORKER_INSTANCE_COUNT_KEY);
                 if(!strCount.equals("0"))
@@ -208,11 +182,7 @@ public class JobExecutor extends Thread {
         if(workerCount>0) {
             CloudInstanceManager instanceManager = new CloudInstanceManager();
             rtnVal = instanceManager.scaleService(workerCount);
-        } else {
-            rtnVal = false;
         }
-
-        jobHandler.updateJobStatus(currJob.getJobUUID(), rtnVal?StaticValues.JOB_STATUS_COMPLETED:StaticValues.JOB_STATUS_FAILED);
         return rtnVal;
     }
 
@@ -223,22 +193,26 @@ public class JobExecutor extends Thread {
      */
     private boolean executeCertificateJob() throws Exception {
         boolean rtnVal = false;
-        Map<String, Object> inputInMap = null;
+
+        final String CER_CERTIFICATE_KEY = "cer_fid"; // file UUID for cer
+        final String PFX_CERTIFICATE_KEY = "pfx_fid"; // file UUID for pfx
+        final String CERTIFICATE_PASSWORD_KEY = "c_password"; //certification password
 
         if(currJob.getInput()!=null) {
-            inputInMap = ToolPool.jsonStringToMap(currJob.getInput());
+            Map<String, Object> inputInMap = ToolPool.jsonStringToMap(currJob.getInput());
             if(inputInMap.containsKey(CER_CERTIFICATE_KEY) && inputInMap.containsKey(PFX_CERTIFICATE_KEY) && inputInMap.containsKey(CERTIFICATE_PASSWORD_KEY)) {
                 String cerFileId = (String)inputInMap.get(CER_CERTIFICATE_KEY);
                 String pfxFileId = (String)inputInMap.get(PFX_CERTIFICATE_KEY);
                 String certPass = (String)inputInMap.get(CERTIFICATE_PASSWORD_KEY);
 
-                if(cerFileId!=null && pfxFileId!=null && certPass!=null) {
+                if(cerFileId!=null && !cerFileId.isEmpty()
+                        && pfxFileId!=null && !pfxFileId.isEmpty()
+                        && certPass!=null && !cerFileId.isEmpty()) {
                     CertificateManager certManager = new CertificateManager();
                     rtnVal = certManager.execute(pfxFileId, cerFileId, certPass);
                 }
             }
         }
-        jobHandler.updateJobStatus(currJob.getJobUUID(), rtnVal?StaticValues.JOB_STATUS_COMPLETED:StaticValues.JOB_STATUS_FAILED);
         return rtnVal;
     }
 
@@ -247,125 +221,66 @@ public class JobExecutor extends Thread {
      * @param workDir current job directory path
      * @throws Exception
      */
-    private void genericJobExecution(String workDir) throws Exception {
-        JobHandler jobHandler = new JobHandler();
+    private boolean genericJob(String workDir) throws Exception {
+        boolean completed = false;
 
-        try {
-            if(currJob.getInput()!=null) {
-                Map<String, Object> inputInMap = ToolPool.jsonStringToMap(currJob.getInput());
-                String interpreter = null;
+        if(currJob.getInput()!=null) {
+            Map<String, Object> inputInMap = ToolPool.jsonStringToMap(currJob.getInput());
+            String interpreter = null;
 
-                Object mapObject = inputInMap.get("interpreter");
-                if(mapObject!=null)
-                    interpreter = (String)mapObject;
+            Object mapObject = inputInMap.get("interpreter");
+            if(mapObject!=null)
+                interpreter = (String)mapObject;
 
-                mapObject = inputInMap.get("script");
-                if(mapObject!=null) {
-                    String scriptID = (String)mapObject;
-                    if(scriptID.trim().isEmpty())
-                        throw new Exception("script is not given!");
+            mapObject = inputInMap.get("script");
+            if(mapObject!=null) {
+                String scriptID = (String)mapObject;
+                if(!scriptID.trim().isEmpty()) {
                     currJob.setScriptFileUUID(scriptID);
+                    mapObject = inputInMap.get("input");
+                    if(mapObject!=null) {
+                        String inputID = (String)mapObject;
+                        if(!inputID.trim().isEmpty())
+                            currJob.setInputFileUUID(inputID);
+                    }
+
+                    String fileExtension = interpreter==null||interpreter.isEmpty()?"exe":"sh";
+                    String scriptFile = this.validateJobFiles(workDir, fileExtension);
+
+                    jobManager.updateJobStatus(currJob.getJobUUID(), StaticValues.JOB_STATUS_RUNNING);
+
+                    boolean executed = false;
+                    if(interpreter!=null) {
+                        if(interpreter.equals("makeflow"))
+                            executed = cctoolsOperator.startMakeflow(false, currJob.getJobUUID(), scriptFile, workDir);
+                        else if(interpreter.equals("bash"))
+                            executed = cctoolsOperator.startBash(scriptFile, workDir);
+                    } else {
+                        executed = cctoolsOperator.startExe(null, workDir);
+                    }
+
+                    if(executed) {
+                        FileTool fileTool = new FileTool();
+                        //task output
+                        String outputFileId = null;
+                        String outputFilePath = ToolPool.buildFilePath(workDir, "output" + StaticValues.FILE_EXTENSION_DAT);
+                        if(ToolPool.canReadFile(outputFilePath))
+                            outputFileId = fileTool.createFile(null, new FileInputStream(outputFilePath), null, currJob.getUserId());
+                        //log file
+                        String logFilePath = ToolPool.buildFilePath(workDir, "final.log");
+                        String logFileId = null;
+                        if(ToolPool.canReadFile(logFilePath))
+                            logFileId = fileTool.createFile(null, new FileInputStream(ToolPool.buildFilePath(workDir, "final.log")), null, currJob.getUserId());
+
+                        //if(outputFileId!=null && !outputFileId.isEmpty())
+                        completed = jobManager.updateJob(currJob.getJobUUID(), StaticValues.JOB_STATUS_COMPLETED, outputFileId, logFileId);
+                    }
                 }
-                mapObject = inputInMap.get("input");
-                if(mapObject!=null) {
-                    String inputID = (String)mapObject;
-                    if(!inputID.trim().isEmpty())
-                        currJob.setInputFileUUID(inputID);
-                }
-
-                String fileExtension = interpreter==null||interpreter.isEmpty()?"exe":"sh";
-                String scriptFile = this.validateJobFiles(workDir, fileExtension);
-
-                jobHandler.updateJobStatus(currJob.getJobUUID(), StaticValues.JOB_STATUS_RUNNING, null, null);
-
-                boolean executed = false;
-                if(interpreter!=null) {
-                    if(interpreter.equals("makeflow"))
-                        executed = cctoolsOperator.startMakeflow(false, currJob.getJobUUID(), scriptFile, workDir);
-                    else if(interpreter.equals("bash"))
-                        executed = cctoolsOperator.startBash(scriptFile, workDir);
-                } else {
-
-                }
-
-                boolean outputUploaded = false;
-                if(executed) {
-                    FileTool fileTool = new FileTool();
-                    //task output
-                    String outputFileId = null;
-                    String outputFilePath = ToolPool.buildFilePath(workDir, "output" + StaticValues.FILE_EXTENSION_DAT);
-                    if(ToolPool.canReadFile(outputFilePath))
-                        outputFileId = fileTool.createFile(null, new FileInputStream(outputFilePath), null, currJob.getUserId());
-                    //log file
-                    String logFilePath = ToolPool.buildFilePath(workDir, "final.log");
-                    String logFileId = null;
-                    if(ToolPool.canReadFile(logFilePath))
-                        logFileId = fileTool.createFile(null, new FileInputStream(ToolPool.buildFilePath(workDir, "final.log")), null, currJob.getUserId());
-
-                    //if(outputFileId!=null && !outputFileId.isEmpty())
-                    jobHandler.updateJobStatus(currJob.getJobUUID(), StaticValues.JOB_STATUS_COMPLETED, outputFileId, logFileId);
-                } else { //error while executing makeflow
-                    throw new Exception("Job Execution Failed");
-                }
-            } else
-                throw new Exception("input data is empty.");
-        } catch (Exception ex) {
-            jobHandler.updateJobStatus(currJob.getJobUUID(), StaticValues.JOB_STATUS_FAILED, null, null);
-            ex.printStackTrace();
+            }
         }
+        return completed;
     }
 
-    /*
-    *Temporary methods for big test
-    */
-    //TODO remove this test methods
-    private void tempExecuteJob(String workDir) {
-        //update job status and result information
-        JobHandler jobHandler = new JobHandler();
-
-        try {
-            String mfFile = null;
-
-            if(currJob.getInput()!=null) {
-                Map<String, Object> inputInMap = ToolPool.jsonStringToMap(currJob.getInput());
-
-                if(currJob.getInputFileUUID()==null || currJob.getScriptFileUUID()==null) {
-                    String scriptID = (String)inputInMap.get("script");
-                    if(scriptID==null || scriptID.isEmpty())
-                        throw new Exception("script is not given!");
-                    currJob.setScriptFileUUID(scriptID);
-
-                    String inputID = (String)inputInMap.get("input");
-                    if(inputID!=null && inputID.isEmpty())
-                        currJob.setInputFileUUID(inputID);
-                }
-
-                mfFile = validateJobFiles(workDir, "sh");
-            }
-            jobHandler.updateJobStatus(currJob.getJobUUID(), StaticValues.JOB_STATUS_RUNNING, null, null);
-
-            boolean executed = cctoolsOperator.startMakeflow(false, currJob.getJobUUID(), mfFile, workDir);
-            if(executed) {
-                String outputFilePath = ToolPool.buildFilePath(workDir, "output" + StaticValues.FILE_EXTENSION_DAT);
-
-                FileTool fileTool = new FileTool();
-                String outputFileId = fileTool.createFile(null, new FileInputStream(outputFilePath), null, currJob.getUserId());
-                //log file
-                String logFileId = null;
-                String logFilePath = ToolPool.buildFilePath(workDir, "final.log");
-                if(ToolPool.canReadFile(logFilePath))
-                    logFileId = fileTool.createFile(null, new FileInputStream(ToolPool.buildFilePath(workDir, "final.log")), null, currJob.getUserId());
-
-                //if(outputFileId!=null && !outputFileId.isEmpty())
-                jobHandler.updateJobStatus(currJob.getJobUUID(), StaticValues.JOB_STATUS_COMPLETED, outputFileId, logFileId);
-            } else { //error while executing makeflow
-                throw new Exception("Job Execution Failed");
-            }
-        } catch(Exception ex) {
-            ex.printStackTrace();
-            jobHandler.updateJobStatus(currJob.getJobUUID(), StaticValues.JOB_STATUS_FAILED, null, null);
-        }
-    }
     private String validateJobFiles(String workingDirectory, String fileExt) throws Exception {
         FileTool fileTool = new FileTool();
         String scriptFileName = "script." + fileExt;

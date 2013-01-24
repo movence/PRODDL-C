@@ -21,6 +21,7 @@
 
 package pdl.operator;
 
+import pdl.cloud.management.JobManager;
 import pdl.cloud.model.JobDetail;
 import pdl.common.Configuration;
 import pdl.common.StaticValues;
@@ -82,14 +83,12 @@ public class ServiceOperatorHelper {
      */
     private void runOperators() throws Exception {
         ToolOperator pythonOperator = new ToolOperator(storagePath, "python", "python.exe", null);
-        //AbstractApplicationOperator pythonOperator = new PythonOperator(storagePath, "python", "python.exe");
         pythonOperator.run();
 
         ToolOperator cygwinOperator = new ToolOperator(storagePath, "cygwin", "cygwin.bat", null);
-        //AbstractApplicationOperator cygwinOperator = new CygwinOperator(storagePath, "cygwin", "cygwin.bat");
         cygwinOperator.run();
 
-        cctoolsOperator = new CctoolsOperator(storagePath, "cctools-3.5.1", "bin" + File.separator + "makeflow.exe");
+        cctoolsOperator = new CctoolsOperator(storagePath, "cctools-3.6.1", "bin" + File.separator + "makeflow.exe");
         cctoolsOperator.run();
     }
 
@@ -107,12 +106,14 @@ public class ServiceOperatorHelper {
         JettyThreadedOperator jettyOperator = new JettyThreadedOperator(jettyPort);
         jettyOperator.start();
 
-        JobHandler jobHandler = new JobHandler();
-        //clear the "being processed" state from all jobs
-        jobHandler.rollbackAllRunningJobStatus();
+        JobManager jobManager = new JobManager();
+
+        //clear the "being processed" or "running" states from all jobs
+        jobManager.updateMultipleJobStatus(StaticValues.JOB_STATUS_RUNNING, StaticValues.JOB_STATUS_SUBMITTED);
+        jobManager.updateMultipleJobStatus(StaticValues.JOB_STATUS_PENDING, StaticValues.JOB_STATUS_SUBMITTED);
 
         if (!cctoolsOperator.startCatalogServer(masterAddress, catalogServerPort)) {
-            throw new Exception("Failed to start Catalog Server at " + masterAddress + ":" + catalogServerPort);
+            throw new Exception("starting catalog server failed - " + masterAddress + ":" + catalogServerPort);
         }
 
         //Adds processor time monitor to timer
@@ -146,9 +147,9 @@ public class ServiceOperatorHelper {
         ThreadGroup threadGroup = new ThreadGroup(Thread.currentThread().getThreadGroup(), "worker");
         //checks available job indefinitely
         while (true) {
-            JobDetail submittedJob = jobHandler.getSubmmittedJob();
+            JobDetail submittedJob = jobManager.getSingleSubmittedJob();
             if (submittedJob != null) {
-                JobExecutor jobExecutor = new JobExecutor(threadGroup, submittedJob, cctoolsOperator);
+                JobExecutor jobExecutor = new JobExecutor(threadGroup, submittedJob, cctoolsOperator, jobManager);
                 threadExecutor.execute(jobExecutor);
             }
         }

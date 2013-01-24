@@ -31,6 +31,5 @@ package pdl.operator.app;
  */
 public interface IApplicationOperator {
     public void run() throws Exception;
-    public boolean isToolReady(String toolFileName, String toolFilePath) throws Exception;
     public boolean unzip(String toolFilePath) throws Exception;
 }

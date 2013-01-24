@@ -21,9 +21,9 @@
 
 package pdl.utils;
 
+import org.apache.commons.io.FileUtils;
+
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.Enumeration;
 import java.util.zip.ZipEntry;
@@ -40,9 +40,7 @@ public class ZipHandler {
     }
 
     public boolean unZip(String filePath, String parentPath) throws Exception {
-        ZipFile zipFile;
-        File f = null;
-        FileOutputStream fos = null;
+        ZipFile zipFile = null;
         boolean rtnVal = false;
 
         try {
@@ -52,11 +50,7 @@ public class ZipHandler {
             while (files.hasMoreElements()) {
                 ZipEntry entry = (ZipEntry) files.nextElement();
                 InputStream eis = zipFile.getInputStream(entry);
-                byte[] buffer = new byte[1024];
-                int bytesRead = 0;
-
-                f = new File(parentPath + entry.getName());
-
+                File f = new File(parentPath + entry.getName());
                 if (entry.isDirectory()) {
                     f.mkdirs();
                     continue;
@@ -64,29 +58,18 @@ public class ZipHandler {
                     f.getParentFile().mkdirs();
                     f.createNewFile();
                 }
-
-                fos = new FileOutputStream(f);
-
-                while ((bytesRead = eis.read(buffer)) != -1) {
-                    fos.write(buffer, 0, bytesRead);
-                }
-                fos.close();
-                fos = null;
+                FileUtils.copyInputStreamToFile(eis, f);
             }
-            System.out.println("ZipHandler - unZip DONE: " + filePath);
-
             rtnVal = true;
         } catch (Exception ex) {
             ex.printStackTrace();
-            throw new Exception("ZipHandler.unZip threw : " + ex.toString());
+            throw new Exception("unzip process failed.");
         } finally {
-            if (fos != null) {
-                try {
-                    fos.close();
-                } catch (IOException e) {
-                    // ignore
+            try {
+                if(zipFile!=null) {
+                    zipFile.close();
                 }
-            }
+            } catch (Exception e) {}
         }
         return rtnVal;
     }

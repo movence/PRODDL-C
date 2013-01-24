@@ -21,6 +21,7 @@
 
 package pdl.operator.app;
 
+import org.soyatec.windowsazure.table.ITableServiceEntity;
 import pdl.cloud.model.Info;
 import pdl.cloud.storage.TableOperator;
 import pdl.common.Configuration;
@@ -41,15 +42,13 @@ import java.util.Map;
  * To change this template use File | Settings | File Templates.
  */
 public class CctoolsOperator extends ToolOperator {
-    private static final String KEY_DYNAMIC_DATA_CATALOGSERVERADDRESS = "CatalogServerAddress";
-    private static final String KEY_DYNAMIC_DATA_CATALOGSERVERPORT = "CatalogServerPort";
-    private static final String LOOKUP_KEY_CATALOGSERVER_INFO = "$catalogServer";
-    private static final String LOOKUP_KEY_TASK_NAME = "$taskName";
-    private static final String LOOKUP_KEY_PORT = "$port";
-    private static final String LOOKUP_KEY_DEBUG_LOG = "$debug";
-
-    private static final String ENV_MAKEFLOW_LOW_PORT = "TCP_LOW_PORT";
-    private static final String ENV_MAKEFLOW_MAX_PORT = "TCP_MAX_PORT";
+    public final String INFOS_KEY_CATALOGSERVER_ADDRESS = "CatalogServerAddress";
+    public final String INFOS_KEY_CATALOGSERVER_PORT = "CatalogServerPort";
+    private final String LOOKUP_KEY_CATALOGSERVER_INFO = "$catalogServer";
+    private final String LOOKUP_KEY_TASK_NAME = "$taskName";
+    private final String LOOKUP_KEY_PORT = "$port";
+    private final String LOOKUP_KEY_DEBUG_LOG = "$debug";
+    private final String LOOKUP_KEY_TMP_PATH = "$tmp";
 
     private static final String GENERIC_TASK_NAME = "proddl";
 
@@ -63,7 +62,7 @@ public class CctoolsOperator extends ToolOperator {
     private String catalogServerAddress;
     private String catalogServerPort;
 
-    private final static String[] makeflowArgs = {
+    private final String[] makeflowArgs = {
             "-T", "wq", //batch system
             "-p", LOOKUP_KEY_PORT, //random port
             "-C", LOOKUP_KEY_CATALOGSERVER_INFO, "-a", //catalog server and advertise makeflow to catalog server
@@ -74,12 +73,13 @@ public class CctoolsOperator extends ToolOperator {
             "-o", LOOKUP_KEY_DEBUG_LOG //debugging log*/
     };
 
-    private final static String[] workerArgs = {
+    private final String[] workerArgs = {
             "-t", "21600", //max idle time
             "-C", LOOKUP_KEY_CATALOGSERVER_INFO, "-a", //catalog server and advertise makeflow to catalog server
             "-z", "1024", //available disk space in MB
             "-i", "3", //initial back-off time to connection failure to master
-            "-N", LOOKUP_KEY_TASK_NAME
+            "-N", LOOKUP_KEY_TASK_NAME,
+            "-s", LOOKUP_KEY_TMP_PATH
     };
 
     public CctoolsOperator(String storagePath, String packageName, String flagFile) {
@@ -93,11 +93,6 @@ public class CctoolsOperator extends ToolOperator {
 
             cctoolsBinPath = ToolPool.buildDirPath(toolPath, "bin");
             cygwinBinPath = ToolPool.buildDirPath(storagePath, "cygwin", "bin");
-
-            //create /tmp directory under cctools
-            File tmpDir = new File(ToolPool.buildDirPath(toolPath, "tmp"));
-            if(!tmpDir.exists() || !tmpDir.isDirectory())
-                tmpDir.mkdir();
 
             processes = new ArrayList<Process>();
             Runtime.getRuntime().addShutdownHook(new Thread() {
@@ -117,14 +112,16 @@ public class CctoolsOperator extends ToolOperator {
     public ProcessBuilder buildProcessBuilder(String taskDir, List<String> args, boolean setPortRange) {
         boolean isEnvironmentVarialbeSet = false;
 
-        if (cygwinBinPath == null || cctoolsBinPath == null)
+        if (cygwinBinPath == null || cctoolsBinPath == null) {
             this.setPaths();
+        }
 
         ProcessBuilder pb = new ProcessBuilder(args);
-        if(taskDir==null)
+        if(taskDir==null) {
             pb.directory(new File(cctoolsBinPath));
-        else
+        } else {
             pb.directory(new File(taskDir));
+        }
         pb.redirectErrorStream(true);
 
         Map<String, String> env = pb.environment();
@@ -141,8 +138,9 @@ public class CctoolsOperator extends ToolOperator {
             env.put("path", cygwinBinPath + File.pathSeparator + cctoolsBinPath);
         }
 
-        env.put(ENV_MAKEFLOW_LOW_PORT, "9001");
-        env.put(ENV_MAKEFLOW_MAX_PORT, "40000");
+        //set the range of port numbers for internal communication, http://www.cse.nd.edu/~ccl/software/manuals/man/makeflow.html
+        env.put("TCP_LOW_PORT", "9001");
+        env.put("TCP_MAX_PORT", "40000");
 
         return pb;
     }
@@ -152,7 +150,7 @@ public class CctoolsOperator extends ToolOperator {
         Process process = null;
 
         try {
-            this.isCatalogServerInfoAvailable();
+            //this.isCatalogServerInfoAvailable(); - catalog server information are already available by ServiceOperatorHelper
 
             if (taskFileName != null && !taskFileName.isEmpty() && taskDirectory != null && !taskDirectory.isEmpty()) {
                 if (ToolPool.isDirectoryExist(taskDirectory)) {
@@ -206,14 +204,22 @@ public class CctoolsOperator extends ToolOperator {
         Process process = null;
 
         try {
-            this.isCatalogServerInfoAvailable();
+            //create /tmp directory under cctools
+            File tmpDir = new File(ToolPool.buildDirPath(toolPath, "tmp"));
+            if(!tmpDir.exists() || !tmpDir.isDirectory()) {
+                tmpDir.mkdir();
+            }
+
+            //this.isCatalogServerInfoAvailable(); - the availability check for catalog server is done by ServiceOperatorHelper
+
             //String taskName = storageOperator.dequeue( StaticValues.QUEUE_JOBQUEUE_NAME, true );
 
             List<String> processArgs = new ArrayList<String>();
-            processArgs.add(cctoolsBinPath+"work_queue_worker");
+            processArgs.add(cctoolsBinPath + "work_queue_worker");
             processArgs.addAll(Arrays.asList(workerArgs));
             processArgs.set(processArgs.indexOf(LOOKUP_KEY_CATALOGSERVER_INFO), catalogServerAddress + ":" + catalogServerPort);
             processArgs.set(processArgs.indexOf(LOOKUP_KEY_TASK_NAME), GENERIC_TASK_NAME);
+            processArgs.set(processArgs.indexOf(LOOKUP_KEY_TMP_PATH), tmpDir.getAbsolutePath());
 
             ProcessBuilder pb = this.buildProcessBuilder(null, processArgs, false);
             process = pb.start();
@@ -241,7 +247,8 @@ public class CctoolsOperator extends ToolOperator {
         boolean rtnVal = false;
 
         try {
-            this.setCatalogServerInfo(catalogServerAddress, catalogServerPort);
+            //sets catalog server information and stores them into table
+            this.getOrUpdateCatalogServerInfo(catalogServerAddress, catalogServerPort);
 
             List<String> processArgs = new ArrayList<String>();
             processArgs.add(cctoolsBinPath+"catalog_server");
@@ -251,7 +258,7 @@ public class CctoolsOperator extends ToolOperator {
             ProcessBuilder pb = this.buildProcessBuilder(null, processArgs, false);
             process = pb.start();
 
-            System.out.println("CctoolsOperator : STARTING CATALOG_SERVER DONE");
+            System.out.println("CctoolsOperator : catalog server is running.");
             rtnVal = true;
         } catch (Exception e) {
             e.printStackTrace();
@@ -265,57 +272,60 @@ public class CctoolsOperator extends ToolOperator {
         return rtnVal;
     }
 
-    private void setCatalogServerInfo(String address, String port) {
-        this.catalogServerAddress = address;
-        this.catalogServerPort = port;
-
-        this.updateCatalogServerInfo(KEY_DYNAMIC_DATA_CATALOGSERVERADDRESS, address);
-        this.updateCatalogServerInfo(KEY_DYNAMIC_DATA_CATALOGSERVERPORT, port);
-    }
-
     public boolean isCatalogServerInfoAvailable() {
-        try {
-            Info info;
-            if (this.catalogServerAddress == null || this.catalogServerAddress.isEmpty()) {
-                info = this.getCatalogServerInfo(KEY_DYNAMIC_DATA_CATALOGSERVERADDRESS);
-                if(info !=null)
-                    this.catalogServerAddress = info.getiValue();
-            }
-            if (this.catalogServerPort == null || this.catalogServerPort.isEmpty()) {
-                info = this.getCatalogServerInfo(KEY_DYNAMIC_DATA_CATALOGSERVERPORT);
-                if(info !=null)
-                    this.catalogServerPort = info.getiValue();
-            }
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
-        return this.catalogServerAddress!=null && this.catalogServerPort!=null;
+        return this.getOrUpdateCatalogServerInfo(null, null);
     }
 
-    public void updateCatalogServerInfo(String key, String value) {
+    private boolean getOrUpdateCatalogServerInfo(String address, String port) {
         try {
             TableOperator tableOperator = new TableOperator(conf);
+            String tableName = ToolPool.buildTableName(StaticValues.TABLE_NAME_INFOS);
+            Info addrInfo = null;
+            Info portInfo = null;
 
-            Info catalogServerInfo = this.getCatalogServerInfo(key);
-            if(catalogServerInfo!=null)
-                tableOperator.deleteEntity(ToolPool.buildTableName(StaticValues.TABLE_NAME_INFOS), catalogServerInfo);
+            //get existing catalog server information
+            ITableServiceEntity tempEntity = null;
+            tempEntity = tableOperator.queryEntityBySearchKey(tableName, StaticValues.COLUMN_INFOS_KEY, INFOS_KEY_CATALOGSERVER_ADDRESS, Info.class);
+            if( tempEntity!=null && tempEntity.getRowKey()!=null ) {
+                addrInfo = (Info)tempEntity;
+            }
+            tempEntity = tableOperator.queryEntityBySearchKey(tableName, StaticValues.COLUMN_INFOS_KEY, INFOS_KEY_CATALOGSERVER_PORT, Info.class);
+            if( tempEntity!=null && tempEntity.getRowKey()!=null ) {
+                portInfo = (Info)tempEntity;
+            }
 
-            catalogServerInfo = new Info("catalogserver_info");
-            catalogServerInfo.setiKey(key);
-            catalogServerInfo.setiValue(value);
+            if( address!=null && port!=null ) { //insert catalog server information
+                if( addrInfo!=null && portInfo!=null ) { //delete old information
+                    List<Info> entities = new ArrayList<Info>(2);
+                    entities.add(addrInfo);
+                    entities.add(portInfo);
+                    tableOperator.deleteMultipleEntities(tableName, entities);
+                }
 
-            tableOperator.insertSingleEntity(ToolPool.buildTableName(StaticValues.TABLE_NAME_INFOS), catalogServerInfo);
+                List<Info> catalogs = new ArrayList<Info>(2);
+                addrInfo = new Info();
+                addrInfo.setiKey(INFOS_KEY_CATALOGSERVER_ADDRESS);
+                addrInfo.setiValue(address);
+                catalogs.add(addrInfo);
+                portInfo = new Info();
+                portInfo.setiKey(INFOS_KEY_CATALOGSERVER_PORT);
+                portInfo.setiValue(port);
+                catalogs.add(portInfo);
+                tableOperator.insertMultipleEntities(tableName, catalogs);
+            }
+
+            this.catalogServerAddress = addrInfo!=null?addrInfo.getiValue():address;
+            this.catalogServerPort = portInfo!=null?portInfo.getiValue():port;
         } catch (Exception e) {
             e.printStackTrace();
         }
+        return (this.catalogServerAddress!=null && this.catalogServerPort!=null);
     }
 
-    public Info getCatalogServerInfo(String key) {
+    public Info getCatalogServerInfo(TableOperator tableOperator, String key) {
         Info catalogServerInfo = null;
 
         try {
-            TableOperator tableOperator = new TableOperator(conf);
-
             catalogServerInfo = (Info) tableOperator.queryEntityBySearchKey(
                     ToolPool.buildTableName(StaticValues.TABLE_NAME_INFOS),
                     StaticValues.COLUMN_INFOS_KEY,
