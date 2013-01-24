@@ -100,14 +100,13 @@ public class BlobOperator {
             if(blobName!=null && !blobName.isEmpty() && filePath!=null && !filePath.isEmpty()) {
                 IBlobContainer theContainer = getBlobContainer(containerName);
                 if (!theContainer.isBlobExist(blobName))
-                    throw new Exception("Blob " + blobName + " does not exist in Container: " + containerName + "!");
+                    throw new Exception("blob not found - " + blobName);
 
-                File objFile = new File(filePath);
-                if (null != objFile && objFile.exists()) {
-                    if (!isOverwrite)
-                        throw new Exception(String.format("Cannot overwrite, File '%s' exists!", filePath));
-                    if (!objFile.delete())
-                        throw new Exception(String.format("File '%s' was not deleted!", filePath));
+                File blobFile = new File(filePath);
+                if(blobFile!=null && blobFile.exists()) {
+                    if(isOverwrite) {
+                        blobFile.delete();
+                    }
                 }
 
                 BlobFileStream objStream = new BlobFileStream(filePath);
@@ -115,10 +114,12 @@ public class BlobOperator {
                 IBlockBlob blob = theContainer.getBlockBlobReference(blobName);
                 blob.getContents(objStream);
 
-                objFile = new File(filePath);
-                if (null == objFile || !objFile.exists()) {
-                    throw new Exception(String.format("File '%s' was not created!", filePath));
+                blobFile = new File(filePath);
+                if(blobFile==null || !blobFile.exists()) {
+                    throw new Exception("filed to get blob - " + blobName);
                 }
+
+                objStream.close();
 
                 fSuccess = true;
             }
