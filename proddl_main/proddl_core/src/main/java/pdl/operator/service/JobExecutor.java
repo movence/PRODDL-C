@@ -79,10 +79,7 @@ public class JobExecutor extends Thread {
     public void run() {
         if (currJob != null && currJob.getJobUUID() != null) {
             boolean jobExecuted = this.executeJob();
-            if (!jobExecuted) {
-                jobManager.updateJobStatus(currJob.getJobUUID(), StaticValues.JOB_STATUS_FAILED);
-                System.out.printf("job failed - id:%s%n", this.toString());
-            }
+            jobManager.updateJobStatus(currJob.getJobUUID(), jobExecuted?StaticValues.JOB_STATUS_COMPLETED:StaticValues.JOB_STATUS_FAILED);
         }
     }
 
@@ -119,6 +116,7 @@ public class JobExecutor extends Thread {
                         }
                     }
                 }
+                System.out.printf("job %s - %s:%s\n", rtnVal?"completed":"failed", jobName, jobId);
             }
         } catch (Exception ex) {
             ex.printStackTrace();

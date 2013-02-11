@@ -43,13 +43,11 @@ import java.util.*;
 public class JobRequestHandler {
     JobManager jobManager;
     FileService fileService;
-    FileTool fileTool;
     ArrayList<String> adminJobs;
 
     public JobRequestHandler() {
         jobManager = new JobManager();
         fileService = new FileService();
-        fileTool = new FileTool();
         adminJobs = null;
     }
 
@@ -376,7 +374,7 @@ public class JobRequestHandler {
         Map<String, Object> rtnVal = new HashMap<String, Object>();
         try {
             List<String> fileInfoList = null;
-            List<FileInfo> files = fileTool.getFileList(userName);
+            List<FileInfo> files = fileService.getFileList(userName);
             if(files!=null && files.size()>0) {
                 fileInfoList = new ArrayList<String>();
                 for(FileInfo fileInfo : files) {

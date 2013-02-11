@@ -112,7 +112,7 @@ public class RestMainController {
      * @return job status in json format
      * @format curl <ip address>:<port>/pdl/r/job/?jid=<jobid> -u <user id>:<pass>
      */
-    @RequestMapping(value = "job", method = {RequestMethod.POST, RequestMethod.GET})
+    @RequestMapping(value = "job", method = RequestMethod.GET)
     public @ResponseBody Map<String, Object> getJobInfo(@RequestParam(value = "jid", defaultValue = "") String jobId) {
 
         Map<String, Object> jsonResult = handler.getJobInfo(jobId);
@@ -125,7 +125,7 @@ public class RestMainController {
      * @return job result in json format
      * @format curl <ip address>:<port>/pdl/r/result/?jid=<jobid> -u <user id>:<pass>
      */
-    @RequestMapping(value = "result", method = {RequestMethod.POST, RequestMethod.GET})
+    @RequestMapping(value = "result", method = RequestMethod.GET)
     public @ResponseBody Map<String, String> getJobResult(@RequestParam(value = "jid", defaultValue = "") String jobId) {
 
         Map<String, String> jsonResult = handler.getJobResult(jobId);
@@ -190,9 +190,9 @@ public class RestMainController {
     /**
      * download file by UUID
      * @return file information (UUID, absolute path) in json format
-     * @format curl <ip address>:<port>/pdl/r/file/get/?id=<file id> -u <user id>:<pass> -o <filename> -X POST|GET
+     * @format curl <ip address>:<port>/pdl/r/file/get/?id=<file id> -u <user id>:<pass> -o <filename> -X GET
      */
-    @RequestMapping(value = "file/get", method = {RequestMethod.POST, RequestMethod.GET})
+    @RequestMapping(value = "file/get", method = RequestMethod.GET)
     public void fileDownload(
             @RequestParam(value = "id", defaultValue = "") String fileId,
             Principal principal,
@@ -233,7 +233,7 @@ public class RestMainController {
      * @format curl <ip address>:<port>/pdl/r/file/delete/?fileId=<fileId> -u <user id>:<pass>
      */
     @RequestMapping(value = "file/delete", method = RequestMethod.POST)
-    public @ResponseBody Map<String, String> fileDelete(@RequestParam("fileId") String fileId, Principal principal) {
+    public @ResponseBody Map<String, String> fileDelete(@RequestParam("id") String fileId, Principal principal) {
 
         Map<String, String> rtnJson = handler.deleteFile(fileId, principal.getName());
         return rtnJson;

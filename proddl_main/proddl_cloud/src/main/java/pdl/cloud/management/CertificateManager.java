@@ -65,8 +65,9 @@ public class CertificateManager {
         boolean rtnVal = false;
         String keystorePath = this.getKeystorePath(pfxFileId, password);
         String trustPath = this.getTrustPath(cerFileId, ToolPool.buildDirPath(conf.getStringProperty(StaticValues.CONFIG_KEY_STORAGE_PATH), "jre"));
-        if(keystorePath!=null && trustPath!=null)
+        if(keystorePath!=null && trustPath!=null) {
             rtnVal = true;
+        }
         return rtnVal;
     }
 
@@ -104,13 +105,13 @@ public class CertificateManager {
             boolean gotCertificate = false;
             String ext = type!=null && type.equals("pfx")?".pfx":".cer";
             FileTool fileTool = new FileTool();
-            FileInfo pfxFileInfo = fileTool.getFileInfoById(fileId);
+            FileInfo certFileInfo = fileTool.getFileInfoById(fileId);
             filePath = ToolPool.buildFilePath(fileTool.getFileStoragePath(), StaticValues.CERTIFICATE_NAME+ext);
-            if(pfxFileInfo!=null) {
-                gotCertificate = fileTool.copyFromDatastore(ToolPool.buildFilePath(pfxFileInfo.getPath(), pfxFileInfo.getName()), filePath);
+            if(certFileInfo!=null) {
+                gotCertificate = fileTool.copyFromDatastore(ToolPool.buildFilePath(certFileInfo.getPath(), certFileInfo.getName()), filePath);
 
                 if(!gotCertificate)
-                    throw new Exception("Failed to get certificate.");
+                    throw new Exception("failed to get certificate.");
             }
         } catch(Exception ex) {
             ex.printStackTrace();
@@ -155,7 +156,7 @@ public class CertificateManager {
             int n = 0;
             List<String> list = new ArrayList<String>();
             if (!eAliases.hasMoreElements()) {
-                throw new Exception("Certificate is not valid. It does not contain any alias.");
+                throw new Exception("certificate validation falied - no alias.");
             }
 
             while (eAliases.hasMoreElements()) {

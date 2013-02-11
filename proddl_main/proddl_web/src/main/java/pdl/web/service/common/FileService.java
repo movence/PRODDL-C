@@ -29,6 +29,7 @@ import pdl.common.FileTool;
 import pdl.common.ToolPool;
 
 import javax.servlet.http.HttpServletResponse;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.util.List;
@@ -104,7 +105,7 @@ public class FileService {
             FileInfo fileInfo = fileTool.createFileRecord(null, userName);
             fileTool.insertFileRecord(fileInfo);
             rtnJson.put("id", fileInfo.getIuuid());
-            rtnJson.put("path", fileInfo.getPath() + fileInfo.getName());
+            rtnJson.put("path", fileInfo.getPath() + File.separator + fileInfo.getName());
         } catch (Exception ex) {
             rtnJson.put("error", "Creating file failed");
             rtnJson.put("message", ex.toString());
@@ -117,12 +118,12 @@ public class FileService {
         Map<String, String> rtnJson = new TreeMap<String, String>();
         try {
             boolean committed = fileTool.commitFileRecord(fileId);
-            if(!committed)
+            if(!committed) {
                 throw new Exception();
-            rtnJson.put("Result", "file committed");
+            }
+            rtnJson.put("result", "file committed");
         } catch (Exception ex) {
             rtnJson.put("error", "Committing file failed");
-            rtnJson.put("message", ex.toString());
         }
 
         return rtnJson;
@@ -133,15 +134,13 @@ public class FileService {
         try {
             if(fileId!=null && !fileId.isEmpty()) {
                 boolean deleted = fileTool.delete(fileId, username);
-                if(deleted) {
-                    rtnJson.put("result", String.format("File '%s' has been deleted", fileId));
-                } else {
-                    rtnJson.put("result", "File ID does not exist!");
+                if(!deleted) {
+                    throw new Exception();
                 }
-
+                rtnJson.put("result", "file deleted");
             }
         } catch (Exception ex) {
-            rtnJson.put("error", String.format("File upload failed for ID '%s'", fileId));
+            rtnJson.put("error", "file deletion failed");
         }
 
         return rtnJson;
