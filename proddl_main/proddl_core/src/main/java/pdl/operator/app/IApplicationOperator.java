@@ -30,6 +30,6 @@ package pdl.operator.app;
  * To change this template use File | Settings | File Templates.
  */
 public interface IApplicationOperator {
-    public void run() throws Exception;
-    public boolean unzip(String toolFilePath) throws Exception;
+    void run() throws Exception;
+    boolean unzip(String toolFilePath) throws Exception;
 }

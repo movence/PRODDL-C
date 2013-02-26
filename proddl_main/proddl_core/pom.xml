@@ -32,6 +32,16 @@
     <artifactId>proddl_core</artifactId>
     <packaging>jar</packaging>
 
+    <developers>
+        <developer>
+            <name>Hyunsoo Daniel Kim</name>
+            <id>hkim</id>
+            <organization>JCVI</organization>
+            <organizationUrl>www.jcvi.org</organizationUrl>
+            <email>hkim@jcvi.org</email>
+        </developer>
+    </developers>
+
     <properties>
         <group.name>proddl</group.name>
         <artifact.id>proddl_core</artifact.id>

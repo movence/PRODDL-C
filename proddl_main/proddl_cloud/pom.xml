@@ -33,6 +33,16 @@
     <artifactId>proddl_cloud</artifactId>
     <packaging>jar</packaging>
 
+    <developers>
+        <developer>
+            <name>Hyunsoo Daniel Kim</name>
+            <id>hkim</id>
+            <organization>JCVI</organization>
+            <organizationUrl>www.jcvi.org</organizationUrl>
+            <email>hkim@jcvi.org</email>
+        </developer>
+    </developers>
+
     <!-- Build Configuration -->
     <build>
         <plugins>

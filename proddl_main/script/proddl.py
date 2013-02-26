@@ -16,7 +16,7 @@ _makeflow_rule_tpl = """\
 """
 
 _worker_cmd_tpl = "$PYTHON timer.py false {ind}.log;$TAR -zcf test.{ind}.tar.gz input.dat;$PYTHON timer.py false {ind}.log"
-_timer_input_tpl = "LOCAL c:/cygwin/bin/curl.exe 127.0.0.1/pdl/r/file/get?id={fileId} -o timer.py -u admin:pdlAdmin -X POST"
+_timer_input_tpl = "LOCAL c:/cygwin/bin/curl.exe 127.0.0.1/pdl/r/file/get?id={fileId} -o timer.py -u admin:pdlAdmin"
 
 _task_insert_sql = "INSERT INTO task (job_id,task_id,t_stamp,result,return_status,worker_selection_algorithm,time_task_submit,time_task_finish,time_send_input_start,time_send_input_finish,time_execute_cmd_start,time_execute_cmd_finish,time_receive_output_start,time_receive_output_finish,total_bytes_transferred,total_transfer_time,host,tag,command_line) VALUES ('%(jobid)s','%(taskid)s',%(t_stamp)i,%(result)i,%(return)i,'%(algo)s',%(submit)d,%(finish)f,%(input_s)f,%(input_f)f,%(cmd_s)f,%(cmd_f)f,%(output_s)f,%(output_f)f,%(bytes)f,%(ttime)f,'%(host)s','%(tag)s','%(cmd)s');"
 _queue_insert_sql = "INSERT INTO queue (job_id,t_stamp,workers_init,workers_ready,workers_busy,tasks_running,tasks_waiting,tasks_complete,total_tasks_dispatched,total_tasks_complete,total_workers_joined,total_workers_removed,total_bytes_sent,total_bytes_received,efficiency,idle_percentage,avg_capacity,total_workers_connected,workers_by_pool) VALUES ('%(jobid)s',%(t_stamp)d,%(init)i,%(ready)i,%(busy)i,%(run)i,%(wait)i,%(complete)i,%(dispat)i,%(complete)i,%(joined)i,%(removed)i,%(sent)i,%(bytes)f,%(eff)f,%(idle)f,%(cap)d,%(conn)i,%(pool)i);"
@@ -79,7 +79,7 @@ class MakeflowWriter(object):
         timerJob.jobId=iterCount+2
         timerJob.depend.append("$CURL")
         timerJob.outputs.append("timer.py")
-        timerJob.scriptName = "LOCAL $CURL 127.0.0.1/pdl/r/file/get?id={timerId} -o timer.py -u admin:pdlAdmin -X POST".format(timerId=timerId)
+        timerJob.scriptName = "LOCAL $CURL 127.0.0.1/pdl/r/file/get?id={timerId} -o timer.py -u admin:pdlAdmin".format(timerId=timerId)
         perfJob.depend.append(timerJob)
         jobs.append(perfJob)
         
@@ -168,8 +168,6 @@ class JobSubmitter:
         timerFile = None
         scriptFile=None
         inputFile=None
-        _fileJob = 'file/upload'
-        _makeflowJob = 'job/execute'
         
         jobs = ['job/execute', 'job']
         

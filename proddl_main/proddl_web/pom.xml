@@ -32,6 +32,16 @@
     <artifactId>proddl_web</artifactId>
     <packaging>war</packaging>
 
+    <developers>
+        <developer>
+            <name>Hyunsoo Daniel Kim</name>
+            <id>hkim</id>
+            <organization>JCVI</organization>
+            <organizationUrl>www.jcvi.org</organizationUrl>
+            <email>hkim@jcvi.org</email>
+        </developer>
+    </developers>
+
     <!-- Project properties -->
     <properties>
         <org.springframework.version>3.0.6.RELEASE</org.springframework.version>
@@ -147,9 +157,9 @@
             <version>1.2.2</version>
         </dependency>
         <dependency>
-           <groupId>commons-httpclient</groupId>
-           <artifactId>commons-httpclient</artifactId>
-           <version>3.1</version>
+            <groupId>commons-httpclient</groupId>
+            <artifactId>commons-httpclient</artifactId>
+            <version>3.1</version>
         </dependency>
 
         <dependency>
