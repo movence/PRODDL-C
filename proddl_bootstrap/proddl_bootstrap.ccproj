@@ -34,7 +34,10 @@
   <!-- Items for the project -->
   <ItemGroup>
     <ServiceDefinition Include="ServiceDefinition.csdef" />
-    <ServiceConfiguration Include="ServiceConfiguration.Empty.cscfg" />
+     <ServiceConfiguration Include="ServiceConfiguration.Prod.cscfg" />
+     <ServiceConfiguration Include="ServiceConfiguration.Local.cscfg" />
+     <ServiceConfiguration Include="ServiceConfiguration.Empty.cscfg" />
+    
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="PRODDLJobRunner\PRODDLJobRunner.csproj">

@@ -25,20 +25,35 @@
   <Role name="PRODDLJobRunner">
     <Instances count="1" />
     <ConfigurationSettings>
-      <Setting name="StorageConnectionString" value="DefaultEndpointsProtocol=https;AccountName=-;AccountKey=dGhpc2lzZW1wdHk=" />
+      <Setting name="StorageConnectionString" value="DefaultEndpointsProtocol=http;AccountName=-;AccountKey=dGhpc2lzZW1wdHk=" />
+      <Setting name="Microsoft.WindowsAzure.Plugins.RemoteAccess.Enabled" value="true" />
+      <Setting name="Microsoft.WindowsAzure.Plugins.RemoteAccess.AccountUsername" value="hkim" />
+      <Setting name="Microsoft.WindowsAzure.Plugins.RemoteAccess.AccountEncryptedPassword" value="MIIBnQYJKoZIhvcNAQcDoIIBjjCCAYoCAQAxggFOMIIBSgIBADAyMB4xHDAaBgNVBAMME1dpbmRvd3MgQXp1cmUgVG9vbHMCEBAl6kbpUpyoS2uvT9ralTswDQYJKoZIhvcNAQEBBQAEggEAmkJlyi0Sao95kZJag8B3Rv79G2giH4RnbtYuZJFgqLpl5BryhQLnjftrM0ZtBm6zxnYgiACCj31S9c6nXXiSTRaez46MEto1Yrr7Xr9OMIXngi+dG5rNK5Tx//Lf0eEEJWQziZqItXxgxPB8zO3HoxKiKUjtJhzTIBXcOHm4H7cz0abGydzQ4Qn9eufZxpRvIYAOxE7BhhRQu+l66FjBIDBlQOX/huJug1AgpQY1ChheZrfgwfX0oopEjT9I9qGGLS+nDuM7c6GIuNzuY4ji8voLv1JRVXniaqsHDgspRcKaOtnZeB9SERshXDZq0vP2ynb28zPgz/M39AV4eJ3CczAzBgkqhkiG9w0BBwEwFAYIKoZIhvcNAwcECGrETfDyDHiIgBDJYPYXv4njhuG25W5vK7Vm" />
+      <Setting name="Microsoft.WindowsAzure.Plugins.RemoteAccess.AccountExpiration" value="2013-12-31T23:59:59.0000000-05:00" />
       <Setting name="DeploymentName" value="" />
       <Setting name="ConfigurationFinalized" value="0" />
     </ConfigurationSettings>
+    <Certificates>
+      <Certificate name="Microsoft.WindowsAzure.Plugins.RemoteAccess.PasswordEncryption" thumbprint="1249B8A38DC0BF87F6AAB2A959A33C320F2F5D95" thumbprintAlgorithm="sha1" />
+    </Certificates>
   </Role>
   <Role name="PRODDLMaster">
     <Instances count="1" />
     <ConfigurationSettings>
       <Setting name="VHDName" value="" />
       <Setting name="StorageConnectionString" value="DefaultEndpointsProtocol=http;AccountName=-;AccountKey=dGhpc2lzZW1wdHk=" />
+      <Setting name="Microsoft.WindowsAzure.Plugins.RemoteAccess.Enabled" value="true" />
+      <Setting name="Microsoft.WindowsAzure.Plugins.RemoteAccess.AccountUsername" value="hkim" />
+      <Setting name="Microsoft.WindowsAzure.Plugins.RemoteAccess.AccountEncryptedPassword" value="MIIBnQYJKoZIhvcNAQcDoIIBjjCCAYoCAQAxggFOMIIBSgIBADAyMB4xHDAaBgNVBAMME1dpbmRvd3MgQXp1cmUgVG9vbHMCEBAl6kbpUpyoS2uvT9ralTswDQYJKoZIhvcNAQEBBQAEggEAmkJlyi0Sao95kZJag8B3Rv79G2giH4RnbtYuZJFgqLpl5BryhQLnjftrM0ZtBm6zxnYgiACCj31S9c6nXXiSTRaez46MEto1Yrr7Xr9OMIXngi+dG5rNK5Tx//Lf0eEEJWQziZqItXxgxPB8zO3HoxKiKUjtJhzTIBXcOHm4H7cz0abGydzQ4Qn9eufZxpRvIYAOxE7BhhRQu+l66FjBIDBlQOX/huJug1AgpQY1ChheZrfgwfX0oopEjT9I9qGGLS+nDuM7c6GIuNzuY4ji8voLv1JRVXniaqsHDgspRcKaOtnZeB9SERshXDZq0vP2ynb28zPgz/M39AV4eJ3CczAzBgkqhkiG9w0BBwEwFAYIKoZIhvcNAwcECGrETfDyDHiIgBDJYPYXv4njhuG25W5vK7Vm" />
+      <Setting name="Microsoft.WindowsAzure.Plugins.RemoteAccess.AccountExpiration" value="2013-12-31T23:59:59.0000000-05:00" />
+      <Setting name="Microsoft.WindowsAzure.Plugins.RemoteForwarder.Enabled" value="true" />
       <Setting name="VHDSize" value="" />
       <Setting name="DeploymentName" value="" />
       <Setting name="ConfigurationFinalized" value="0" />
       <Setting name="SubscriptionId" value="" />
     </ConfigurationSettings>
+    <Certificates>
+      <Certificate name="Microsoft.WindowsAzure.Plugins.RemoteAccess.PasswordEncryption" thumbprint="1249B8A38DC0BF87F6AAB2A959A33C320F2F5D95" thumbprintAlgorithm="sha1" />
+    </Certificates>
   </Role>
 </ServiceConfiguration>
