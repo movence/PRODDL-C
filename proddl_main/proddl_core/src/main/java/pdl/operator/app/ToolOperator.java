@@ -90,6 +90,7 @@ public class ToolOperator implements IApplicationOperator {
         boolean rtnVal = false;
         String roleToolsPath = Configuration.getInstance().getStringProperty(StaticValues.CONFIG_KEY_ROLE_TOOLS_PATH);
         if(roleToolsPath!=null && !roleToolsPath.isEmpty()) {
+            //TODO remove fileTool for checking blob from Azure
             FileTool fileTool = new FileTool();
             String fromPath = ToolPool.buildFilePath(roleToolsPath, toolFileName);
             rtnVal = fileTool.copy(fromPath, toolFilePath);
