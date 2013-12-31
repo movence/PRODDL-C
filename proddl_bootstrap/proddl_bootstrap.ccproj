@@ -34,10 +34,9 @@
   <!-- Items for the project -->
   <ItemGroup>
     <ServiceDefinition Include="ServiceDefinition.csdef" />
-     <ServiceConfiguration Include="ServiceConfiguration.Prod.cscfg" />
-     <ServiceConfiguration Include="ServiceConfiguration.Local.cscfg" />
-     <ServiceConfiguration Include="ServiceConfiguration.Empty.cscfg" />
-    
+    <ServiceConfiguration Include="ServiceConfiguration.Prod.cscfg" />
+    <ServiceConfiguration Include="ServiceConfiguration.Local.cscfg" />
+    <ServiceConfiguration Include="ServiceConfiguration.Empty.cscfg" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="PRODDLJobRunner\PRODDLJobRunner.csproj">
@@ -62,6 +61,7 @@
   </ItemGroup>
   <ItemGroup>
     <PublishProfile Include="Profiles\jcviazureStaging.azurePubxml" />
+    <PublishProfile Include="Profiles\proddl-cProduction.azurePubxml" />
   </ItemGroup>
   <!-- Import the target files for this project template -->
   <PropertyGroup>

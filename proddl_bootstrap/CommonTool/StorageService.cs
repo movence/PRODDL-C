@@ -66,7 +66,7 @@ namespace CommonTool
             }
             catch (Exception ex)
             {
-                Trace.TraceError("failed to mount a drive.");
+                Trace.TraceError("cloud drive mount error: " + ex.ToString());
             }
 
             return rtnVal;
@@ -90,7 +90,11 @@ namespace CommonTool
             IDictionary<String, Uri> listDrives = CloudDrive.GetMountedDrives();
             if ((listDrives == null || listDrives.Count == 0) || _cloudDrivePath == null)
             {
-                this.mountDriveByUri(driveUri);
+                Boolean driveMounted = this.mountDriveByUri(driveUri);
+                if (!driveMounted)
+                {
+                    _cloudDrivePath = null;
+                }
             }
             return _cloudDrivePath;
         }

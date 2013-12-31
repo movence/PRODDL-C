@@ -25,7 +25,7 @@
   <WorkerRole name="PRODDLMaster" vmsize="Large">
     <Runtime executionContext="elevated" />
     <LocalResources>
-      <LocalStorage name="LocalStorage" cleanOnRoleRecycle="false" sizeInMB="2048" />
+      <LocalStorage name="LocalStorage" cleanOnRoleRecycle="false" sizeInMB="20480" />
       <LocalStorage name="TempStorage" cleanOnRoleRecycle="false" sizeInMB="10240" />
     </LocalResources>
     <ConfigurationSettings>
