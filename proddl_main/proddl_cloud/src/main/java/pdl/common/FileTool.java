@@ -139,9 +139,12 @@ public class FileTool {
             fileIn.close();
             fileIn = null;
 
-            //TODO It might need to allow files to be uploaded to other blob containers than jobFiles
-            if (type!=null && type.equals("blob")) {
-                fileInfo.setContainer("files");
+            if (type != null && !type.isEmpty()) {
+                if(type.equals("blob")) {
+                    fileInfo.setContainer("files");
+                } else if(type.equals("tool")) {
+                    fileInfo.setContainer("tools");
+                }
 
                 BlobOperator blobOperator = new BlobOperator(conf);
                 boolean uploaded = blobOperator.uploadFileToBlob(fileInfo.getContainer(), fileInfo.getName(), newFilePath, fileInfo.getType(), false);

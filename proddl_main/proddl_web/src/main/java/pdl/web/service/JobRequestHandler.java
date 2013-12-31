@@ -115,7 +115,7 @@ public class JobRequestHandler {
      * @return boolean result
      * @throws Exception
      */
-    private boolean isUserAdmin(String userName) throws Exception {
+    public boolean isUserAdmin(String userName) throws Exception {
         UserService userService = new UserService();
         return userService.isAdmin(userName);
     }
@@ -315,10 +315,22 @@ public class JobRequestHandler {
     *    File handlers
     *
     */
-    public Map<String, String> uploadFile(MultipartFile file, String type, String userName) {
+    public Map<String, String> uploadFile(MultipartFile file, String fileType, String userName) {
         Map<String, String> rtnVal = new HashMap<String, String>();
         try {
-            rtnVal = fileService.uploadFile(file, type, userName);
+            boolean uploadable = true;
+
+            //upload tools only if the user is admin
+            if(fileType != null &&  !fileType.isEmpty() && fileType.equals("tool")) {
+                uploadable = this.isUserAdmin(userName);
+                if(!uploadable) {
+                    throw new Exception("only admin is allowed to upload a tool.");
+                }
+            }
+
+            if(uploadable) {
+                rtnVal = fileService.uploadFile(file, fileType, userName);
+            }
         } catch(Exception ex) {
             ex.printStackTrace();
             rtnVal.put("error", ex.toString());

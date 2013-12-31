@@ -176,13 +176,14 @@ public class RestMainController {
      * File upload request handler (POST, PUT)
      * @param file MultipartFile data in form
      * @return file information in json format
-     * @format curl <ip address>:<port>/pdl/r/file/upload -u <user id>:<pass> -F file=@<file> --keepalive-time <seconds> -X POST|PUT
+     * @format curl <ip address>:<port>/pdl/r/file/upload/?type=<type> -u <user id>:<pass> -F file=@<file> --keepalive-time <seconds> -X POST|PUT
+     *
+     * Admin users can upload tools such as python and cctools using this method.
+     * @format curl <ip address>:<port>/pdl/r/file/upload/?type=tool -u <user id>:<pass> -F file=@<file> --keepalive-time <seconds> -X POST|PUT
      */
     @RequestMapping(value = "file/upload", method = {RequestMethod.POST, RequestMethod.PUT})
     public @ResponseBody Map<String, String> fileUpload(
             @RequestParam("file") MultipartFile file, @RequestParam(value = "type", defaultValue = "") String type, Principal principal) {
-        //TODO allow admin to upload third-party application to tools container
-
         Map<String, String> rtnJson = handler.uploadFile(file, type, principal.getName());
         return rtnJson;
     }

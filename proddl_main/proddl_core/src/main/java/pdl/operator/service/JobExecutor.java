@@ -198,7 +198,9 @@ public class JobExecutor extends Thread {
 
         if(currJob.getInput()!=null) {
             Map<String, Object> inputInMap = ToolPool.jsonStringToMap(currJob.getInput());
-            if(inputInMap.containsKey(CER_CERTIFICATE_KEY) && inputInMap.containsKey(PFX_CERTIFICATE_KEY) && inputInMap.containsKey(CERTIFICATE_PASSWORD_KEY)) {
+            if(inputInMap.containsKey(CER_CERTIFICATE_KEY)
+                    && inputInMap.containsKey(PFX_CERTIFICATE_KEY)
+                    && inputInMap.containsKey(CERTIFICATE_PASSWORD_KEY)) {
                 String cerFileId = (String)inputInMap.get(CER_CERTIFICATE_KEY);
                 String pfxFileId = (String)inputInMap.get(PFX_CERTIFICATE_KEY);
                 String certPass = (String)inputInMap.get(CERTIFICATE_PASSWORD_KEY);
