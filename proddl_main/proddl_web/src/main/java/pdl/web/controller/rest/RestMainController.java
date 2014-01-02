@@ -179,7 +179,7 @@ public class RestMainController {
      * @format curl <ip address>:<port>/pdl/r/file/upload/?type=<type> -u <user id>:<pass> -F file=@<file> --keepalive-time <seconds> -X POST|PUT
      *
      * Admin users can upload tools such as python and cctools using this method.
-     * @format curl <ip address>:<port>/pdl/r/file/upload/?type=tool -u <user id>:<pass> -F file=@<file> --keepalive-time <seconds> -X POST|PUT
+     * @format curl <ip address>:<port>/pdl/r/file/upload/?type=tool:<tool> -u <user id>:<pass> -F file=@<file> --keepalive-time <seconds> -X POST|PUT
      */
     @RequestMapping(value = "file/upload", method = {RequestMethod.POST, RequestMethod.PUT})
     public @ResponseBody Map<String, String> fileUpload(

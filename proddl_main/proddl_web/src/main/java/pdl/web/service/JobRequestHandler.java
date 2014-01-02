@@ -321,7 +321,7 @@ public class JobRequestHandler {
             boolean uploadable = true;
 
             //upload tools only if the user is admin
-            if(fileType != null &&  !fileType.isEmpty() && fileType.equals("tool")) {
+            if(fileType != null &&  !fileType.isEmpty() && fileType.startsWith("tool:")) {
                 uploadable = this.isUserAdmin(userName);
                 if(!uploadable) {
                     throw new Exception("only admin is allowed to upload a tool.");

@@ -22,6 +22,7 @@
 package pdl.common;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.soyatec.windowsazure.table.ITableServiceEntity;
 import pdl.cloud.model.FileInfo;
 import pdl.cloud.storage.BlobOperator;
@@ -122,27 +123,31 @@ public class FileTool {
         String rtnVal = null;
         FileOutputStream fileOut = null;
         try {
+            boolean uploadToBlob = type != null && !type.isEmpty() && (type.equals("blob") || type.startsWith("tool:"));
+
             FileInfo fileInfo = this.createFileRecord(fileName, userName);
 
             String newFilePath = ToolPool.buildFilePath(fileStoragePath, fileInfo.getPath(), fileInfo.getName());
             fileOut = new FileOutputStream(newFilePath);
 
-            int readBytes = 0;
+            IOUtils.copy(fileIn, fileOut);
+            /*int readBytes = 0;
             int readBlockSize = 4 * 1024 * 1024;
             byte[] buffer = new byte[readBlockSize];
             while ((readBytes = fileIn.read(buffer, 0, readBlockSize)) != -1) {
                 fileOut.write(buffer, 0, readBytes);
-            }
+            }*/
 
             fileOut.close();
             fileOut = null;
             fileIn.close();
             fileIn = null;
 
+            //tools or special files that need to be copied to blob storage
             if (type != null && !type.isEmpty()) {
                 if(type.equals("blob")) {
                     fileInfo.setContainer("files");
-                } else if(type.equals("tool")) {
+                } else if(type.startsWith("tool:")) {
                     fileInfo.setContainer("tools");
                 }
 

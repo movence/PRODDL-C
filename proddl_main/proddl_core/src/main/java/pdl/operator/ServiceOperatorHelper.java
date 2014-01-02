@@ -82,6 +82,9 @@ public class ServiceOperatorHelper {
      * @throws Exception
      */
     private void runOperators() throws Exception {
+        //check if all required tools are loaded
+
+
         ToolOperator pythonOperator = new ToolOperator(storagePath, "python", "python.exe", null);
         pythonOperator.run();
 

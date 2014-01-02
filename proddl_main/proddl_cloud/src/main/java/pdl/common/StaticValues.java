@@ -90,14 +90,13 @@ public class StaticValues {
     public static final int MAX_FILE_COUNT_PER_DIRECTORY = 500;
 
     //JOB EXECUTION
-    public static final String[] ADMIN_ONLY_JOBS =
-        {
-            "execute",
-            "adduser",
-            "scale",
-            "cert"
-        };
     public static final String SPECIAL_EXECUTION_JOB = "execute";
+    public static final String[] ADMIN_ONLY_JOBS = {
+        SPECIAL_EXECUTION_JOB,
+        "adduser",
+        "scale",
+        "cert"
+    };
     public static final int CORE_NUMBER_JOB_EXECUTOR = 1;
     public static final int MAX_NUMBER_JOB_EXECUTOR = 20;
     public static final String MAX_KEEP_ALIVE_UNIT_JOB_EXECUTOR = "min"; //Available units: min, sec
@@ -112,6 +111,13 @@ public class StaticValues {
 
     public static final String CERTIFICATE_NAME = "management";
     public static final String CERTIFICATE_ALIAS = "keyalias";
+
+    //REQUIRED TOOLS FOR THE BASIC FUNCTIONALITY
+    public static final String[] REQUIRED_TOOLS = {
+        "python",
+        "cygwin",
+        "cctools"
+    };
 
     //ERROR CODE
 }
