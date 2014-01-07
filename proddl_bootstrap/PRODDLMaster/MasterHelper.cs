@@ -123,6 +123,10 @@ namespace PRODDLMaster
             }
 
             String drivePath = storageHelper.getMountedDrivePath(String.Format("{0}/{1}", SharedTools.BLOB_CONTAINER_NAME, vhdName));
+            if (drivePath == null)
+            {
+                throw new Exception("Failed to mount Azure Drive for master node.");
+            }
 
             String webServerPort = RoleEnvironment.CurrentRoleInstance.InstanceEndpoints["HttpIn"].IPEndpoint.Port.ToString();
             IPEndPoint internalAddress = RoleEnvironment.CurrentRoleInstance.InstanceEndpoints["CatalogServer"].IPEndpoint;
