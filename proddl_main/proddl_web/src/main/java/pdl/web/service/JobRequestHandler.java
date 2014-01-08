@@ -28,7 +28,9 @@ import pdl.cloud.management.UserService;
 import pdl.cloud.model.FileInfo;
 import pdl.cloud.model.JobDetail;
 import pdl.cloud.model.User;
-import pdl.common.*;
+import pdl.utils.QueryTool;
+import pdl.utils.StaticValues;
+import pdl.utils.ToolPool;
 import pdl.web.service.common.FileService;
 
 import javax.servlet.http.HttpServletResponse;

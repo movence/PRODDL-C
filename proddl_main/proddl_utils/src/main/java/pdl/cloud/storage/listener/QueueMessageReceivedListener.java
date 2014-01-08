@@ -19,31 +19,26 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package pdl.operator.service;
+package pdl.cloud.storage.listener;
 
-import pdl.cloud.management.JobManager;
-import pdl.utils.StaticValues;
-
-import java.util.concurrent.RejectedExecutionHandler;
-import java.util.concurrent.ThreadPoolExecutor;
+import org.soyatec.windowsazure.queue.IMessageReceivedListener;
+import org.soyatec.windowsazure.queue.MessageReceivedEvent;
 
 /**
  * Created by IntelliJ IDEA.
  * User: hkim
- * Date: 2/2/12
- * Time: 3:21 PM
+ * Date: 10/21/11
+ * Time: 3:51 PM
+ * To change this template use File | Settings | File Templates.
  */
-public class RejectedJobExecutorHandler implements RejectedExecutionHandler {
+public class QueueMessageReceivedListener implements IMessageReceivedListener {
 
-    /**
-     * update Job status of rejected Jobs
-     *
-     * @param runnable Job Executor thread
-     * @param executor Thread executor service
-     */
-    @Override
-    public void rejectedExecution(Runnable runnable, ThreadPoolExecutor executor) {
-        JobManager jobManager = new JobManager();
-        jobManager.updateJobStatus(runnable.toString(), StaticValues.JOB_STATUS_SUBMITTED);
+    public void handle(MessageReceivedEvent event) {
+        try {
+            System.err.println(event.getMessage());
+            System.err.println(event.getSource());
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
     }
 }

@@ -24,9 +24,9 @@ package pdl.operator.app;
 import org.soyatec.windowsazure.table.ITableServiceEntity;
 import pdl.cloud.model.Info;
 import pdl.cloud.storage.TableOperator;
-import pdl.common.Configuration;
-import pdl.common.StaticValues;
-import pdl.common.ToolPool;
+import pdl.utils.Configuration;
+import pdl.utils.StaticValues;
+import pdl.utils.ToolPool;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -51,8 +51,6 @@ public class CctoolsOperator extends ToolOperator {
     private final String LOOKUP_KEY_TMP_PATH = "$tmp";
 
     private static final String GENERIC_TASK_NAME = "proddl";
-
-    private Configuration conf;
 
     private List<Process> processes;
 
@@ -95,8 +93,6 @@ public class CctoolsOperator extends ToolOperator {
 
     private void setPaths() {
         try {
-            conf = Configuration.getInstance();
-
             cctoolsBinPath = ToolPool.buildDirPath(toolPath, "bin");
             cygwinBinPath = ToolPool.buildDirPath(storagePath, "cygwin", "bin");
             tmpPath = ToolPool.buildDirPath(toolPath, "tmp");
@@ -289,7 +285,9 @@ public class CctoolsOperator extends ToolOperator {
 
     private boolean getOrUpdateCatalogServerInfo(String address, String port) {
         try {
+            Configuration conf = Configuration.getInstance();
             TableOperator tableOperator = new TableOperator(conf);
+
             String tableName = ToolPool.buildTableName(StaticValues.TABLE_NAME_INFOS);
             Info addrInfo = null;
             Info portInfo = null;

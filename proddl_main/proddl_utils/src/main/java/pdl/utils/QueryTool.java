@@ -19,31 +19,28 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package pdl.operator.service;
-
-import pdl.cloud.management.JobManager;
-import pdl.utils.StaticValues;
-
-import java.util.concurrent.RejectedExecutionHandler;
-import java.util.concurrent.ThreadPoolExecutor;
+package pdl.utils;
 
 /**
  * Created by IntelliJ IDEA.
  * User: hkim
- * Date: 2/2/12
- * Time: 3:21 PM
+ * Date: 1/27/12
+ * Time: 9:25 AM
  */
-public class RejectedJobExecutorHandler implements RejectedExecutionHandler {
+public class QueryTool {
 
-    /**
-     * update Job status of rejected Jobs
-     *
-     * @param runnable Job Executor thread
-     * @param executor Thread executor service
-     */
-    @Override
-    public void rejectedExecution(Runnable runnable, ThreadPoolExecutor executor) {
-        JobManager jobManager = new JobManager();
-        jobManager.updateJobStatus(runnable.toString(), StaticValues.JOB_STATUS_SUBMITTED);
+    public static String mergeConditions(String cond1, String condition, String cond2) {
+        return String.format("%s %s %s", cond1, condition, cond2);
+    }
+
+    public static String getSingleConditionalStatement(String column, String condition, Object value) {
+
+        String valueInString;
+        if (value.getClass() != String.class)
+            valueInString = String.valueOf(value);
+        else
+            valueInString = "'" + value + "'";
+
+        return String.format("%s %s %s", column, condition, valueInString);
     }
 }
