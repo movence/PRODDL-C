@@ -91,7 +91,7 @@ public class ServiceOperatorHelper {
         ToolOperator cygwinOperator = new ToolOperator(storagePath, "cygwin", "cygwin.bat", null);
         cygwinOperator.run();
 
-        cctoolsOperator = new CctoolsOperator(storagePath, "cctools-3.6.1", "bin" + File.separator + "makeflow.exe");
+        cctoolsOperator = new CctoolsOperator(storagePath, "cctools-4.0.3", "bin" + File.separator + "makeflow.exe");
         cctoolsOperator.run();
     }
 
