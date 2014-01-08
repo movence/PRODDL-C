@@ -86,7 +86,11 @@ public class CctoolsOperator extends ToolOperator {
 
     public CctoolsOperator(String storagePath, String packageName, String flagFile) {
         super(storagePath, packageName, flagFile, null);
+    }
+
+    public void run() throws Exception {
         setPaths();
+        super.run();
     }
 
     private void setPaths() {
