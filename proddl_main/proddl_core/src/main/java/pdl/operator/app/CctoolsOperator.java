@@ -85,12 +85,12 @@ public class CctoolsOperator extends ToolOperator {
     };
 
     public CctoolsOperator(String storagePath, String packageName, String flagFile) {
-        super(storagePath, packageName, flagFile, null);
+        super(storagePath, packageName, flagFile);
     }
 
-    public void run() throws Exception {
+    public boolean run() throws Exception {
         setPaths();
-        super.run();
+        return super.run();
     }
 
     private void setPaths() {
