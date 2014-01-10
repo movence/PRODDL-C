@@ -57,7 +57,7 @@ public class ToolOperator implements IApplicationOperator {
         this.flagFile = flagFile;
     }
 
-    public boolean run() throws Exception {
+    public boolean run() throws Exception{
         boolean result = false;
 
         String toolFileName = toolName + StaticValues.FILE_EXTENSION_ZIP;

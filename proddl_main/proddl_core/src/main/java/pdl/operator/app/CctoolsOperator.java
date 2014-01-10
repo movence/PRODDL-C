@@ -82,8 +82,8 @@ public class CctoolsOperator extends ToolOperator {
             "-s", LOOKUP_KEY_TMP_PATH
     };
 
-    public CctoolsOperator(String storagePath, String packageName, String flagFile) {
-        super(storagePath, packageName, flagFile);
+    public CctoolsOperator(String storagePath, String packageName) {
+        super(storagePath, packageName);
     }
 
     public boolean run() throws Exception {
