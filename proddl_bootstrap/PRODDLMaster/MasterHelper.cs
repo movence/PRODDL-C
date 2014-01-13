@@ -54,7 +54,7 @@ namespace PRODDLMaster
 
         public MasterHelper(string logPath) {
             this.logPath = logPath;
-            roleToolsPath = Path.Combine(Environment.GetEnvironmentVariable("RoleRoot"), "approot", SharedTools.ROLE_DIRECTORY_TOOLS);
+            roleToolsPath = Environment.GetEnvironmentVariable("RoleRoot") + Path.DirectorySeparatorChar + Path.Combine("approot", SharedTools.ROLE_DIRECTORY_TOOLS);
         }
 
         private String[] INFOS_TABLE_KEYS = 

@@ -25,8 +25,8 @@ import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.springframework.web.multipart.MultipartFile;
 import pdl.cloud.model.FileInfo;
-import pdl.common.FileTool;
-import pdl.common.ToolPool;
+import pdl.utils.FileTool;
+import pdl.utils.ToolPool;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;

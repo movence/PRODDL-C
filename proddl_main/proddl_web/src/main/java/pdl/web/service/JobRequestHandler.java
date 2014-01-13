@@ -28,7 +28,9 @@ import pdl.cloud.management.UserService;
 import pdl.cloud.model.FileInfo;
 import pdl.cloud.model.JobDetail;
 import pdl.cloud.model.User;
-import pdl.common.*;
+import pdl.utils.QueryTool;
+import pdl.utils.StaticValues;
+import pdl.utils.ToolPool;
 import pdl.web.service.common.FileService;
 
 import javax.servlet.http.HttpServletResponse;
@@ -115,7 +117,7 @@ public class JobRequestHandler {
      * @return boolean result
      * @throws Exception
      */
-    private boolean isUserAdmin(String userName) throws Exception {
+    public boolean isUserAdmin(String userName) throws Exception {
         UserService userService = new UserService();
         return userService.isAdmin(userName);
     }
@@ -315,10 +317,22 @@ public class JobRequestHandler {
     *    File handlers
     *
     */
-    public Map<String, String> uploadFile(MultipartFile file, String type, String userName) {
+    public Map<String, String> uploadFile(MultipartFile file, String fileType, String userName) {
         Map<String, String> rtnVal = new HashMap<String, String>();
         try {
-            rtnVal = fileService.uploadFile(file, type, userName);
+            boolean uploadable = true;
+
+            //upload tools only if the user is admin
+            if(fileType != null &&  !fileType.isEmpty() && fileType.startsWith("tool:")) {
+                uploadable = this.isUserAdmin(userName);
+                if(!uploadable) {
+                    throw new Exception("only admin is allowed to upload a tool.");
+                }
+            }
+
+            if(uploadable) {
+                rtnVal = fileService.uploadFile(file, fileType, userName);
+            }
         } catch(Exception ex) {
             ex.printStackTrace();
             rtnVal.put("error", ex.toString());

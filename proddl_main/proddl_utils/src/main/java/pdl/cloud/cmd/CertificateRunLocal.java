@@ -19,31 +19,25 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package pdl.operator.service;
-
-import pdl.cloud.management.JobManager;
-import pdl.utils.StaticValues;
-
-import java.util.concurrent.RejectedExecutionHandler;
-import java.util.concurrent.ThreadPoolExecutor;
+package pdl.cloud.cmd;
 
 /**
  * Created by IntelliJ IDEA.
  * User: hkim
- * Date: 2/2/12
- * Time: 3:21 PM
+ * Date: 8/11/11
+ * Time: 9:51 AM
+ * To change this template use File | Settings | File Templates.
  */
-public class RejectedJobExecutorHandler implements RejectedExecutionHandler {
-
-    /**
-     * update Job status of rejected Jobs
-     *
-     * @param runnable Job Executor thread
-     * @param executor Thread executor service
-     */
-    @Override
-    public void rejectedExecution(Runnable runnable, ThreadPoolExecutor executor) {
-        JobManager jobManager = new JobManager();
-        jobManager.updateJobStatus(runnable.toString(), StaticValues.JOB_STATUS_SUBMITTED);
+public class CertificateRunLocal {
+    public void createKeystore() {
+        try {
+            CertificateToolLocal tool = new CertificateToolLocal();
+            tool.convert(
+                    "C:\\Users\\public\\AZURE\\certs\\jcviManagement.pfx",
+                    "C:\\Users\\public\\AZURE\\certs\\jcviManagement.keystore",
+                    "managementjcvi", "managementjcvi", "jcvimanagement");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }

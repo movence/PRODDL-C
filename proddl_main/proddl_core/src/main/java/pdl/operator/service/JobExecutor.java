@@ -27,10 +27,10 @@ import pdl.cloud.management.CloudInstanceManager;
 import pdl.cloud.management.JobManager;
 import pdl.cloud.model.FileInfo;
 import pdl.cloud.model.JobDetail;
-import pdl.common.Configuration;
-import pdl.common.FileTool;
-import pdl.common.StaticValues;
-import pdl.common.ToolPool;
+import pdl.utils.Configuration;
+import pdl.utils.FileTool;
+import pdl.utils.StaticValues;
+import pdl.utils.ToolPool;
 import pdl.operator.app.CctoolsOperator;
 
 import java.io.File;
@@ -198,7 +198,9 @@ public class JobExecutor extends Thread {
 
         if(currJob.getInput()!=null) {
             Map<String, Object> inputInMap = ToolPool.jsonStringToMap(currJob.getInput());
-            if(inputInMap.containsKey(CER_CERTIFICATE_KEY) && inputInMap.containsKey(PFX_CERTIFICATE_KEY) && inputInMap.containsKey(CERTIFICATE_PASSWORD_KEY)) {
+            if(inputInMap.containsKey(CER_CERTIFICATE_KEY)
+                    && inputInMap.containsKey(PFX_CERTIFICATE_KEY)
+                    && inputInMap.containsKey(CERTIFICATE_PASSWORD_KEY)) {
                 String cerFileId = (String)inputInMap.get(CER_CERTIFICATE_KEY);
                 String pfxFileId = (String)inputInMap.get(PFX_CERTIFICATE_KEY);
                 String certPass = (String)inputInMap.get(CERTIFICATE_PASSWORD_KEY);

@@ -24,10 +24,10 @@ package pdl.operator.app;
 
 import org.apache.commons.io.FileUtils;
 import pdl.cloud.storage.BlobOperator;
-import pdl.common.Configuration;
-import pdl.common.FileTool;
-import pdl.common.StaticValues;
-import pdl.common.ToolPool;
+import pdl.utils.Configuration;
+import pdl.utils.FileTool;
+import pdl.utils.StaticValues;
+import pdl.utils.ToolPool;
 import pdl.utils.ZipHandler;
 
 import java.io.File;
@@ -44,22 +44,20 @@ public class ToolOperator implements IApplicationOperator {
     protected String storagePath;
     protected String toolPath;
     protected String toolName;
-    protected String arg;
     protected String flagFile;
 
     public ToolOperator(String storagePath, String toolName) {
-        this(storagePath, toolName, null, null);
+        this(storagePath, toolName, null);
     }
 
-    public ToolOperator(String storagePath, String toolName, String flagFile, String arg) {
+    public ToolOperator(String storagePath, String toolName, String flagFile) {
         this.storagePath = storagePath;
         this.toolName = toolName;
         toolPath = ToolPool.buildDirPath(storagePath, toolName);
         this.flagFile = flagFile;
-        this.arg = arg;
     }
 
-    public void run() throws Exception {
+    public boolean run() throws Exception{
         boolean result = false;
 
         String toolFileName = toolName + StaticValues.FILE_EXTENSION_ZIP;
@@ -77,6 +75,8 @@ public class ToolOperator implements IApplicationOperator {
                 throw new Exception("ToolOperator failed - " + toolName);
             }
         }
+
+        return result;
     }
 
     public boolean isToolReady(String toolFileName, String toolFilePath) throws Exception {

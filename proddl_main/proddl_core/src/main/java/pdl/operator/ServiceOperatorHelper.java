@@ -23,14 +23,16 @@ package pdl.operator;
 
 import pdl.cloud.management.JobManager;
 import pdl.cloud.model.JobDetail;
-import pdl.common.Configuration;
-import pdl.common.StaticValues;
 import pdl.operator.app.CctoolsOperator;
 import pdl.operator.app.JettyThreadedOperator;
 import pdl.operator.app.ToolOperator;
-import pdl.operator.service.*;
+import pdl.operator.service.JobExecutor;
+import pdl.operator.service.JobExecutorThreadPool;
+import pdl.operator.service.RejectedJobExecutorHandler;
+import pdl.operator.service.WorkerExecutor;
+import pdl.utils.Configuration;
+import pdl.utils.StaticValues;
 
-import java.io.File;
 import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -47,8 +49,6 @@ public class ServiceOperatorHelper {
     private Configuration conf;
     private CctoolsOperator cctoolsOperator;
 
-    private String storagePath;
-
     public ServiceOperatorHelper() {
         conf = Configuration.getInstance();
     }
@@ -58,10 +58,6 @@ public class ServiceOperatorHelper {
      */
     public void run() {
         try {
-            this.storagePath = conf.getStringProperty(StaticValues.CONFIG_KEY_STORAGE_PATH);
-
-            this.runOperators();
-
             String isMaster = conf.getStringProperty(StaticValues.CONFIG_KEY_MASTER_INSTANCE);
             if (isMaster != null && isMaster.equals("true")) { //Master Instance
                 String webServerPort = conf.getStringProperty(StaticValues.CONFIG_KEY_WEBSERVER_PORT);
@@ -81,15 +77,19 @@ public class ServiceOperatorHelper {
      * download 3rd party tools from blob storage area, then extracts into local storage space
      * @throws Exception
      */
-    private void runOperators() throws Exception {
-        ToolOperator pythonOperator = new ToolOperator(storagePath, "python", "python.exe", null);
-        pythonOperator.run();
+    private void getTools() throws Exception {
+        String storagePath = conf.getStringProperty(StaticValues.CONFIG_KEY_STORAGE_PATH);
 
-        ToolOperator cygwinOperator = new ToolOperator(storagePath, "cygwin", "cygwin.bat", null);
-        cygwinOperator.run();
+        boolean pythonReady = false;
+        boolean cygwinReady = false;
+        boolean cctooslReady = false;
 
-        cctoolsOperator = new CctoolsOperator(storagePath, "cctools-3.6.1", "bin" + File.separator + "makeflow.exe");
-        cctoolsOperator.run();
+        ToolOperator pythonOperator = new ToolOperator(storagePath, "python");
+        pythonReady = pythonOperator.run();
+        ToolOperator cygwinOperator = new ToolOperator(storagePath, "cygwin");
+        cygwinReady = cygwinOperator.run();
+        cctoolsOperator = new CctoolsOperator(storagePath, "cctools-4.0.3");
+        cctooslReady = cctoolsOperator.run();
     }
 
     /**
@@ -105,6 +105,8 @@ public class ServiceOperatorHelper {
     private void runMaster(String jettyPort, String masterAddress, String catalogServerPort) throws Exception {
         JettyThreadedOperator jettyOperator = new JettyThreadedOperator(jettyPort);
         jettyOperator.start();
+
+        this.getTools();
 
         JobManager jobManager = new JobManager();
 
@@ -160,6 +162,8 @@ public class ServiceOperatorHelper {
      * @throws Exception
      */
     private void runJobRunner() throws Exception {
+        this.getTools();
+
         int maxWorkerCountPerNode = StaticValues.MAX_WORKER_INSTANCE_PER_NODE;
 
         //waits until master is available
