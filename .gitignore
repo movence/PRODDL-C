@@ -11,6 +11,8 @@ proddl.properties
 proddl_core*.jar
 *[Tt]est*
 
+OLD_proddl_c/
+
 Debug/
 azure-sdk-for-java/*
 proddl_main/proddl_core/target/
