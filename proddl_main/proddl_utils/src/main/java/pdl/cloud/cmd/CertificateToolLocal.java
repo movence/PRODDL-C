@@ -1,5 +1,5 @@
 /*
- * Copyright J. Craig Venter Institute, 2011
+ * Copyright J. Craig Venter Institute, 2014
  *
  * The creation of this program was supported by the U.S. National
  * Science Foundation grant 1048199 and the Microsoft allocation
@@ -16,7 +16,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
 package pdl.cloud.cmd;

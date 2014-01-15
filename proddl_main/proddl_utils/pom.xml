@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright J. Craig Venter Institute, 2011
+  ~ Copyright J. Craig Venter Institute, 2014
   ~
   ~ The creation of this program was supported by the U.S. National
   ~ Science Foundation grant 1048199 and the Microsoft allocation
@@ -17,7 +17,7 @@
   ~ GNU General Public License for more details.
   ~
   ~ You should have received a copy of the GNU General Public License
-  ~ along with this program.  If not, see <http://www.gnu.org/licenses/>.
+  ~ along with this program.  If not, see <http://www.gnu.org/licenses/>
   -->
 
 <project xmlns="http://maven.apache.org/POM/4.0.0"
@@ -60,6 +60,13 @@
     </build>
 
     <dependencies>
+        <dependency>
+        	<groupId>org.xerial</groupId>
+        	<artifactId>sqlite-jdbc</artifactId>
+        	<version>3.7.2</version>
+        </dependency>
+
+        <!-- old dependencies -->
         <!--mvn install:install-file -Dfile=./org.soyatec.windows.azure.java_2.0.2.v20110627-1009.jar -DgroupId=soyatec -DartifactId=azure_jdk -Dversion=2.0.2 -Dpackaging=jar-->
         <dependency>
             <groupId>soyatec</groupId>
