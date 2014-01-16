@@ -63,7 +63,7 @@
                     <skipTests>false</skipTests>
                     <useFile>false</useFile>
                     <printSummary>true</printSummary>
-                    <!--<debugForkedProcess>true</debugForkedProcess>-->
+                    <debugForkedProcess>true</debugForkedProcess>
                 </configuration>
             </plugin>
         </plugins>

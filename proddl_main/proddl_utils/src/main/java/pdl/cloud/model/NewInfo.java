@@ -1,0 +1,103 @@
+/*
+ * Copyright J. Craig Venter Institute, 2014
+ *
+ * The creation of this program was supported by the U.S. National
+ * Science Foundation grant 1048199 and the Microsoft allocation
+ * in the MS Azure cloud.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+package pdl.cloud.model;
+
+import java.sql.Timestamp;
+import java.util.Map;
+
+/**
+ * User: hkim
+ * Date: 1/15/14
+ * Time: 1:51 PM
+ * pdl.cloud.model
+ */
+public class NewInfo extends AbstractModel  {
+    private String iKey;
+    private String iValue;
+    private String dataType;
+
+    public NewInfo(String uuid) {
+        super(uuid);
+    }
+
+    public NewInfo() {
+        super();
+    }
+
+    public String getiKey() {
+        return iKey;
+    }
+
+    public void setiKey(String iKey) {
+        this.iKey = iKey;
+    }
+
+    public String getiValue() {
+        return iValue;
+    }
+
+    public void setiValue(String iValue) {
+        this.iValue = iValue;
+    }
+
+    public String getDataType() {
+        return dataType;
+    }
+
+    public void setDataType(String dataType) {
+        this.dataType = dataType;
+    }
+
+    @Override
+    public String getValuesWithComma() {
+        String comma = ",";
+        String singleQuote = "'";
+        StringBuilder values = new StringBuilder();
+        values.append(singleQuote + uuid + singleQuote + comma);
+        values.append(singleQuote + createTime+ singleQuote + comma);
+        values.append((updateTime == null ? null : singleQuote + updateTime + singleQuote) + comma);
+        values.append(singleQuote + iKey + singleQuote + comma);
+        values.append(singleQuote + iValue+ singleQuote + comma);
+        values.append("null");
+
+        return values.toString();
+    }
+
+    @Override
+    public String getValuesWithEqual() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("iKey='" + this.getiKey() + "'");
+        sb.append(",iValue='" + this.getiValue() + "'");
+        sb.append(",dataType=" + (this.getDataType() == null ? null : "'" + this.getDataType() + "'"));
+        return sb.toString();
+    }
+
+    @Override
+    public void setValues(Map<String, String> map) {
+        this.setiKey(map.get("iKey"));
+        this.setiValue(map.get("iValue"));
+        this.setDataType(map.get("dataType"));
+        this.setUuid(map.get("uuid"));
+        this.setCreateTime(Long.valueOf(map.get("createTime")));
+        this.setCreateTime(map.get("updateTime") == null ? null : Long.valueOf(map.get("updateTime")));
+    }
+}

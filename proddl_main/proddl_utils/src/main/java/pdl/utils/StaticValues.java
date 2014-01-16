@@ -1,5 +1,5 @@
 /*
- * Copyright J. Craig Venter Institute, 2011
+ * Copyright J. Craig Venter Institute, 2014
  *
  * The creation of this program was supported by the U.S. National
  * Science Foundation grant 1048199 and the Microsoft allocation
@@ -16,7 +16,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
 package pdl.utils;
@@ -35,7 +35,7 @@ public class StaticValues {
     public static final String AZURE_TABLE_HOST_NAME = "http://table.core.windows.net";
 
     //PROPERTIES
-    public static final String CONFIG_FILENAME = "proddl.properties";
+    public static final String CONFIG_FILENAME = "proddl.ini";
     public static final String CONFIG_KEY_SUBSCRIPTION_ID = "SubscriptionId";
     public static final String CONFIG_KEY_DEPLOYMENT_ID = "DeploymentId";
     public static final String CONFIG_KEY_DEPLOYMENT_NAME = "DeploymentName";
@@ -44,7 +44,7 @@ public class StaticValues {
     public static final String CONFIG_KEY_CERT_PASSWORD = "CertificatePassword";
 
     public static final String CONFIG_KEY_DATASTORE_PATH = "DataStorePath";
-    public static final String CONFIG_KEY_STORAGE_PATH = "StoragePath";
+    public static final String CONFIG_KEY_STORAGE_PATH = "storage_path";
     public static final String CONFIG_KEY_ROLE_TOOLS_PATH = "RoleToolsPath";
 
     public static final String CONFIG_KEY_CSTORAGE_NAME = "StorageAccountName";
