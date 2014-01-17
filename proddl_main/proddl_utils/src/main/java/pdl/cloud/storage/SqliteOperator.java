@@ -43,10 +43,6 @@ public class SqliteOperator {
     private String dbFilePath;
     private boolean isOpened = false;
 
-    private final static String QUERY_SELECT_BY_NAME = "SELECT * FROM media WHERE FilePath=?;";
-    private final static String QUERY_SELECT_BY_NAME_HASHCODE = "SELECT * FROM media WHERE FilePath=? AND CheckSum=?;";
-    private final static String QUERY_SELECT_THUMBNAIL = "SELECT Thumbnail FROM media WHERE FilePath=?;";
-
     public final static String DATABASE = "proddlc.db";
 
     static {
@@ -230,7 +226,7 @@ public class SqliteOperator {
         String sql = "INSERT INTO " + tableName + " ";
 
         for(M entity : rows) {
-            sqls.add(sql + entity.getInsertSql());
+            sqls.add(sql + entity.generate("insert"));
         }
 
         return this.update(sqls, false);
@@ -247,7 +243,7 @@ public class SqliteOperator {
         String sql = "UPDATE " + tableName + " SET ";
 
         for(M entity : rows) {
-            sqls.add(sql + entity.getUpdateSql());
+            sqls.add(sql + entity.generate("update"));
         }
 
         return this.update(sqls, false);

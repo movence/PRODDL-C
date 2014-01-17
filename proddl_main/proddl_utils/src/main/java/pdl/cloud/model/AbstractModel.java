@@ -21,7 +21,7 @@
 
 package pdl.cloud.model;
 
-import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.Date;
 import java.util.Map;
 import java.util.UUID;
@@ -71,41 +71,103 @@ public abstract class AbstractModel {
         this.updateTime = updateTime;
     }
 
-    abstract void setValues(Map<String, String> map);
-    abstract String getValuesWithComma();
-    abstract String getValuesWithEqual();
+    public void map(Map<String, String> map) {
+        Class obj = this.getClass();
+        for(Method method : obj.getMethods()) {
+            String methodName = method.getName();
+            if(methodName.startsWith("set")) {
+                String field = methodName.substring(3);
+                field = field.substring(0, 1).toLowerCase() + field.substring(1);
+                if(map.containsKey(field)) {
+                    String type = (method.getParameterTypes())[0].toString();
+                    type = type.substring(type.lastIndexOf(".") + 1);
 
-    public String getInsertSql() {
-        String fields = this.fields(false);
-        String values = " values ";
+                    Object objectValue = null;
+                    String stringValue = map.get(field);
+                    if(stringValue != null && !stringValue.equals("null")) {
+                        if(type.equals("String")) {
+                            objectValue = "" + stringValue;
+                        } else if(type.equals("Long")) {
+                            objectValue = Long.valueOf(stringValue);
+                        } else {
+                            objectValue = Integer.valueOf(stringValue);
+                        }
 
-        return "(" + fields + ")" + values + "(" + getValuesWithComma() + ")";
-    }
-
-    public String getUpdateSql() {
-        StringBuilder sb = new StringBuilder(this.getValuesWithEqual());
-        sb.append(",updateTime='" + new Date().getTime() + "'");
-        sb.append(" WHERE uuid='" + this.getUuid() + "'");
-        return sb.toString();
-    }
-
-    public String fields(boolean withType) {
-        //manually add fields from this abstract class since getDeclaredFields() only returns fields of current class
-        StringBuilder fields = new StringBuilder("uuid");
-        if(withType) {
-            fields.append(" string primary key not null, createTime date, updateTime date");
-        } else {
-            fields.append(", createTime, updateTime");
-        }
-        for(Field field : this.getClass().getDeclaredFields()) {
-            fields.append(", ");
-            fields.append(field.getName());
-
-            if(withType) {
-                String type = "string";
-                fields.append(" ").append(type);
+                        try {
+                            method.invoke(this, objectValue);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
             }
         }
-        return fields.toString();
+    }
+
+    public String generate(String which) {
+        StringBuilder sb1 = new StringBuilder();
+        StringBuilder sb2 = new StringBuilder();
+
+        boolean isCreate = which.equals("create");
+        boolean isInsert = which.equals("insert");
+
+        Class obj = this.getClass();
+        Method[] methods = obj.getMethods();
+        for(Method method : methods) {
+            String methodName = method.getName();
+            if(methodName.startsWith("get") && !methodName.endsWith("Class")) {
+                String field = methodName.substring(3);
+                field = field.substring(0, 1).toLowerCase() + field.substring(1);
+
+                String type = method.getReturnType().getName();
+                type = type.substring(type.lastIndexOf(".") + 1);
+
+                if(isCreate) {
+                    sb1.append(",").append(field).append(" ").append(type);
+                    if(field.equals("uuid")) {
+                        sb1.append(" primary key not null");
+                    }
+                } else {
+                    Object value = null;
+                    try {
+                        value = method.invoke(this);
+                    } catch(Exception e) {
+                        e.printStackTrace();
+                    }
+
+                    String stringfyValue = "";
+                    if(value!=null && value.getClass() == String.class) {
+                        stringfyValue = "'" + value + "'";
+                    } else {
+                        stringfyValue += value;
+                    }
+
+                    if(isInsert) {
+                        sb1.append(",").append(field);
+                        sb2.append(",").append(stringfyValue);
+                    } else { //update
+                        if(field.equals("uuid")) {
+                            sb2.append(field).append("=").append(stringfyValue);
+                        } else {
+                            if(field.equals("updateTime")) {
+                                stringfyValue = "" + new Date().getTime();
+                            }
+                            sb1.append(",").append(field).append("=").append(stringfyValue);
+                        }
+                    }
+                }
+            }
+        }
+
+        sb1 = sb1.deleteCharAt(0);
+        if(!isCreate) {
+            if(isInsert) {
+                sb1.insert(0, "(").append(") values (").append(sb2.deleteCharAt(0)).append(")");
+            } else {
+                sb1.append(" WHERE ").append(sb2);
+            }
+        }
+
+        return sb1.toString();
     }
 }

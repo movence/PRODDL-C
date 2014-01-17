@@ -21,9 +21,6 @@
 
 package pdl.cloud.model;
 
-import java.sql.Timestamp;
-import java.util.Map;
-
 /**
  * User: hkim
  * Date: 1/15/14
@@ -31,73 +28,30 @@ import java.util.Map;
  * pdl.cloud.model
  */
 public class NewInfo extends AbstractModel  {
-    private String iKey;
-    private String iValue;
-    private String dataType;
-
-    public NewInfo(String uuid) {
-        super(uuid);
-    }
+    private String key;
+    private String value;
 
     public NewInfo() {
         super();
     }
 
-    public String getiKey() {
-        return iKey;
+    public NewInfo(String uuid) {
+        super(uuid);
     }
 
-    public void setiKey(String iKey) {
-        this.iKey = iKey;
+    public String getKey() {
+        return key;
     }
 
-    public String getiValue() {
-        return iValue;
+    public void setKey(String key) {
+        this.key = key;
     }
 
-    public void setiValue(String iValue) {
-        this.iValue = iValue;
+    public String getValue() {
+        return value;
     }
 
-    public String getDataType() {
-        return dataType;
-    }
-
-    public void setDataType(String dataType) {
-        this.dataType = dataType;
-    }
-
-    @Override
-    public String getValuesWithComma() {
-        String comma = ",";
-        String singleQuote = "'";
-        StringBuilder values = new StringBuilder();
-        values.append(singleQuote + uuid + singleQuote + comma);
-        values.append(singleQuote + createTime+ singleQuote + comma);
-        values.append((updateTime == null ? null : singleQuote + updateTime + singleQuote) + comma);
-        values.append(singleQuote + iKey + singleQuote + comma);
-        values.append(singleQuote + iValue+ singleQuote + comma);
-        values.append("null");
-
-        return values.toString();
-    }
-
-    @Override
-    public String getValuesWithEqual() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("iKey='" + this.getiKey() + "'");
-        sb.append(",iValue='" + this.getiValue() + "'");
-        sb.append(",dataType=" + (this.getDataType() == null ? null : "'" + this.getDataType() + "'"));
-        return sb.toString();
-    }
-
-    @Override
-    public void setValues(Map<String, String> map) {
-        this.setiKey(map.get("iKey"));
-        this.setiValue(map.get("iValue"));
-        this.setDataType(map.get("dataType"));
-        this.setUuid(map.get("uuid"));
-        this.setCreateTime(Long.valueOf(map.get("createTime")));
-        this.setCreateTime(map.get("updateTime") == null ? null : Long.valueOf(map.get("updateTime")));
+    public void setValue(String value) {
+        this.value = value;
     }
 }
