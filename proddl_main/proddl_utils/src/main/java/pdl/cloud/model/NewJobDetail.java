@@ -20,6 +20,14 @@ public class NewJobDetail extends AbstractModel {
     private String log;
     private String jobDirectory;
 
+    public NewJobDetail() {
+        super();
+    }
+
+    public NewJobDetail(String uuid) {
+        super(uuid);
+    }
+
     public String getJobName() {
         return jobName;
     }
