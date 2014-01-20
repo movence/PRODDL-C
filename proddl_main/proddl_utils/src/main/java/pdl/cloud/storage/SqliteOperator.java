@@ -113,7 +113,7 @@ public class SqliteOperator {
         }
     }
 
-    public List<Map<String, String>> query(String tableName, String sql) {
+    public List<Map<String, String>> query(String tableName, String where) {
         List<Map<String, String>> results = new ArrayList<Map<String, String>>();
         Statement statement = null;
         ResultSet rs = null;
@@ -124,7 +124,10 @@ public class SqliteOperator {
 
         try {
             statement = connection.createStatement();
-            rs = statement.executeQuery("SELECT * FROM " + tableName + (sql == null || sql.isEmpty()? "" : sql));
+            StringBuilder sql = new StringBuilder("SELECT * FROM ")
+                    .append(tableName)
+                    .append(" WHERE ").append(where == null || where.isEmpty()? "" : where);
+            rs = statement.executeQuery(sql.toString());
             if(rs.next()) {
 
                 ResultSetMetaData metaData = rs.getMetaData();
