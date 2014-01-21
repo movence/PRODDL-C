@@ -21,11 +21,6 @@
 
 package pdl.operator.app;
 
-import org.soyatec.windowsazure.table.ITableServiceEntity;
-import pdl.cloud.model.Info;
-import pdl.cloud.storage.TableOperator;
-import pdl.utils.Configuration;
-import pdl.utils.StaticValues;
 import pdl.utils.ToolPool;
 
 import java.io.*;
@@ -285,7 +280,7 @@ public class CctoolsOperator extends ToolOperator {
 
     private boolean getOrUpdateCatalogServerInfo(String address, String port) {
         try {
-            Configuration conf = Configuration.getInstance();
+            /*Configuration conf = Configuration.getInstance();
             TableOperator tableOperator = new TableOperator(conf);
 
             String tableName = ToolPool.buildTableName(StaticValues.TABLE_NAME_INFOS);
@@ -324,7 +319,7 @@ public class CctoolsOperator extends ToolOperator {
             }
 
             this.catalogServerAddress = addrInfo!=null?addrInfo.getiValue():address;
-            this.catalogServerPort = portInfo!=null?portInfo.getiValue():port;
+            this.catalogServerPort = portInfo!=null?portInfo.getiValue():port;*/
         } catch (Exception e) {
             e.printStackTrace();
         }
