@@ -21,34 +21,27 @@
 
 package pdl.cloud.model;
 
-import org.soyatec.windowsazure.table.AbstractTableServiceEntity;
-import org.soyatec.windowsazure.table.Guid;
-
 /**
  * Created by IntelliJ IDEA.
  * User: hkim
  * Date: 1/23/12
  * Time: 1:10 PM
  */
-public class User extends AbstractTableServiceEntity {
+public class User extends AbstractModel {
     private String firstName;
     private String lastName;
     private String userId;
     private String userpass;
-    private int isAdmin; //0: NO, 1: YES
+    private int admin; //0: NO, 1: YES
     private String email;
     private String phone;
 
-    public User(String partitionKey, String rowKey) {
-        super(partitionKey, rowKey);
-    }
-
-    public User(String partitionKey) {
-        this(partitionKey, new Guid().getValue());
+    public User(String uuid) {
+        super(uuid);
     }
 
     public User() {
-        this("proddl_user");
+        super();
     }
 
     public String getFirstName() {
@@ -84,11 +77,11 @@ public class User extends AbstractTableServiceEntity {
     }
 
     public int getAdmin() {
-        return isAdmin;
+        return admin;
     }
 
     public void setAdmin(int admin) {
-        isAdmin = admin;
+        admin = admin;
     }
 
     public String getEmail() {

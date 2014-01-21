@@ -16,60 +16,42 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 package pdl.cloud.model;
 
-import org.soyatec.windowsazure.table.AbstractTableServiceEntity;
-import org.soyatec.windowsazure.table.Guid;
-
 /**
- * Created by IntelliJ IDEA.
  * User: hkim
- * Date: 8/29/11
- * Time: 12:45 PM
- * To change this template use File | Settings | File Templates.
+ * Date: 1/15/14
+ * Time: 1:51 PM
+ * pdl.cloud.model
  */
-public class Info extends AbstractTableServiceEntity {
-    private String iKey;
-    private String iValue;
-    private String dataType;
-
-
-    public Info(String partitionKey, String rowKey) {
-        super(partitionKey, rowKey);
-    }
-
-    public Info(String partitionKey) {
-        this(partitionKey, new Guid().getValue());
-    }
+public class Info extends AbstractModel  {
+    private String key;
+    private String value;
 
     public Info() {
-        this("proddl_info");
+        super();
     }
 
-    public String getiKey() {
-        return iKey;
+    public Info(String uuid) {
+        super(uuid);
     }
 
-    public void setiKey(String iKey) {
-        this.iKey = iKey;
+    public String getKey() {
+        return key;
     }
 
-    public String getiValue() {
-        return iValue;
+    public void setKey(String key) {
+        this.key = key;
     }
 
-    public void setiValue(String iValue) {
-        this.iValue = iValue;
+    public String getValue() {
+        return value;
     }
 
-    public String getDataType() {
-        return dataType;
-    }
-
-    public void setDataType(String dataType) {
-        this.dataType = dataType;
+    public void setValue(String value) {
+        this.value = value;
     }
 }

@@ -1,38 +1,14 @@
-/*
- * Copyright J. Craig Venter Institute, 2014
- *
- * The creation of this program was supported by the U.S. National
- * Science Foundation grant 1048199 and the Microsoft allocation
- * in the MS Azure cloud.
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>
- */
-
 package pdl.cloud.model;
 
-import org.soyatec.windowsazure.table.AbstractTableServiceEntity;
-import org.soyatec.windowsazure.table.Guid;
 import pdl.utils.StaticValues;
 
 /**
- * Created by IntelliJ IDEA.
- * User: hkim
- * Date: 8/12/11
- * Time: 2:54 PM
- * To change this template use File | Settings | File Templates.
+ * User: movence
+ * Date: 1/17/14
+ * Time: 11:44 AM
+ * pdl.cloud.model
  */
-public class JobDetail extends AbstractTableServiceEntity {
+public class JobDetail extends AbstractModel {
     private String jobName;
     private String inputFileUUID;
     private String scriptFileUUID;
@@ -44,21 +20,12 @@ public class JobDetail extends AbstractTableServiceEntity {
     private String log;
     private String jobDirectory;
 
-    public JobDetail(String partitionKey, String rowKey) {
-        super(partitionKey, rowKey);
-    }
-
-    public JobDetail(String partitionKey) {
-        this(partitionKey + "_job", new Guid().getValue());
-    }
-
     public JobDetail() {
-        //this( UUID.randomUUID().toString() );
-        this("generic");
+        super();
     }
 
-    public String getJobUUID() {
-        return getRowKey();
+    public JobDetail(String uuid) {
+        super(uuid);
     }
 
     public String getJobName() {
@@ -93,20 +60,20 @@ public class JobDetail extends AbstractTableServiceEntity {
         this.userId = userId;
     }
 
+    public int getStatus() {
+        return status;
+    }
+
     /**
      * @return String value of status
      *         0:Submitted, 1:Running, 2:Finished, 4:Failed
      */
-    public String getStatusInString() {
-        return status==StaticValues.JOB_STATUS_SUBMITTED?"submitted"
+    public String statusInString() {
+        return status== StaticValues.JOB_STATUS_SUBMITTED?"submitted"
                 :status==StaticValues.JOB_STATUS_PENDING?"pending"
                 :status==StaticValues.JOB_STATUS_RUNNING?"running"
                 :status==StaticValues.JOB_STATUS_COMPLETED?"finished"
                 :"failed";
-    }
-
-    public int getStatus() {
-        return status;
     }
 
     public void setStatus(int status) {
@@ -137,19 +104,19 @@ public class JobDetail extends AbstractTableServiceEntity {
         this.result = result;
     }
 
-    public String getJobDirectory() {
-        return jobDirectory;
-    }
-
-    public void setJobDirectory(String jobDirectory) {
-        this.jobDirectory = jobDirectory;
-    }
-
     public String getLog() {
         return log;
     }
 
     public void setLog(String log) {
         this.log = log;
+    }
+
+    public String getJobDirectory() {
+        return jobDirectory;
+    }
+
+    public void setJobDirectory(String jobDirectory) {
+        this.jobDirectory = jobDirectory;
     }
 }
