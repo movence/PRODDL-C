@@ -21,7 +21,6 @@
 
 package pdl.cloud.management;
 
-import org.soyatec.windowsazure.table.ITableServiceEntity;
 import pdl.cloud.model.JobDetail;
 import pdl.cloud.storage.TableOperator;
 import pdl.utils.QueryTool;
@@ -30,6 +29,7 @@ import pdl.utils.ToolPool;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by IntelliJ IDEA.
@@ -55,7 +55,7 @@ public class JobManager {
     private synchronized void reorderSubmittedJobs() throws Exception {
         try {
             List<JobDetail> jobs = getJobList(
-                QueryTool.getSingleConditionalStatement(StaticValues.COLUMN_JOB_DETAIL_STATUS, "eq", StaticValues.JOB_STATUS_SUBMITTED)
+                    QueryTool.getSingleConditionalStatement(StaticValues.COLUMN_JOB_DETAIL_STATUS, "=", StaticValues.JOB_STATUS_SUBMITTED)
             );
 
             if(jobs!=null && jobs.size()>0) {
@@ -143,21 +143,18 @@ public class JobManager {
         JobDetail job = null;
 
         try {
-            ITableServiceEntity retrievedJob = null;
+            Map<String, String> retrievedJob = null;
 
             if (jobId != null && !jobId.isEmpty()) {
-                retrievedJob = tableOperator.queryEntityBySearchKey(
-                        jobDetailTableName,
-                        StaticValues.COLUMN_ROW_KEY,
-                        jobId,
-                        JobDetail.class
-                );
+                retrievedJob = tableOperator.queryEntityBySearchKey(jobDetailTableName, StaticValues.COLUMN_ROW_KEY, jobId);
             }
 
-            if (retrievedJob != null && retrievedJob.getClass() == JobDetail.class)
-                job = (JobDetail) retrievedJob;
-            else
+            if (retrievedJob != null) {
+                job = new JobDetail();
+                job.map(retrievedJob);
+            } else {
                 throw new Exception(String.format("Job (ID:'%s') does not exist.", jobId));
+            }
 
         } catch (Exception ex) {
             throw ex;
@@ -177,40 +174,36 @@ public class JobManager {
         JobDetail job = null;
 
         try {
-            ITableServiceEntity retrievedJob = null;
+            StringBuilder where = new StringBuilder();
 
             //gets job which has the highest priority
-            retrievedJob = tableOperator.queryEntityByCondition(
-                    jobDetailTableName,
-                    QueryTool.mergeConditions(
-                            QueryTool.getSingleConditionalStatement(
-                                    StaticValues.COLUMN_JOB_DETAIL_STATUS,
-                                    "eq",
-                                    StaticValues.JOB_STATUS_SUBMITTED
-                            ),
-                            "and",
-                            QueryTool.getSingleConditionalStatement(
-                                    StaticValues.COLUMN_JOB_DETAIL_PRIORITY,
-                                    "eq",
-                                    1
-                            )
-                    ),
-                    JobDetail.class
+            where.append(
+                    QueryTool.getSingleConditionalStatement(StaticValues.COLUMN_JOB_DETAIL_STATUS, "=", StaticValues.JOB_STATUS_SUBMITTED)
             );
+            where.append(" and ");
+            where.append(QueryTool.getSingleConditionalStatement(StaticValues.COLUMN_JOB_DETAIL_PRIORITY, "=", 1));
 
-            //if no job is found in previous step, grab a submitted job to run
-            if (retrievedJob == null) {
-                retrievedJob = tableOperator.queryEntityBySearchKey(
-                        jobDetailTableName,
-                        StaticValues.COLUMN_JOB_DETAIL_STATUS,
-                        StaticValues.JOB_STATUS_SUBMITTED,
-                        JobDetail.class
-                );
+            Map<String, String> jobMap = tableOperator.queryEntity(jobDetailTableName, where.toString());
+            if(jobMap != null) {
+                job = new JobDetail();
+                job.map(jobMap);
             }
 
-            if (retrievedJob != null && retrievedJob.getClass() == JobDetail.class) {
-                job = (JobDetail) retrievedJob;
-                this.updateJobStatus(job.getJobUUID(), StaticValues.JOB_STATUS_PENDING);
+            //if no job is found in previous step, grab a submitted job to run
+            if (job == null) {
+                jobMap = tableOperator.queryEntityBySearchKey(
+                        jobDetailTableName,
+                        StaticValues.COLUMN_JOB_DETAIL_STATUS,
+                        StaticValues.JOB_STATUS_SUBMITTED
+                );
+                if(jobMap != null) {
+                    job = new JobDetail();
+                    job.map(jobMap);
+                }
+            }
+
+            if (job != null && job.getClass() == JobDetail.class) {
+                this.updateJobStatus(job.getUuid(), StaticValues.JOB_STATUS_PENDING);
                 this.reorderSubmittedJobs();
             }
 
@@ -258,7 +251,7 @@ public class JobManager {
     public boolean updateJobStatus(String jobId, int status) {
         boolean rtnVal = false;
         try {
-         rtnVal = this.updateJob(jobId, status, null, null);
+            rtnVal = this.updateJob(jobId, status, null, null);
         } catch (Exception ex) {
             ex.printStackTrace();
         }
@@ -273,7 +266,9 @@ public class JobManager {
      */
     public void updateMultipleJobStatus(int prevStatus, int newStatus) throws Exception {
         try {
-            List<JobDetail> jobList = getJobList(QueryTool.getSingleConditionalStatement(StaticValues.COLUMN_JOB_DETAIL_STATUS, "eq", prevStatus));
+            List<JobDetail> jobList = getJobList(
+                    QueryTool.getSingleConditionalStatement(StaticValues.COLUMN_JOB_DETAIL_STATUS, "=", prevStatus)
+            );
 
             if(jobList!=null && jobList.size()>0) {
                 for (JobDetail currJob : jobList) {
@@ -321,14 +316,13 @@ public class JobManager {
     public List<JobDetail> getJobList(String condition) throws Exception {
         List<JobDetail> jobs = null;
         try {
-            List<ITableServiceEntity> jobEntities = tableOperator.queryListByCondition(
-                    jobDetailTableName,
-                    condition,
-                    JobDetail.class);
-            if(jobEntities!=null && jobEntities.size()>0) {
+            List<Map<String, String>> list = tableOperator.query(jobDetailTableName, condition);
+            if(list != null && list.size() > 0) {
                 jobs = new ArrayList<JobDetail>();
-                for(ITableServiceEntity entity : jobEntities) {
-                    jobs.add((JobDetail)entity);
+                for(Map<String, String> entity : list) {
+                    JobDetail job = new JobDetail();
+                    job.map(entity);
+                    jobs.add(job);
                 }
             }
         } catch (Exception ex) {

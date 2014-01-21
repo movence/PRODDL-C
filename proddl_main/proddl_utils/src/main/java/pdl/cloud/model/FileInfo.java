@@ -10,7 +10,7 @@ import pdl.utils.StaticValues;
  */
 public class FileInfo extends AbstractModel {
     String type;
-    String suuid; //file name
+    String name; //file name
     String content;
     String userId;
     String container;
@@ -34,12 +34,12 @@ public class FileInfo extends AbstractModel {
         this.type = type;
     }
 
-    public String getSuuid() {
-        return suuid;
+    public String getName() {
+        return name;
     }
 
-    public void setSuuid(String suuid) {
-        this.suuid = suuid;
+    public void setName(String name) {
+        this.name = name;
     }
 
     public String getContent() {

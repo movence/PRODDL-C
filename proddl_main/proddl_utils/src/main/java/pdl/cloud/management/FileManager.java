@@ -21,11 +21,12 @@
 
 package pdl.cloud.management;
 
-import pdl.cloud.model.FileInfo;
 import pdl.cloud.storage.TableOperator;
 import pdl.utils.Configuration;
 import pdl.utils.StaticValues;
 import pdl.utils.ToolPool;
+
+import java.util.Map;
 
 /**
  * Created by IntelliJ IDEA.
@@ -53,9 +54,10 @@ public class FileManager {
     public String getFileNameById(String id) throws Exception {
         String name = null;
         try {
-            FileInfo info = (FileInfo)tableOperator.queryEntityBySearchKey(filesTableName, StaticValues.COLUMN_ROW_KEY, id, FileInfo.class);
-            if(info!=null)
-                name=info.getSuuid();
+            Map<String, String> entity = tableOperator.queryEntityBySearchKey(filesTableName, StaticValues.COLUMN_ROW_KEY, id);
+            if(entity != null) {
+                name = entity.get("name");
+            }
         } catch(Exception ex) {
             throw ex;
         }

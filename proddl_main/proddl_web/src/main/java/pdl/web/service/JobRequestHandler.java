@@ -95,7 +95,7 @@ public class JobRequestHandler {
 
                 succeed = jobManager.submitJob(jobDetail);
                 if(succeed) {
-                    rtnVal.put("id", jobDetail.getJobUUID());
+                    rtnVal.put("id", jobDetail.getUuid());
                     rtnVal.put("name", jobDetail.getJobName());
                     result = "submitted";
                 } else {
@@ -203,7 +203,7 @@ public class JobRequestHandler {
                 Map<String, Object> jobInfoMap = new TreeMap<String, Object>();
                 //jobInfoMap.put("Job ID", job.getJobUUID());
                 jobInfoMap.put("name", job.getJobName());
-                jobInfoMap.put("status", job.getStatusInString());
+                jobInfoMap.put("status", job.statusInString());
                 jobInfoMap.put("user", job.getUserId());
                 jobInfoMap.put("input", job.getInput());
 
@@ -245,7 +245,7 @@ public class JobRequestHandler {
                         result = "failed";
                         break;
                     default:
-                        result = String.format("status-'%s'", job.getStatusInString());
+                        result = String.format("status-'%s'", job.statusInString());
                 }
             }
             rtnVal.put("result", result);
@@ -268,11 +268,11 @@ public class JobRequestHandler {
             List<String> jobIdWithStatus = new ArrayList<String>();
 
             List<JobDetail> jobs = jobManager.getJobList(
-                    QueryTool.getSingleConditionalStatement(StaticValues.COLUMN_USER_ID, "eq", userName)
+                    QueryTool.getSingleConditionalStatement(StaticValues.COLUMN_USER_ID, "=", userName)
             );
             if(jobs!=null && jobs.size()>0) {
                 for(JobDetail job : jobs) {
-                    jobIdWithStatus.add(job.getJobName()+":"+job.getJobUUID()+":"+job.getStatusInString());
+                    jobIdWithStatus.add(job.getJobName()+":"+job.getUuid()+":"+job.statusInString());
                 }
             }
             rtnVal.put("job", jobIdWithStatus);
@@ -392,7 +392,7 @@ public class JobRequestHandler {
             if(files!=null && files.size()>0) {
                 fileInfoList = new ArrayList<String>();
                 for(FileInfo fileInfo : files) {
-                    fileInfoList.add(fileInfo.getIuuid()+":"+fileInfo.getOriginalName()+":"+fileInfo.getStatusInString());
+                    fileInfoList.add(fileInfo.getUuid()+":"+fileInfo.getOriginalName()+":"+fileInfo.statusInString());
                 }
             }
             rtnVal.put("file", fileInfoList);

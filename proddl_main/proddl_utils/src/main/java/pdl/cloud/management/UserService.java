@@ -21,7 +21,6 @@
 
 package pdl.cloud.management;
 
-import org.soyatec.windowsazure.table.ITableServiceEntity;
 import org.springframework.security.authentication.encoding.PasswordEncoder;
 import org.springframework.security.authentication.encoding.ShaPasswordEncoder;
 import pdl.cloud.model.User;
@@ -29,6 +28,8 @@ import pdl.cloud.storage.TableOperator;
 import pdl.utils.Configuration;
 import pdl.utils.StaticValues;
 import pdl.utils.ToolPool;
+
+import java.util.Map;
 
 /**
  * Created by IntelliJ IDEA.
@@ -64,14 +65,15 @@ public class UserService {
      * @throws Exception
      */
     public User getUserById(String userId) throws Exception {
-        User rtnVal = null;
+        User user = null;
 
         try {
             initializeTableOperator();
-            ITableServiceEntity rtnEntity = tableOperator.queryEntityBySearchKey(userTableName, StaticValues.COLUMN_USER_ID, userId, User.class);
+            Map<String, String> entity = tableOperator.queryEntityBySearchKey(userTableName, StaticValues.COLUMN_USER_ID, userId);
 
-            if(rtnEntity != null) {
-                rtnVal = (User)rtnEntity;
+            if(entity != null) {
+                user = new User();
+                user.map(entity);
             } else { //if admin does not exist(in case of fresh start), create one with default password ("pdlAdmin")
                 if("admin".equals(userId)) {
                     User admin = new User();
@@ -80,8 +82,9 @@ public class UserService {
                     admin.setUserpass("pdlAdmin");
                     admin.setAdmin(1);
 
-                    if (this.loadUser(admin))
-                        rtnVal = admin;
+                    if (this.loadUser(admin)) {
+                        user = admin;
+                    }
                 }
             }
         } catch (Exception ex) {
@@ -89,7 +92,7 @@ public class UserService {
             throw ex;
         }
 
-        return rtnVal;
+        return user;
     }
 
     /**

@@ -24,6 +24,7 @@ package pdl.cloud.storage;
 import org.sqlite.SQLiteConfig;
 import pdl.cloud.model.AbstractModel;
 import pdl.utils.Configuration;
+import pdl.utils.StaticValues;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -51,6 +52,10 @@ public class TableOperator {
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
         }
+    }
+
+    public TableOperator(Configuration conf) {
+        this(conf.getStringProperty(StaticValues.CONFIG_KEY_STORAGE_PATH));
     }
 
     public TableOperator(String databaseFileName) {
@@ -124,9 +129,11 @@ public class TableOperator {
 
         try {
             statement = connection.createStatement();
-            StringBuilder sql = new StringBuilder("SELECT * FROM ")
-                    .append(tableName)
-                    .append(" WHERE ").append(where == null || where.isEmpty()? "" : where);
+            StringBuilder sql = new StringBuilder("SELECT * FROM ").append(tableName).append(" ");
+            if(!where.startsWith("WHERE")) {
+                sql.append("WHERE ");
+            }
+            sql.append(where == null || where.isEmpty()? "" : where);
             rs = statement.executeQuery(sql.toString());
             if(rs.next()) {
 
@@ -159,6 +166,36 @@ public class TableOperator {
         }
 
         return results;
+    }
+
+    public Map<String, String> queryEntity(String tableName, String where) {
+        Map<String, String> entity = null;
+        List<Map<String, String>> list = this.query(tableName, where);
+        if(list != null && list.size() > 0) {
+            entity = list.get(0);
+        }
+        return entity;
+    }
+
+    public List<Map<String, String>> queryListBySearchKey(String tableName, String searchColumn, Object value) {
+        StringBuilder where = new StringBuilder("WHERE ");
+        where.append(searchColumn).append("=");
+
+        if(value.getClass() == java.lang.String.class) {
+            where.append("'").append(value).append("'");
+        } else {
+            where.append(value);
+        }
+        return this.query(tableName, where.toString());
+    }
+
+    public Map<String, String> queryEntityBySearchKey(String tableName, String searchColumn, Object value) {
+        Map<String, String> entity = null;
+        List<Map<String, String>> list = this.queryListBySearchKey(tableName, searchColumn, value);
+        if(list != null && list.size() > 0) {
+            entity = list.get(0);
+        }
+        return entity;
     }
 
     public boolean update(String sql, boolean isTable) {

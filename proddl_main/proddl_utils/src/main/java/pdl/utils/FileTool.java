@@ -22,7 +22,6 @@
 package pdl.utils;
 
 import org.apache.commons.io.FileUtils;
-import org.soyatec.windowsazure.table.ITableServiceEntity;
 import pdl.cloud.model.FileInfo;
 import pdl.cloud.storage.BlobOperator;
 import pdl.cloud.storage.TableOperator;
@@ -31,6 +30,7 @@ import java.io.File;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by IntelliJ IDEA.
@@ -78,12 +78,12 @@ public class FileTool {
      */
     public FileInfo createFileRecord(String originalFileName, String userName) {
         FileInfo fileInfo = new FileInfo();
-        fileInfo.setName(fileInfo.getIuuid()+StaticValues.FILE_EXTENSION_DAT);
+        fileInfo.setName(fileInfo.getUuid()+StaticValues.FILE_EXTENSION_DAT);
         fileInfo.setUserId(userName);
         fileInfo.setStatus(StaticValues.FILE_STATUS_RESERVED);
         fileInfo.setOriginalName(originalFileName);
 
-        int hashedDirectory = Math.abs(fileInfo.getIuuid().hashCode()) % StaticValues.MAX_FILE_COUNT_PER_DIRECTORY;
+        int hashedDirectory = Math.abs(fileInfo.getUuid().hashCode()) % StaticValues.MAX_FILE_COUNT_PER_DIRECTORY;
         String dirPath = fileStoragePath + hashedDirectory;
         ToolPool.createDirectoryIfNotExist(dirPath);
         fileInfo.setPath(String.valueOf(hashedDirectory));
@@ -100,9 +100,11 @@ public class FileTool {
     public FileInfo getFileInfoById(String fileId) throws Exception{
         FileInfo fileInfo = null;
 
-        ITableServiceEntity entity = tableOperator.queryEntityBySearchKey(fileTableName, StaticValues.COLUMN_ROW_KEY, fileId, FileInfo.class);
-        if(entity!=null)
-            fileInfo = (FileInfo)entity;
+        Map<String, String> entity = tableOperator.queryEntityBySearchKey(fileTableName, StaticValues.COLUMN_ROW_KEY, fileId);
+        if(entity!=null) {
+            fileInfo = new FileInfo();
+            fileInfo.map(entity);
+        }
 
         return fileInfo;
     }
@@ -163,7 +165,7 @@ public class FileTool {
             fileInfo.setStatus(StaticValues.FILE_STATUS_COMMITTED);
             boolean recordInserted = this.insertFileRecord(fileInfo);
             if(recordInserted)
-                rtnVal = fileInfo.getIuuid();
+                rtnVal = fileInfo.getUuid();
         } catch(Exception ex) {
             throw ex;
         } finally {
@@ -294,11 +296,13 @@ public class FileTool {
      */
     public List<FileInfo> getFileList(String userName) throws Exception {
         List<FileInfo> files = null;
-        List<ITableServiceEntity> fileList = tableOperator.queryListBySearchKey(fileTableName, StaticValues.COLUMN_USER_ID, userName, null, null, FileInfo.class);
+        List<Map<String, String>> fileList = tableOperator.queryListBySearchKey(fileTableName, StaticValues.COLUMN_USER_ID, userName);
         if(fileList!=null && fileList.size()>0) {
             files = new ArrayList<FileInfo>();
-            for(ITableServiceEntity entity : fileList) {
-                files.add((FileInfo)entity);
+            for(Map<String, String> entity : fileList) {
+                FileInfo fileInfo = new FileInfo();
+                fileInfo.map(entity);
+                files.add(fileInfo);
             }
         }
         return files;

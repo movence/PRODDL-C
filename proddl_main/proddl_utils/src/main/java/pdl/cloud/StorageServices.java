@@ -23,6 +23,7 @@ package pdl.cloud;
 
 
 import org.soyatec.windowsazure.table.ITableServiceEntity;
+import pdl.cloud.model.AbstractModel;
 import pdl.cloud.model.FileInfo;
 import pdl.cloud.storage.BlobOperator;
 import pdl.cloud.storage.TableOperator;
@@ -30,6 +31,7 @@ import pdl.utils.StaticValues;
 import pdl.utils.ToolPool;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by IntelliJ IDEA.
@@ -52,16 +54,15 @@ public class StorageServices {
         return tableOperator;
     }
 
-    public boolean insertSingleEnttity(String tableName, ITableServiceEntity entity) {
+    public boolean insertSingleEnttity(String tableName, AbstractModel entity) {
         return getTableOperator().insertEntity(tableName, entity);
     }
 
     public String getFileNameById(String fileId) {
-        FileInfo currFile = (FileInfo) getTableOperator().queryEntityBySearchKey(
-                ToolPool.buildTableName(StaticValues.TABLE_NAME_FILES),
-                StaticValues.COLUMN_ROW_KEY, fileId,
-                FileInfo.class);
-        return currFile==null?null:currFile.getName();
+        Map<String, String> entity = getTableOperator().queryEntityBySearchKey(
+                ToolPool.buildTableName(StaticValues.TABLE_NAME_FILES), StaticValues.COLUMN_ROW_KEY, fileId
+        );
+        return entity == null ? null : entity.get("name");
     }
 
     public ITableServiceEntity queryEntityBySearchKey(String tableName, String column, String key, Class model) {
@@ -72,11 +73,11 @@ public class StorageServices {
         return getTableOperator().queryListBySearchKey(tableName, column, key, null, null, model);
     }
 
-    public boolean updateEntity(String tableName, ITableServiceEntity entity) {
+    public boolean updateEntity(String tableName, AbstractModel entity) {
         return getTableOperator().updateEntity(tableName, entity);
     }
 
-    public void deleteEntity(String tableName, ITableServiceEntity entity) {
+    public void deleteEntity(String tableName, AbstractModel entity) {
         getTableOperator().deleteEntity(tableName, entity);
     }
 

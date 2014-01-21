@@ -30,13 +30,10 @@ import org.soyatec.windowsazure.management.Deployment;
 import org.soyatec.windowsazure.management.HostedService;
 import org.soyatec.windowsazure.management.HostedServiceProperties;
 import org.soyatec.windowsazure.management.ServiceManagementRest;
-import org.soyatec.windowsazure.table.ITableServiceEntity;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
-import pdl.cloud.model.Info;
-import pdl.cloud.model.PerformanceData;
 import pdl.cloud.storage.TableOperator;
 import pdl.utils.Configuration;
 import pdl.utils.StaticValues;
@@ -85,14 +82,14 @@ public class CloudInstanceManager {
             String trustcaFilePath = ToolPool.buildFilePath(dataStorePath, StaticValues.DIRECTORY_FILE_AREA, trustcaFieName);
 
             String certPass = conf.getStringProperty(StaticValues.CONFIG_KEY_CERT_PASSWORD);
-            if (certPass == null) {
+            /*if (certPass == null) {
                 Info passData = (Info) tableOperator.queryEntityBySearchKey(
                         ToolPool.buildTableName(StaticValues.TABLE_NAME_INFOS),
                         StaticValues.COLUMN_INFOS_KEY,
                         StaticValues.CONFIG_KEY_CERT_PASSWORD,
                         Info.class);
                 certPass = passData.getiValue();
-            }
+            }*/
             manager = new ServiceManagementRest(
                     conf.getStringProperty(StaticValues.CONFIG_KEY_SUBSCRIPTION_ID),
                     keystoreFilePath, certPass,
@@ -260,12 +257,11 @@ public class CloudInstanceManager {
                  COLUMN_PERFORMANCE_COUNTER_VALUE, null, null, PerformanceData.class);
             */
 
-            List<ITableServiceEntity> entityList = tableOperator.queryListBySearchKey(
+            /*List<ITableServiceEntity> entityList = tableOperator.queryListBySearchKey(
                     TABLE_PERFORMANCE_COUNTER_NAME,
                     StaticValues.CONFIG_KEY_DEPLOYMENT_ID,
                     conf.getStringProperty(StaticValues.CONFIG_KEY_DEPLOYMENT_ID),
-                    null, null,
-                    PerformanceData.class);
+                    null, null);
 
             if (entityList != null && entityList.size() > 0) {
                 float processorTimeFactor = 0;
@@ -282,7 +278,7 @@ public class CloudInstanceManager {
                 } else if (processorTimeFactor < StaticValues.MINIMUM_AVERAGE_CPU_USAGE) {
                     this.scaleService(currCount/2);
                 }
-            }
+            }*/
         } catch (Exception ex) {
             ex.printStackTrace();
         }

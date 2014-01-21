@@ -50,7 +50,7 @@ public class JobExecutor extends Thread {
     private JobManager jobManager;
 
     public JobExecutor(ThreadGroup group, JobDetail currJob, CctoolsOperator operator, JobManager jobManager) {
-        super(group, currJob.getJobUUID() + "_job");
+        super(group, currJob.getUuid() + "_job");
         this.currJob=currJob;
         this.cctoolsOperator = operator;
         this.jobManager = jobManager;
@@ -70,16 +70,16 @@ public class JobExecutor extends Thread {
          * This method overrides toString() in order to provide job ID to RejectedJobExecutorHandler
          * in case this thread gets rejected by Asynchronous Queue
          */
-        return currJob.getJobUUID();
+        return currJob.getUuid();
     }
 
     /**
      * thread run
      */
     public void run() {
-        if (currJob != null && currJob.getJobUUID() != null) {
+        if (currJob != null && currJob.getUuid() != null) {
             boolean jobExecuted = this.executeJob();
-            jobManager.updateJobStatus(currJob.getJobUUID(), jobExecuted?StaticValues.JOB_STATUS_COMPLETED:StaticValues.JOB_STATUS_FAILED);
+            jobManager.updateJobStatus(currJob.getUuid(), jobExecuted?StaticValues.JOB_STATUS_COMPLETED:StaticValues.JOB_STATUS_FAILED);
         }
     }
 
@@ -92,7 +92,7 @@ public class JobExecutor extends Thread {
 
         try {
             if (currJob != null) { //TODO check if job has input(json format)
-                String jobId = currJob.getJobUUID();
+                String jobId = currJob.getUuid();
                 String jobName = currJob.getJobName();
 
                 System.out.printf("starting a job - %s:%s%n", jobName, jobId);
@@ -247,12 +247,12 @@ public class JobExecutor extends Thread {
                     String fileExtension = interpreter==null||interpreter.isEmpty()?"exe":"sh";
                     String scriptFile = this.validateJobFiles(workDir, fileExtension);
 
-                    jobManager.updateJobStatus(currJob.getJobUUID(), StaticValues.JOB_STATUS_RUNNING);
+                    jobManager.updateJobStatus(currJob.getUuid(), StaticValues.JOB_STATUS_RUNNING);
 
                     boolean executed = false;
                     if(interpreter!=null) {
                         if(interpreter.equals("makeflow"))
-                            executed = cctoolsOperator.startMakeflow(false, currJob.getJobUUID(), scriptFile, workDir);
+                            executed = cctoolsOperator.startMakeflow(false, currJob.getUuid(), scriptFile, workDir);
                         else if(interpreter.equals("bash"))
                             executed = cctoolsOperator.startBash(scriptFile, workDir);
                     } else {
@@ -273,7 +273,7 @@ public class JobExecutor extends Thread {
                             logFileId = fileTool.createFile(null, new FileInputStream(ToolPool.buildFilePath(workDir, "final.log")), null, currJob.getUserId());
 
                         //if(outputFileId!=null && !outputFileId.isEmpty())
-                        completed = jobManager.updateJob(currJob.getJobUUID(), StaticValues.JOB_STATUS_COMPLETED, outputFileId, logFileId);
+                        completed = jobManager.updateJob(currJob.getUuid(), StaticValues.JOB_STATUS_COMPLETED, outputFileId, logFileId);
                     }
                 }
             }
