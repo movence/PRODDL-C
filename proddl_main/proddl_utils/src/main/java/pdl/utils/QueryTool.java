@@ -41,6 +41,6 @@ public class QueryTool {
         else
             valueInString = "'" + value + "'";
 
-        return String.format("%s %s %s", column, condition, valueInString);
+        return String.format("%s%s%s", column, condition, valueInString);
     }
 }

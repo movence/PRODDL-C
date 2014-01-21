@@ -65,9 +65,9 @@ public class StaticValues {
     public static final String TABLE_NAME_FILES = "files";
     public static final String TABLE_NAME_USER = "users";
 
-    public static final String COLUMN_ROW_KEY = "RowKey";
+    public static final String COLUMN_ROW_KEY = "uuid";
     public static final String COLUMN_USER_ID = "userId";
-    public static final String COLUMN_INFOS_KEY = "iKey";
+    public static final String COLUMN_INFOS_KEY = "key";
     public static final String COLUMN_JOB_DETAIL_PRIORITY = "priority";
     public static final String COLUMN_JOB_DETAIL_STATUS = "status";
 
