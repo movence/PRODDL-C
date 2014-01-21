@@ -21,312 +21,251 @@
 
 package pdl.cloud.storage;
 
-import org.soyatec.windowsazure.blob.IRetryPolicy;
-import org.soyatec.windowsazure.blob.internal.RetryPolicies;
-import org.soyatec.windowsazure.error.StorageException;
-import org.soyatec.windowsazure.internal.util.TimeSpan;
-import org.soyatec.windowsazure.table.*;
-import org.soyatec.windowsazure.table.internal.CloudTableQuery;
+import org.sqlite.SQLiteConfig;
+import pdl.cloud.model.AbstractModel;
 import pdl.utils.Configuration;
-import pdl.utils.StaticValues;
 
-import java.net.URI;
+import java.sql.*;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.Callable;
+import java.util.Map;
 
 /**
- * Created by IntelliJ IDEA.
  * User: hkim
- * Date: 11/8/11
- * Time: 8:41 AM
- * To change this template use File | Settings | File Templates.
+ * Date: 1/14/14
+ * Time: 3:46 PM
+ * pdl.cloud.storage
  */
 public class TableOperator {
-    private Configuration conf;
 
-    public TableStorageClient tableStorageClient;
+    private Connection connection;
+    private String dbFilePath;
+    private boolean isOpened = false;
 
-    public TableOperator() {
-        conf = Configuration.getInstance();
-    }
+    public final static String DATABASE = "proddlc.db";
 
-    public TableOperator(Configuration conf) {
-        this.conf = conf;
-    }
-
-    private void initTableClient() {
+    static {
         try {
-            tableStorageClient = TableStorageClient.create(
-                    URI.create(StaticValues.AZURE_TABLE_HOST_NAME),
-                    false,
-                    conf.getStringProperty(StaticValues.CONFIG_KEY_CSTORAGE_NAME),
-                    conf.getStringProperty(StaticValues.CONFIG_KEY_CSTORAGE_PKEY)
-            );
-
-            tableStorageClient.setRetryPolicy(RetryPolicies.retryN(3, TimeSpan.fromSeconds(3)));
-            /*IRetryPolicy retryPolicy = new TableRetryPolicy();
-            tableStorageClient.setRetryPolicy(retryPolicy);*/
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
-    }
-
-    public ITable createTable(String tableName) {
-        ITable table = null;
-        try {
-            if (tableStorageClient == null)
-                initTableClient();
-
-            table = tableStorageClient.getTableReference(tableName);
-            if (table==null) {
-                throw new NullPointerException("failed to get table: " + tableName);
-            }
-            if (!table.isTableExist()) {
-                table.createTable();
-                if (!table.isTableExist())
-                    throw new Exception("failed to create table: " + tableName);
-            }
-        } catch (Exception e) {
+            Class.forName("org.sqlite.JDBC");
+        } catch (ClassNotFoundException e) {
             e.printStackTrace();
         }
-        return table;
+    }
+
+    public TableOperator(String databaseFileName) {
+        Configuration configuration = Configuration.getInstance();
+        String storagePath = configuration.getStringProperty("storage_path");
+
+        this.dbFilePath = storagePath + databaseFileName;
+    }
+
+    public TableOperator() {
+        this(DATABASE);
+    }
+
+    public boolean open(boolean isReadOnly) {
+        try {
+            SQLiteConfig config = new SQLiteConfig();
+
+            if(isReadOnly) {
+                config.setReadOnly(true);
+            }
+            this.connection = DriverManager.getConnection("jdbc:sqlite:/" + this.dbFilePath, config.toProperties());
+            this.connection.setAutoCommit(false);
+            isOpened = true;
+        } catch(SQLException e) {
+            e.printStackTrace();
+            isOpened = false;
+        }
+        return isOpened;
+    }
+
+    public boolean close() {
+        if(!this.isOpened) {
+            return true;
+        }
+
+        try {
+            this.connection.close();
+            this.isOpened = false;
+        } catch(SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+
+        return true;
+    }
+
+    public void commit() {
+        try {
+            this.connection.commit();
+        } catch(SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void rollback() {
+        try {
+            this.connection.rollback();
+        } catch(SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public List<Map<String, String>> query(String tableName, String where) {
+        List<Map<String, String>> results = new ArrayList<Map<String, String>>();
+        Statement statement = null;
+        ResultSet rs = null;
+
+        if(!this.isOpened) {
+            this.open(true);
+        }
+
+        try {
+            statement = connection.createStatement();
+            StringBuilder sql = new StringBuilder("SELECT * FROM ")
+                    .append(tableName)
+                    .append(" WHERE ").append(where == null || where.isEmpty()? "" : where);
+            rs = statement.executeQuery(sql.toString());
+            if(rs.next()) {
+
+                ResultSetMetaData metaData = rs.getMetaData();
+                int columnCount = metaData.getColumnCount();
+
+                do {
+                    Map<String, String> row = new HashMap<String, String>(columnCount);
+                    for(int i=1;i<=columnCount;i++) {
+                        row.put(metaData.getColumnName(i), rs.getString(i));
+                    }
+                    results.add(row);
+                } while(rs.next());
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if(rs != null) {
+                    rs.close();
+                }
+                if(statement != null) {
+                    statement.close();
+                }
+                this.commit();
+                this.close();
+            } catch(SQLException e) {
+                e.printStackTrace();
+            }
+        }
+
+        return results;
+    }
+
+    public boolean update(String sql, boolean isTable) {
+        List<String> sqls = new ArrayList<String>(1);
+        sqls.add(sql);
+        return this.update(sqls, isTable);
+    }
+
+    public boolean update(List<String> sqls, boolean isTable) {
+        boolean result = true;
+        Statement statement = null;
+        int executeResult = isTable ? 0 : 1;
+
+        if(!this.isOpened) {
+            this.open(false);
+        }
+
+        try {
+            statement = connection.createStatement();
+            statement.setQueryTimeout(30);
+            for(String sql : sqls) {
+                System.err.println(sql);
+                statement.addBatch(sql);
+            }
+            int[] batchResults = statement.executeBatch();
+            for(int batchResult : batchResults) {
+                result = result && batchResult == executeResult;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            this.rollback();
+            result = false;
+        } finally {
+            try {
+                if(statement != null) {
+                    statement.close();
+                }
+                this.commit();
+                this.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+
+        return result;
+    }
+
+    public boolean createTable(String tableName, String columns) {
+        StringBuilder createSql = new StringBuilder("CREATE TABLE IF NOT EXISTS ").append(tableName);
+        createSql.append(" (");
+        createSql.append(columns);
+        createSql.append(")");
+        return this.update(createSql.toString(), true);
     }
 
     public boolean deleteTable(String tableName) {
-        boolean rtnVal = false;
-        try {
-            if(tableStorageClient==null) {
-                initTableClient();
-            }
-            ITable table = tableStorageClient.getTableReference(tableName);
-            if(table!=null && table.isTableExist()) {
-                rtnVal = table.deleteTable();
-            }
-        } catch(Exception ex) {
-            ex.printStackTrace();
-        }
-        return rtnVal;
+        return this.update("DROP TABLE IF EXISTS " + tableName, true);
     }
 
-    public <B extends ITableServiceEntity> boolean insertEntity(String tableName, B entity) {
-        List<B> entities = new ArrayList<B>(1);
+    public <M extends AbstractModel> boolean insertEntity(String tableName, M entity) {
+        List<M> entities = new ArrayList<M>(1);
         entities.add(entity);
         return this.insertMultipleEntities(tableName, entities);
     }
 
-    public <B extends ITableServiceEntity> boolean insertMultipleEntities(String tableName, List<B> entities) {
-        boolean rtnVal = false;
-        try {
+    public <M extends AbstractModel> boolean insertMultipleEntities(String tableName, List<M> rows) {
+        List<String> sqls = new ArrayList<String>(rows.size());
+        String sql = "INSERT INTO " + tableName + " ";
 
-            if (tableStorageClient == null)
-                initTableClient();
-
-            ITable table = tableStorageClient.getTableReference(tableName);
-            if (table==null || !table.isTableExist())
-                table = createTable(tableName);
-
-            TableServiceContext context = table.getTableServiceContext();
-            context.setModelClass(entities.get(0).getClass());
-            context.startBatch();
-            for (ITableServiceEntity entity : entities)
-                context.insertEntity(entity);
-            context.executeBatch();
-
-            rtnVal = true;
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return rtnVal;
-    }
-
-    public ITableServiceEntity queryEntityBySearchKey(String tableName, String searchColumn, Object searchKey, Class model) {
-        ITableServiceEntity entity = null;
-
-        try {
-            List<ITableServiceEntity> entityList = this.queryListBySearchKey(tableName, searchColumn, searchKey, null, null, model);
-
-            if (entityList != null && entityList.size() > 0) {
-                entity = (ITableServiceEntity) entityList.get(0);
-            }
-        } catch (StorageException ex) {
-            ex.printStackTrace();
-        } catch (Exception ex) {
-            ex.printStackTrace();
+        for(M entity : rows) {
+            sqls.add(sql + entity.generate("insert"));
         }
 
-        return entity;
+        return this.update(sqls, false);
     }
 
-    public List<ITableServiceEntity> queryListBySearchKey(String tableName, String searchColumn, Object searchKey, Class<? extends ITableServiceEntity> model) {
-        return this.queryListBySearchKey(tableName, searchColumn, searchKey, null, null, model);
-    }
-
-    public List<ITableServiceEntity> queryListBySearchKey(
-            String tableName,
-            String searchColumn, Object searchKey,
-            String order, String orderColumn,
-            Class model) {
-        List<ITableServiceEntity> entityList = null;
-
-        try {
-            if (tableStorageClient == null)
-                initTableClient();
-
-            ITable table = tableStorageClient.getTableReference(tableName);
-
-            if (table!=null && table.isTableExist()) {
-                CloudTableQuery sql = CloudTableQuery.select();
-                if (searchColumn != null && searchKey != null)
-                    sql.eq(searchColumn, searchKey);
-                /*if( order != null && orderColumn != null ) {
-                    if( order.equals( "asc" ) )
-                        sql.orderAsc( orderColumn );
-                    else if( order.equals( "desc" ) )
-                        sql.orderDesc( orderColumn );
-                }*/
-
-
-                entityList = table.getTableServiceContext().retrieveEntities(sql.toAzureQuery(), model);
-            }
-        } catch (StorageException ex) {
-            ex.printStackTrace();
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
-
-        return entityList;
-    }
-
-    public ITableServiceEntity queryEntityByCondition(String tableName, String condition, Class model) {
-        ITableServiceEntity entity = null;
-        try {
-            List<ITableServiceEntity> entityList = this.queryListByCondition(tableName, condition, model);
-
-            if (entityList != null && entityList.size() >= 1)
-                entity = (ITableServiceEntity)entityList.get(0);
-
-        } catch (StorageException ex) {
-            ex.printStackTrace();
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
-
-        return entity;
-    }
-
-    public List<ITableServiceEntity> queryListByCondition(String tableName, String condition, Class<? extends ITableServiceEntity> model) {
-        List<ITableServiceEntity> entityList = null;
-        try {
-            if (tableStorageClient == null)
-                initTableClient();
-
-            CloudTableQuery sql = CloudTableQuery.select();
-            sql.where(condition);
-
-            ITable table = tableStorageClient.getTableReference(tableName);
-
-            if (table!=null && table.isTableExist())
-                entityList = table.getTableServiceContext().retrieveEntities(sql.toAzureQuery(), model);
-
-        } catch (StorageException ex) {
-            ex.printStackTrace();
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
-
-        return entityList;
-    }
-
-    public <B extends ITableServiceEntity> void deleteEntity(String tableName, B entity) {
-        List<B> entities = new ArrayList<B>(1);
-        entities.add(entity);
-        this.deleteMultipleEntities(tableName, entities);
-    }
-
-    public <B extends ITableServiceEntity> void deleteMultipleEntities(String tableName, List<B> entities) {
-        try {
-            if(tableStorageClient == null)
-                initTableClient();
-
-            ITable table = tableStorageClient.getTableReference(tableName);
-
-            if (table != null && table.isTableExist())  {
-                TableServiceContext tableContext = new TableServiceContext(table);
-                tableContext.setModelClass(entities.get(0).getClass());
-                tableContext.startBatch();
-                for(B entity : entities) {
-                    tableContext.deleteEntity(entity);
-                }
-                tableContext.executeBatch();
-            }
-        } catch (StorageException ex) {
-            ex.printStackTrace();
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
-    }
-
-    public <B extends ITableServiceEntity> boolean updateEntity(String tableName, B entity) {
-        List<B> entities = new ArrayList<B>(1);
+    public <M extends AbstractModel> boolean updateEntity(String tableName, M entity) {
+        List<M> entities = new ArrayList<M>(1);
         entities.add(entity);
         return this.updateMultipleEntities(tableName, entities);
     }
 
-    public <B extends ITableServiceEntity> boolean updateMultipleEntities(String tableName, List<B> entities) {
-        boolean rtnVal = false;
+    public <M extends AbstractModel> boolean updateMultipleEntities(String tableName, List<M> rows) {
+        List<String> sqls = new ArrayList<String>(rows.size());
+        String sql = "UPDATE " + tableName + " SET ";
 
-        try {
-            if (tableStorageClient == null)
-                initTableClient();
-
-            ITable table = tableStorageClient.getTableReference(tableName);
-            if (table!=null && table.isTableExist()) {
-                TableServiceContext tableContext = table.getTableServiceContext();
-                tableContext.setModelClass(entities.get(0).getClass());
-                tableContext.startBatch();
-                for (B entity : entities) {
-                    entity.setValues(null);
-                    tableContext.updateEntity(entity);
-                }
-                tableContext.executeBatch();
-            }
-            rtnVal = true;
-        } catch (Exception e) {
-            e.printStackTrace();
+        for(M entity : rows) {
+            sqls.add(sql + entity.generate("update"));
         }
-        return rtnVal;
+
+        return this.update(sqls, false);
     }
 
-    /*
-     * Custom retry policy for azure table client
-     */
-    private class TableRetryPolicy implements IRetryPolicy {
-        private int numberOfTriesLeft;
-        private long timeToWait = 2000;
+    public <M extends AbstractModel> boolean deleteEntity(String tableName, M entity) {
+        List<M> entities = new ArrayList<M>(1);
+        entities.add(entity);
+        return this.deleteMultipleEntities(tableName, entities);
+    }
 
-        @Override
-        public Object execute(Callable callable) throws StorageException {
-            numberOfTriesLeft = 5;
-            while (true) {
-                try {
-                    System.err.println("Trying TableStorage process again after failure.");
-                    return callable.call();
-                }
-                catch (Exception e) {
-                    numberOfTriesLeft--;
-                    if (numberOfTriesLeft == 0) {
-                        throw new StorageException("Ran out of retry attempts!!");
-                    }
-                    try {
-                        Thread.sleep(timeToWait);
-                    } catch(Exception ex) {
-                        throw new StorageException("Exception in TableRetryPolicy!");
-                    }
-                }
-            }
+    public <M extends AbstractModel> boolean deleteMultipleEntities(String tableName, List<M> rows) {
+        List<String> sqls = new ArrayList<String>(rows.size());
+        String sql = "DELETE FROM " + tableName + " WHERE uuid= ";
+
+        for(M entity : rows) {
+            sqls.add(sql + "'" + entity.getUuid() + "'");
         }
+
+        return this.update(sqls, false);
     }
 }
-
-
