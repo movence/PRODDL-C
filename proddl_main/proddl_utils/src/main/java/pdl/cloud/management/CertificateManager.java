@@ -179,7 +179,7 @@ public class CertificateManager {
             Info passData = new Info();
             passData.setKey(StaticValues.CONFIG_KEY_CERT_PASSWORD);
             passData.setValue(password);
-            storageServices.insertSingleEnttity(ToolPool.buildTableName(StaticValues.TABLE_NAME_INFOS), passData);
+            storageServices.insertSingleEnttity(StaticValues.TABLE_NAME_INFOS, passData);
 
             conf.setProperty(StaticValues.CONFIG_KEY_CERT_PASSWORD, password);
         } catch(Exception ex) {

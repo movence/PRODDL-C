@@ -60,7 +60,7 @@ public class FileTool {
             conf = Configuration.getInstance();
         tableOperator = new TableOperator(conf);
 
-        fileTableName = ToolPool.buildTableName(StaticValues.TABLE_NAME_FILES);
+        fileTableName = StaticValues.TABLE_NAME_FILES;
 
         String storagePath = conf.getStringProperty(StaticValues.CONFIG_KEY_DATASTORE_PATH);
 

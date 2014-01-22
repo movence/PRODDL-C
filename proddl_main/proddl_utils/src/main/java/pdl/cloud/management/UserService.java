@@ -27,7 +27,6 @@ import pdl.cloud.model.User;
 import pdl.cloud.storage.TableOperator;
 import pdl.utils.Configuration;
 import pdl.utils.StaticValues;
-import pdl.utils.ToolPool;
 
 import java.util.Map;
 
@@ -50,7 +49,7 @@ public class UserService {
     public UserService(Configuration conf) {
         this.conf = conf;
         this.tableOperator = new TableOperator(conf);
-        this.userTableName = ToolPool.buildTableName(StaticValues.TABLE_NAME_USER);
+        this.userTableName = StaticValues.TABLE_NAME_USER;
     }
 
     /**

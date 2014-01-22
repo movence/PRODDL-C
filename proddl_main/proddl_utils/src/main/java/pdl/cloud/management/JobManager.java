@@ -25,7 +25,6 @@ import pdl.cloud.model.JobDetail;
 import pdl.cloud.storage.TableOperator;
 import pdl.utils.QueryTool;
 import pdl.utils.StaticValues;
-import pdl.utils.ToolPool;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -44,7 +43,7 @@ public class JobManager {
 
     public JobManager() {
         tableOperator = new TableOperator();
-        jobDetailTableName = ToolPool.buildTableName(StaticValues.TABLE_NAME_JOB_DETAIL);
+        jobDetailTableName = StaticValues.TABLE_NAME_JOB_DETAIL;
     }
 
     /**

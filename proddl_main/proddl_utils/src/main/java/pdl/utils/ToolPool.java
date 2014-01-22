@@ -115,10 +115,4 @@ public class ToolPool {
 
         return rtnVal;
     }
-
-
-    //todo remove this
-    public static String buildTableName(String tableName) {
-        return tableName.concat(Configuration.getInstance().getStringProperty(StaticValues.CONFIG_KEY_DEPLOYMENT_NAME));
-    }
 }

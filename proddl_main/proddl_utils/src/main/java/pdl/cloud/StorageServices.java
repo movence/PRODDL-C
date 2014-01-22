@@ -27,7 +27,6 @@ import pdl.cloud.model.FileInfo;
 import pdl.cloud.storage.BlobOperator;
 import pdl.cloud.storage.TableOperator;
 import pdl.utils.StaticValues;
-import pdl.utils.ToolPool;
 
 import java.util.Map;
 
@@ -58,9 +57,13 @@ public class StorageServices {
 
     public String getFileNameById(String fileId) {
         Map<String, String> entity = getTableOperator().queryEntityBySearchKey(
-                ToolPool.buildTableName(StaticValues.TABLE_NAME_FILES), StaticValues.COLUMN_ROW_KEY, fileId
+                StaticValues.TABLE_NAME_FILES, StaticValues.COLUMN_ROW_KEY, fileId
         );
         return entity == null ? null : entity.get("name");
+    }
+
+    public Map<String, String> queryEntityBySearchKey(String tableName, String column, String value) {
+        return this.getTableOperator().queryEntityBySearchKey(tableName, column, value);
     }
 
     public boolean updateEntity(String tableName, AbstractModel entity) {
@@ -85,7 +88,7 @@ public class StorageServices {
         boolean uploaded = getBlobOperator().uploadFileToBlob(fileInfo.getContainer(), fileInfo.getName(), filePath, fileInfo.getType(), overwrite);
         boolean inserted = false;
         if(uploaded) {
-            inserted = this.insertSingleEnttity(ToolPool.buildTableName(StaticValues.TABLE_NAME_FILES), fileInfo);
+            inserted = this.insertSingleEnttity(StaticValues.TABLE_NAME_FILES, fileInfo);
         }
         return inserted;
     }

@@ -24,7 +24,6 @@ package pdl.cloud.management;
 import pdl.cloud.storage.TableOperator;
 import pdl.utils.Configuration;
 import pdl.utils.StaticValues;
-import pdl.utils.ToolPool;
 
 import java.util.Map;
 
@@ -42,7 +41,7 @@ public class FileManager {
     public FileManager() {
         conf = Configuration.getInstance();
         tableOperator = new TableOperator(conf);
-        filesTableName = ToolPool.buildTableName(StaticValues.TABLE_NAME_FILES);
+        filesTableName = StaticValues.TABLE_NAME_FILES;
     }
 
     /**
