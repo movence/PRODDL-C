@@ -214,7 +214,6 @@ public class TableOperator {
             statement = connection.createStatement();
             statement.setQueryTimeout(30);
             for(String sql : sqls) {
-                System.err.println(sql);
                 statement.addBatch(sql);
             }
             int[] batchResults = statement.executeBatch();
@@ -259,14 +258,22 @@ public class TableOperator {
     }
 
     public <M extends AbstractModel> boolean insertMultipleEntities(String tableName, List<M> rows) {
-        List<String> sqls = new ArrayList<String>(rows.size());
-        String sql = "INSERT INTO " + tableName + " ";
+        boolean result = false;
 
-        for(M entity : rows) {
-            sqls.add(sql + entity.generate("insert"));
+        if(rows != null && rows.size() > 0) { //run only when there is data
+            //create table if not exist with top entity
+            M top = rows.get(0);
+            this.createTable(tableName, top.generate("create"));
+
+            //batch update
+            List<String> sqls = new ArrayList<String>(rows.size());
+            String sql = "INSERT INTO " + tableName + " ";
+            for(M entity : rows) {
+                sqls.add(sql + entity.generate("insert"));
+            }
+            result = this.update(sqls, false);
         }
-
-        return this.update(sqls, false);
+        return result;
     }
 
     public <M extends AbstractModel> boolean updateEntity(String tableName, M entity) {

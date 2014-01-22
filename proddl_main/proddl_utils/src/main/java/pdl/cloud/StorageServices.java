@@ -46,13 +46,14 @@ public class StorageServices {
      *TABLE OPERATIONS
      */
     private TableOperator getTableOperator() {
-        if (tableOperator == null)
+        if (tableOperator == null) {
             tableOperator = new TableOperator();
+        }
         return tableOperator;
     }
 
     public boolean insertSingleEntity(String tableName, AbstractModel entity) {
-        return getTableOperator().insertEntity(tableName, entity);
+        return this.getTableOperator().insertEntity(tableName, entity);
     }
 
     public String getFileNameById(String fileId) {
