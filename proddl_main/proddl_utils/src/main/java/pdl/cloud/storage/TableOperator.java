@@ -54,19 +54,16 @@ public class TableOperator {
         }
     }
 
+    public TableOperator() {
+        this(Configuration.getInstance().getStringProperty(StaticValues.CONFIG_KEY_STORAGE_PATH));
+    }
+
     public TableOperator(Configuration conf) {
         this(conf.getStringProperty(StaticValues.CONFIG_KEY_STORAGE_PATH));
     }
 
-    public TableOperator(String databaseFileName) {
-        Configuration configuration = Configuration.getInstance();
-        String storagePath = configuration.getStringProperty("storage_path");
-
-        this.dbFilePath = storagePath + databaseFileName;
-    }
-
-    public TableOperator() {
-        this(DATABASE);
+    public TableOperator(String storagePath) {
+        this.dbFilePath = storagePath + DATABASE;
     }
 
     public boolean open(boolean isReadOnly) {
