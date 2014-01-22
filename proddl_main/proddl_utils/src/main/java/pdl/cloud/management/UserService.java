@@ -44,17 +44,13 @@ public class UserService {
     private String userTableName;
 
     public UserService() {
-        conf = Configuration.getInstance();
-        userTableName = ToolPool.buildTableName(StaticValues.TABLE_NAME_USER);
+        this(Configuration.getInstance());
     }
 
     public UserService(Configuration conf) {
         this.conf = conf;
-    }
-
-    private void initializeTableOperator() {
-        if (tableOperator == null)
-            tableOperator = new TableOperator(conf);
+        this.tableOperator = new TableOperator(conf);
+        this.userTableName = ToolPool.buildTableName(StaticValues.TABLE_NAME_USER);
     }
 
     /**
@@ -68,7 +64,6 @@ public class UserService {
         User user = null;
 
         try {
-            initializeTableOperator();
             Map<String, String> entity = tableOperator.queryEntityBySearchKey(userTableName, StaticValues.COLUMN_USER_ID, userId);
 
             if(entity != null) {
@@ -103,7 +98,6 @@ public class UserService {
      */
     public boolean loadUser(User user) throws Exception {
         boolean rtnVal = false;
-        initializeTableOperator();
 
         user.setUserpass(passwordEncoder.encodePassword(user.getUserpass(), null));
         rtnVal = tableOperator.insertEntity(userTableName, user);

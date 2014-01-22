@@ -22,7 +22,6 @@
 package pdl.cloud;
 
 
-import org.soyatec.windowsazure.table.ITableServiceEntity;
 import pdl.cloud.model.AbstractModel;
 import pdl.cloud.model.FileInfo;
 import pdl.cloud.storage.BlobOperator;
@@ -30,7 +29,6 @@ import pdl.cloud.storage.TableOperator;
 import pdl.utils.StaticValues;
 import pdl.utils.ToolPool;
 
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -63,14 +61,6 @@ public class StorageServices {
                 ToolPool.buildTableName(StaticValues.TABLE_NAME_FILES), StaticValues.COLUMN_ROW_KEY, fileId
         );
         return entity == null ? null : entity.get("name");
-    }
-
-    public ITableServiceEntity queryEntityBySearchKey(String tableName, String column, String key, Class model) {
-        return getTableOperator().queryEntityBySearchKey(tableName, column, key, model);
-    }
-
-    public List<ITableServiceEntity> queryListBySearchKey(String tableName, String column, String key, Class model) {
-        return getTableOperator().queryListBySearchKey(tableName, column, key, null, null, model);
     }
 
     public boolean updateEntity(String tableName, AbstractModel entity) {
