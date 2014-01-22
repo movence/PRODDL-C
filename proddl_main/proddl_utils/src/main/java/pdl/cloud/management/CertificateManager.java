@@ -177,8 +177,8 @@ public class CertificateManager {
             //store certificate password in dynamic data table in case cloud instance gets rebootes
             StorageServices storageServices = new StorageServices();
             Info passData = new Info();
-            passData.setiKey(StaticValues.CONFIG_KEY_CERT_PASSWORD);
-            passData.setiValue(password);
+            passData.setKey(StaticValues.CONFIG_KEY_CERT_PASSWORD);
+            passData.setValue(password);
             storageServices.insertSingleEnttity(ToolPool.buildTableName(StaticValues.TABLE_NAME_INFOS), passData);
 
             conf.setProperty(StaticValues.CONFIG_KEY_CERT_PASSWORD, password);
