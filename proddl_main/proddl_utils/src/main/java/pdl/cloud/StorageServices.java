@@ -51,7 +51,7 @@ public class StorageServices {
         return tableOperator;
     }
 
-    public boolean insertSingleEnttity(String tableName, AbstractModel entity) {
+    public boolean insertSingleEntity(String tableName, AbstractModel entity) {
         return getTableOperator().insertEntity(tableName, entity);
     }
 
@@ -88,7 +88,7 @@ public class StorageServices {
         boolean uploaded = getBlobOperator().uploadFileToBlob(fileInfo.getContainer(), fileInfo.getName(), filePath, fileInfo.getType(), overwrite);
         boolean inserted = false;
         if(uploaded) {
-            inserted = this.insertSingleEnttity(StaticValues.TABLE_NAME_FILES, fileInfo);
+            inserted = this.insertSingleEntity(StaticValues.TABLE_NAME_FILES, fileInfo);
         }
         return inserted;
     }
