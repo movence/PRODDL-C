@@ -14,14 +14,12 @@ proddl_core*.jar
 OLD_proddl_c/
 
 Debug/
-azure-sdk-for-java/*
 proddl_main/proddl_core/target/
 proddl_main/proddl_core/src/test/
 proddl_main/proddl_utils/target/
 proddl_main/proddl_utils/src/test/
 proddl_main/proddl_web/target/
 proddl_main/proddl_web/src/test/
-org.soyatec.windows.azure.java.doc/
 
 proddl_main/proddl_cloud/src/main/resources/property/proddl.properties.OLD
 proddl_main/proddl_web/src/main/webapp/resources/js/customClasses.js
@@ -43,5 +41,5 @@ proddl_bootstrap/csx/Release
 proddl_bootstrap/obj/Release
 proddl_utils-1.0.jar
 pom.properties
-proddl.properties.SAMPLE
+proddl.ini.SAMPLE
 proddl.ini

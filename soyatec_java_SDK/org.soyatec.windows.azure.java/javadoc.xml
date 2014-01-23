@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<project default="javadoc">
-    <target name="javadoc">
-        <javadoc access="public" author="true" classpath="libs/dom4j-1.6.1.jar;libs/httpmime-4.0-beta2.jar;libs/httpcore-nio-4.0.jar;libs/httpcore-4.0.jar;libs/jaxen-1.1.1.jar;libs/commons-lang-2.4.jar;libs/sqljdbc4.jar;libs/httpclient-4.0-beta2.jar;libs/commons-logging-1.1.1.jar;libs/log4j-1.2.9.jar;libs/commons-collections-3.2.1.jar" destdir="doc" nodeprecated="false" nodeprecatedlist="false" noindex="false" nonavbar="false" notree="false" packagenames="org.soyatec.windowsazure.internal.log4j,org.soyatec.windowsazure.error,org.soyatec.windowsazure.queue.internal,org.soyatec.windowsazure.internal.constants,org.soyatec.windowsazure.blob.io,org.soyatec.windowsazure.authenticate,org.soyatec.windowsazure.blob,org.soyatec.windowsazure.queue,org.soyatec.windowsazure.constants,org.soyatec.windowsazure.internal.util.xml,org.soyatec.windowsazure.table,org.soyatec.windowsazure.internal,org.soyatec.windowsazure.table.internal,org.soyatec.windowsazure.internal.util,org.soyatec.windowsazure.internal.util.ssl,org.soyatec.windowsazure.blob.internal,org.soyatec.windowsazure.management" source="1.5" sourcepath="src" splitindex="true" use="true" version="true"/>
-    </target>
-</project>
