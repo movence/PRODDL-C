@@ -66,13 +66,16 @@ public class ToolPool {
         return path.substring(0, path.length()-1);
     }
     public static String buildDirPath(String root, String... args) {
-        String newPath = root.endsWith(File.separator)?root:root.concat(File.separator);
+        StringBuilder newPath = new StringBuilder(root.endsWith(File.separator) ? root : root.concat(File.separator));
         if(args!=null) {
             for(String arg : args) {
-                newPath += arg.concat(arg.endsWith(File.separator)?"":File.separator);
+                newPath.append(arg);
+                if(!arg.endsWith(File.separator)) {
+                    newPath.append(File.separator);
+                }
             }
         }
-        return newPath;
+        return newPath.toString();
     }
 
     public static Map<String, Object> jsonStringToMap(String value) throws Exception {
