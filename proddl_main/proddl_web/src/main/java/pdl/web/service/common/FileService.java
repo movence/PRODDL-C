@@ -104,7 +104,7 @@ public class FileService {
         try {
             FileInfo fileInfo = fileTool.createFileRecord(null, userName);
             fileTool.insertFileRecord(fileInfo);
-            rtnJson.put("id", fileInfo.getIuuid());
+            rtnJson.put("id", fileInfo.getUuid());
             rtnJson.put("path", fileInfo.getPath() + File.separator + fileInfo.getName());
         } catch (Exception ex) {
             rtnJson.put("error", "Creating file failed");
