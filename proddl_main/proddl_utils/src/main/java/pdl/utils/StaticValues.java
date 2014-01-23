@@ -29,37 +29,18 @@ package pdl.utils;
  * To change this template use File | Settings | File Templates.
  */
 public class StaticValues {
-    //AZURE
-    public static final String AZURE_BLOB_HOST_NAME = "http://blob.core.windows.net";
-    public static final String AZURE_QUEUE_HOST_NAME = "http://queue.core.windows.net";
-    public static final String AZURE_TABLE_HOST_NAME = "http://table.core.windows.net";
 
     //PROPERTIES
     public static final String CONFIG_FILENAME = "proddl.ini";
-    public static final String CONFIG_KEY_SUBSCRIPTION_ID = "SubscriptionId";
-    public static final String CONFIG_KEY_DEPLOYMENT_ID = "DeploymentId";
-    public static final String CONFIG_KEY_DEPLOYMENT_NAME = "DeploymentName";
-    public static final String CONFIG_KEY_WORKER_NAME = "CloudRoleWorkerName";
-
-    public static final String CONFIG_KEY_CERT_PASSWORD = "CertificatePassword";
-
-    public static final String CONFIG_KEY_DATASTORE_PATH = "DataStorePath";
     public static final String CONFIG_KEY_STORAGE_PATH = "storage_path";
-    public static final String CONFIG_KEY_ROLE_TOOLS_PATH = "RoleToolsPath";
-
-    public static final String CONFIG_KEY_CSTORAGE_NAME = "StorageAccountName";
-    public static final String CONFIG_KEY_CSTORAGE_PKEY = "StorageAccountPkey";
-    public static final String CONFIG_KEY_MASTER_INSTANCE = "IsMaster";
-    public static final String CONFIG_KEY_WEBSERVER_PORT = "WebserverPort";
-    public static final String CONFIG_KEY_INTERNAL_ADDR = "InternalAddress";
-    public static final String CONFIG_KEY_INTERNAL_PORT = "InternalPort";
-    //--OPTIONAL
-    public static final String CONFIG_KEY_URLS_WITH_COMMA = "ToolsURL";
-    public static final String CONFIG_KEY_URL_CCTOOLS = "CctoolsURL";
+    public static final String CONFIG_KEY_WEB_SERVER_PORT = "web_server_port";
+    public static final String CONFIG_KEY_START_CATALOG_SERVER = "start_wq_catalog_server";
+    public static final String CONFIG_KEY_CATALOG_SERVER_PORT = "wq_catalog_server_port";
+    public static final String CONFIG_KEY_START_WORKER_POOL = "start_wq_worker_pool";
+    public static final String CONFIG_KEY_WORKER_POOL = "worker_pool";
+    public static final String CONFIG_KEY_MAKEFLOW_ARGS = "makeflow_args";
 
     //STORAGE
-    public static final String BLOB_CONTAINER_TOOLS = "tools";
-    public static final String BLOB_CONTAINER_FILES = "files";
     public static final String TABLE_NAME_JOB_DETAIL = "jobs";
     public static final String TABLE_NAME_INFOS = "infos";
     public static final String TABLE_NAME_FILES = "files";
@@ -101,23 +82,6 @@ public class StaticValues {
     public static final int MAX_NUMBER_JOB_EXECUTOR = 20;
     public static final String MAX_KEEP_ALIVE_UNIT_JOB_EXECUTOR = "min"; //Available units: min, sec
     public static final int MAX_KEEP_ALIVE_VALUE_JOB_EXECUTOR = 1;
-
-    //CLOUD INSTANCE MANAGEMENT
-    public static final int MAX_TOTAL_WORKER_INSTANCE = 96;
-    public static final int MAX_WORKER_INSTANCE_PER_NODE = 1;
-    public static final int WORKER_INSTANCE_MONITORING_INTERVAL = 3600000; //time interval for monitoring CPU usage on Worker instance in milliseconds
-    public static final int MAXIMUM_AVERAGE_CPU_USAGE = 50;
-    public static final int MINIMUM_AVERAGE_CPU_USAGE = 15;
-
-    public static final String CERTIFICATE_NAME = "management";
-    public static final String CERTIFICATE_ALIAS = "keyalias";
-
-    //REQUIRED TOOLS FOR THE BASIC FUNCTIONALITY
-    public static final String[] REQUIRED_TOOLS = {
-        "python",
-        "cygwin",
-        "cctools"
-    };
 
     //ERROR CODE
 }

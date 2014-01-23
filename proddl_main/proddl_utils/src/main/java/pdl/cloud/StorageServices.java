@@ -23,8 +23,6 @@ package pdl.cloud;
 
 
 import pdl.cloud.model.AbstractModel;
-import pdl.cloud.model.FileInfo;
-import pdl.cloud.storage.BlobOperator;
 import pdl.cloud.storage.TableOperator;
 import pdl.utils.StaticValues;
 
@@ -38,7 +36,6 @@ import java.util.Map;
  */
 public class StorageServices {
     private TableOperator tableOperator;
-    private BlobOperator blobOperator;
 
     public StorageServices() {}
 
@@ -73,49 +70,5 @@ public class StorageServices {
 
     public void deleteEntity(String tableName, AbstractModel entity) {
         getTableOperator().deleteEntity(tableName, entity);
-    }
-
-
-    /*
-     *BLOB OPERATIONS
-     */
-    private BlobOperator getBlobOperator() {
-        if (blobOperator == null)
-            blobOperator = new BlobOperator();
-        return blobOperator;
-    }
-
-    public boolean uploadFileToBlob(FileInfo fileInfo, String filePath, boolean overwrite) throws Exception {
-        boolean uploaded = getBlobOperator().uploadFileToBlob(fileInfo.getContainer(), fileInfo.getName(), filePath, fileInfo.getType(), overwrite);
-        boolean inserted = false;
-        if(uploaded) {
-            inserted = this.insertSingleEntity(StaticValues.TABLE_NAME_FILES, fileInfo);
-        }
-        return inserted;
-    }
-
-    public boolean downloadByName(String container, String name, String path) {
-        return getBlobOperator().getBlob(container, name, path, false);
-    }
-
-    public boolean downloadToolsByName(String name, String path) {
-        return this.downloadByName(StaticValues.BLOB_CONTAINER_TOOLS, name, path);
-    }
-    /*
-     * Files are stored in Azure drive 7/6/12
-    public boolean downloadJobFileByName(String name, String path) {
-        return this.downloadByName(conf.getStringProperty("BLOB_CONTAINER_JOB_FILES"), name, path);
-    }
-
-    public boolean downloadUploadedFileByName(String name, String path) {
-        return this.downloadByName(conf.getStringProperty("BLOB_CONTAINER_UPLOADS"), name, path);
-    }
-
-    public boolean downloadFilesByName(String name, String path) {
-        return this.downloadByName(conf.getStringProperty("BLOB_CONTAINER_FILES"), name, path);
-    }
-    */
-    public boolean deleteBlob(String containerName, String blobName) {
-        return getBlobOperator().deleteBlob(containerName, blobName);
     }
 }

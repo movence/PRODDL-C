@@ -62,7 +62,7 @@ public class FileTool {
 
         fileTableName = StaticValues.TABLE_NAME_FILES;
 
-        String storagePath = conf.getStringProperty(StaticValues.CONFIG_KEY_DATASTORE_PATH);
+        String storagePath = conf.getStringProperty(StaticValues.CONFIG_KEY_STORAGE_PATH);
 
         fileStoragePath = ToolPool.buildDirPath(storagePath, StaticValues.DIRECTORY_FILE_AREA);
         File uploadDir = new File(fileStoragePath);

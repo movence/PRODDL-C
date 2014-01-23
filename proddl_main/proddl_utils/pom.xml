@@ -66,19 +66,6 @@
         	<version>3.7.2</version>
         </dependency>
 
-        <!-- old dependencies -->
-        <!--mvn install:install-file -Dfile=./org.soyatec.windows.azure.java_2.0.2.v20110627-1009.jar -DgroupId=soyatec -DartifactId=azure_jdk -Dversion=2.0.2 -Dpackaging=jar-->
-        <dependency>
-            <groupId>soyatec</groupId>
-            <artifactId>azure_jdk</artifactId>
-            <version>2.0.2</version>
-        </dependency>
-        <!--mvn install:install-file -Dfile=./cpdetector_1.0.6.jar -DgroupId=soyatec -DartifactId=cpdetector -Dversion=1.0.6 -Dpackaging=jar-->
-        <dependency>
-            <groupId>soyatec</groupId>
-            <artifactId>cpdetector</artifactId>
-            <version>1.0.6</version>
-        </dependency>
         <dependency>
             <groupId>commons-collections</groupId>
             <artifactId>commons-collections</artifactId>

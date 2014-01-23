@@ -37,8 +37,6 @@ import java.util.Map;
  * To change this template use File | Settings | File Templates.
  */
 public class CctoolsOperator extends ToolOperator {
-    public final String INFOS_KEY_CATALOGSERVER_ADDRESS = "CatalogServerAddress";
-    public final String INFOS_KEY_CATALOGSERVER_PORT = "CatalogServerPort";
     private final String LOOKUP_KEY_CATALOGSERVER_INFO = "$catalogServer";
     private final String LOOKUP_KEY_TASK_NAME = "$taskName";
     private final String LOOKUP_KEY_PORT = "$port";
@@ -52,7 +50,7 @@ public class CctoolsOperator extends ToolOperator {
     private String cctoolsBinPath;
     private String cygwinBinPath;
 
-    private String catalogServerAddress;
+    private String catalogServerAddress = "127.0.0.1";
     private String catalogServerPort;
 
     private String tmpPath;
@@ -242,88 +240,6 @@ public class CctoolsOperator extends ToolOperator {
         if(!tmpDir.exists() || !tmpDir.isDirectory()) {
             tmpDir.mkdir();
         }
-    }
-
-    public boolean startCatalogServer(String catalogServerAddress, String catalogServerPort) {
-        Process process = null;
-        boolean rtnVal = false;
-
-        try {
-            //sets catalog server information and stores them into table
-            this.getOrUpdateCatalogServerInfo(catalogServerAddress, catalogServerPort);
-
-            List<String> processArgs = new ArrayList<String>();
-            processArgs.add(cctoolsBinPath+"catalog_server");
-            processArgs.add("-p");
-            processArgs.add(catalogServerPort);
-
-            ProcessBuilder pb = this.buildProcessBuilder(null, processArgs, false);
-            process = pb.start();
-            processes.add(process);
-
-            rtnVal = true;
-        } catch (Exception e) {
-            e.printStackTrace();
-            if(processes!=null && processes.contains(process))
-                processes.remove(process);
-
-            if(process!=null)
-                process.destroy();
-        } finally {
-        }
-        return rtnVal;
-    }
-
-    public boolean isCatalogServerInfoAvailable() {
-        return this.getOrUpdateCatalogServerInfo(null, null);
-    }
-
-    private boolean getOrUpdateCatalogServerInfo(String address, String port) {
-        try {
-            /*Configuration conf = Configuration.getInstance();
-            TableOperator tableOperator = new TableOperator(conf);
-
-            String tableName = ToolPool.buildTableName(StaticValues.TABLE_NAME_INFOS);
-            Info addrInfo = null;
-            Info portInfo = null;
-
-            //get existing catalog server information
-            ITableServiceEntity tempEntity = null;
-            tempEntity = tableOperator.queryEntityBySearchKey(tableName, StaticValues.COLUMN_INFOS_KEY, INFOS_KEY_CATALOGSERVER_ADDRESS, Info.class);
-            if( tempEntity!=null && tempEntity.getRowKey()!=null ) {
-                addrInfo = (Info)tempEntity;
-            }
-            tempEntity = tableOperator.queryEntityBySearchKey(tableName, StaticValues.COLUMN_INFOS_KEY, INFOS_KEY_CATALOGSERVER_PORT, Info.class);
-            if( tempEntity!=null && tempEntity.getRowKey()!=null ) {
-                portInfo = (Info)tempEntity;
-            }
-
-            if( address!=null && port!=null ) { //insert catalog server information
-                if( addrInfo!=null && portInfo!=null ) { //delete old information
-                    List<Info> entities = new ArrayList<Info>(2);
-                    entities.add(addrInfo);
-                    entities.add(portInfo);
-                    tableOperator.deleteMultipleEntities(tableName, entities);
-                }
-
-                List<Info> catalogs = new ArrayList<Info>(2);
-                addrInfo = new Info();
-                addrInfo.setiKey(INFOS_KEY_CATALOGSERVER_ADDRESS);
-                addrInfo.setiValue(address);
-                catalogs.add(addrInfo);
-                portInfo = new Info();
-                portInfo.setiKey(INFOS_KEY_CATALOGSERVER_PORT);
-                portInfo.setiValue(port);
-                catalogs.add(portInfo);
-                tableOperator.insertMultipleEntities(tableName, catalogs);
-            }
-
-            this.catalogServerAddress = addrInfo!=null?addrInfo.getiValue():address;
-            this.catalogServerPort = portInfo!=null?portInfo.getiValue():port;*/
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return (this.catalogServerAddress!=null && this.catalogServerPort!=null);
     }
 
     public boolean startBash(String taskFileName, String taskDirectory) {

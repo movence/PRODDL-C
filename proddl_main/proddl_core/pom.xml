@@ -51,10 +51,6 @@
         <jetty.version>7.5.4.v20111024</jetty.version>
         <glassfish-jsp-2.1.version>2.1.v20100127</glassfish-jsp-2.1.version>
         <version.number>1.0</version.number>
-
-        <bootstrap.dir>${basedir}/../../proddl_bootstrap</bootstrap.dir>
-        <worker.name>PRODDLJobRunner</worker.name>
-        <master.name>PRODDLMaster</master.name>
     </properties>
 
     <!-- Build Configuration -->
@@ -125,24 +121,6 @@
                         <phase>package</phase>
                         <goals>
                             <goal>single</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-
-            <plugin>
-                <artifactId>maven-antrun-plugin</artifactId>
-                <version>1.7</version>
-                <executions>
-                    <execution>
-                        <phase>install</phase>
-                        <configuration>
-                            <target>
-                                <copy file="./target/${artifact.id}-${version.number}.jar" todir="${bootstrap.dir}/CommonTool/tools"/>
-                            </target>
-                        </configuration>
-                        <goals>
-                            <goal>run</goal>
                         </goals>
                     </execution>
                 </executions>

@@ -23,19 +23,14 @@ package pdl.operator;
 
 import pdl.cloud.management.JobManager;
 import pdl.cloud.model.JobDetail;
-import pdl.operator.app.CctoolsOperator;
 import pdl.operator.app.JettyThreadedOperator;
-import pdl.operator.app.ToolOperator;
 import pdl.operator.service.JobExecutor;
 import pdl.operator.service.JobExecutorThreadPool;
 import pdl.operator.service.RejectedJobExecutorHandler;
-import pdl.operator.service.WorkerExecutor;
 import pdl.utils.Configuration;
 import pdl.utils.StaticValues;
 
-import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.SynchronousQueue;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -47,7 +42,6 @@ import java.util.concurrent.TimeUnit;
 public class ServiceOperatorHelper {
 
     private Configuration conf;
-    private CctoolsOperator cctoolsOperator;
 
     public ServiceOperatorHelper() {
         conf = Configuration.getInstance();
@@ -58,38 +52,16 @@ public class ServiceOperatorHelper {
      */
     public void run() {
         try {
-            String isMaster = conf.getStringProperty(StaticValues.CONFIG_KEY_MASTER_INSTANCE);
-            if (isMaster != null && isMaster.equals("true")) { //Master Instance
-                String webServerPort = conf.getStringProperty(StaticValues.CONFIG_KEY_WEBSERVER_PORT);
-                String internalAddress = conf.getStringProperty(StaticValues.CONFIG_KEY_INTERNAL_ADDR);
-                String internalPort = conf.getStringProperty(StaticValues.CONFIG_KEY_INTERNAL_PORT);
-                this.runMaster(webServerPort, internalAddress, internalPort);
-            } else { //Job(WorkQ) runner
-                this.runJobRunner();
+            //default web server port to 80
+            String webServerPort = conf.getStringProperty(StaticValues.CONFIG_KEY_WEB_SERVER_PORT);
+            if(webServerPort == null || webServerPort.isEmpty()) {
+                webServerPort = "80";
             }
+            this.runMaster(webServerPort);
 
         } catch (Exception ex) {
             ex.printStackTrace();
         }
-    }
-
-    /**
-     * download 3rd party tools from blob storage area, then extracts into local storage space
-     * @throws Exception
-     */
-    private void getTools() throws Exception {
-        String storagePath = conf.getStringProperty(StaticValues.CONFIG_KEY_STORAGE_PATH);
-
-        boolean pythonReady = false;
-        boolean cygwinReady = false;
-        boolean cctooslReady = false;
-
-        ToolOperator pythonOperator = new ToolOperator(storagePath, "python");
-        pythonReady = pythonOperator.run();
-        ToolOperator cygwinOperator = new ToolOperator(storagePath, "cygwin");
-        cygwinReady = cygwinOperator.run();
-        cctoolsOperator = new CctoolsOperator(storagePath, "cctools-4.0.3");
-        cctooslReady = cctoolsOperator.run();
     }
 
     /**
@@ -98,35 +70,17 @@ public class ServiceOperatorHelper {
      *  -starts catalog server
      *  -runs a job
      * @param jettyPort port number Jetty uses
-     * @param masterAddress local IP address
-     * @param catalogServerPort internal communication port between cctools instances
      * @throws Exception
      */
-    private void runMaster(String jettyPort, String masterAddress, String catalogServerPort) throws Exception {
+    private void runMaster(String jettyPort) throws Exception {
         JettyThreadedOperator jettyOperator = new JettyThreadedOperator(jettyPort);
         jettyOperator.start();
-
-        this.getTools();
 
         JobManager jobManager = new JobManager();
 
         //clear the "being processed" or "running" states from all jobs
         jobManager.updateMultipleJobStatus(StaticValues.JOB_STATUS_RUNNING, StaticValues.JOB_STATUS_SUBMITTED);
         jobManager.updateMultipleJobStatus(StaticValues.JOB_STATUS_PENDING, StaticValues.JOB_STATUS_SUBMITTED);
-
-        if (!cctoolsOperator.startCatalogServer(masterAddress, catalogServerPort)) {
-            throw new Exception("starting catalog server failed - " + masterAddress + ":" + catalogServerPort);
-        }
-
-        //Adds processor time monitor to timer
-        /*
-        * Removed instance monitor for manual instance management through REST API
-        * by hkim 6/26/12
-        *
-        ScheduledInstanceMonitor instanceMonitor = new ScheduledInstanceMonitor();
-        Timer instanceMonitorTimer = new Timer();
-        instanceMonitorTimer.scheduleAtFixedRate(instanceMonitor, StaticValue.WORKER_INSTANCE_MONITORING_INTERVAL, timeInterval);
-        */
 
         //Job running threads pool
         final JobExecutorThreadPool threadExecutor = new JobExecutorThreadPool(
@@ -151,53 +105,9 @@ public class ServiceOperatorHelper {
         while (true) {
             JobDetail submittedJob = jobManager.getSingleSubmittedJob();
             if (submittedJob != null) {
-                JobExecutor jobExecutor = new JobExecutor(threadGroup, submittedJob, cctoolsOperator, jobManager);
+                JobExecutor jobExecutor = new JobExecutor(threadGroup, submittedJob, null, jobManager);
                 threadExecutor.execute(jobExecutor);
             }
-        }
-    }
-
-    /**
-     * starts worker
-     * @throws Exception
-     */
-    private void runJobRunner() throws Exception {
-        this.getTools();
-
-        int maxWorkerCountPerNode = StaticValues.MAX_WORKER_INSTANCE_PER_NODE;
-
-        //waits until master is available
-        while (!cctoolsOperator.isCatalogServerInfoAvailable()) {
-            Thread.sleep(10000);
-        }
-
-        cctoolsOperator.createTmpForWorker();
-
-        final ThreadPoolExecutor workerPool = new ThreadPoolExecutor(
-                maxWorkerCountPerNode,
-                maxWorkerCountPerNode,
-                StaticValues.MAX_KEEP_ALIVE_VALUE_JOB_EXECUTOR,
-                StaticValues.MAX_KEEP_ALIVE_UNIT_JOB_EXECUTOR.equals("min") ? TimeUnit.MINUTES : TimeUnit.SECONDS,
-                new SynchronousQueue<Runnable>(),
-                //new BlockingArrayQueue<Runnable>(5),
-                new RejectedExecutionHandler() {
-                    @Override
-                    public void rejectedExecution(Runnable runnable, ThreadPoolExecutor threadPoolExecutor) {
-                        return;
-                    }
-                }
-        );
-
-        Runtime.getRuntime().addShutdownHook(new Thread() {
-            @Override
-            public void run() {
-                workerPool.shutdownNow();
-            }
-        });
-
-        for (int i = 0; i < maxWorkerCountPerNode; i++) {
-            WorkerExecutor worker = new WorkerExecutor(cctoolsOperator);
-            workerPool.execute(worker);
         }
     }
 }

@@ -23,9 +23,6 @@ package pdl.operator.app;
 
 
 import org.apache.commons.io.FileUtils;
-import pdl.cloud.storage.BlobOperator;
-import pdl.utils.Configuration;
-import pdl.utils.FileTool;
 import pdl.utils.StaticValues;
 import pdl.utils.ToolPool;
 import pdl.utils.ZipHandler;
@@ -80,27 +77,7 @@ public class ToolOperator implements IApplicationOperator {
     }
 
     public boolean isToolReady(String toolFileName, String toolFilePath) throws Exception {
-        return ToolPool.canReadFile(toolFilePath)
-                || this.getFromRoleTools(toolFileName, toolFilePath)
-                || this.downloadFromUrl("", toolFilePath)
-                || this.downloadFromBlob(toolFileName, toolFilePath);
-    }
-
-    private boolean getFromRoleTools(String toolFileName, String toolFilePath) throws Exception {
-        boolean rtnVal = false;
-        String roleToolsPath = Configuration.getInstance().getStringProperty(StaticValues.CONFIG_KEY_ROLE_TOOLS_PATH);
-        if(roleToolsPath!=null && !roleToolsPath.isEmpty()) {
-            //TODO remove fileTool for checking blob from Azure
-            FileTool fileTool = new FileTool();
-            String fromPath = ToolPool.buildFilePath(roleToolsPath, toolFileName);
-            rtnVal = fileTool.copy(fromPath, toolFilePath);
-        }
-        return rtnVal;
-    }
-
-    private boolean downloadFromBlob(String toolFileName, String toolFilePath) throws Exception {
-        BlobOperator blobOperator = new BlobOperator();
-        return blobOperator.getBlob(StaticValues.BLOB_CONTAINER_TOOLS, toolFileName, toolFilePath, true);
+        return ToolPool.canReadFile(toolFilePath) || this.downloadFromUrl("", toolFilePath);
     }
 
     private boolean downloadFromUrl(String url, String toolFilePath) throws Exception {

@@ -22,16 +22,14 @@
 package pdl.operator.service;
 
 import org.apache.commons.io.FileUtils;
-import pdl.cloud.management.CertificateManager;
-import pdl.cloud.management.CloudInstanceManager;
 import pdl.cloud.management.JobManager;
 import pdl.cloud.model.FileInfo;
 import pdl.cloud.model.JobDetail;
+import pdl.operator.app.CctoolsOperator;
 import pdl.utils.Configuration;
 import pdl.utils.FileTool;
 import pdl.utils.StaticValues;
 import pdl.utils.ToolPool;
-import pdl.operator.app.CctoolsOperator;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -91,16 +89,16 @@ public class JobExecutor extends Thread {
         boolean rtnVal = false;
 
         try {
-            if (currJob != null) { //TODO check if job has input(json format)
+            if (currJob != null) {
                 String jobId = currJob.getUuid();
                 String jobName = currJob.getJobName();
 
                 System.out.printf("starting a job - %s:%s%n", jobName, jobId);
 
                 if(jobName.equals("scale")) {
-                    rtnVal = this.executeScaleJob();
+                    rtnVal = false; //this.executeScaleJob();
                 } else if(jobName.equals("cert")) {
-                    rtnVal = this.executeCertificateJob();
+                    rtnVal = false; //this.executeCertificateJob();
                 } else {
                     String workDirPath = createJobDirectoryIfNotExist(jobId);
                     if (workDirPath != null) {
@@ -132,7 +130,7 @@ public class JobExecutor extends Thread {
      * @throws Exception
      */
     private String createJobDirectoryIfNotExist(String jobId) throws Exception {
-        String dataStorePath = Configuration.getInstance().getStringProperty(StaticValues.CONFIG_KEY_DATASTORE_PATH);
+        String dataStorePath = ToolPool.buildDirPath(Configuration.getInstance().getStringProperty(StaticValues.CONFIG_KEY_STORAGE_PATH), StaticValues.DIRECTORY_FILE_AREA);
         File taskArea = new File(ToolPool.buildDirPath(dataStorePath + StaticValues.DIRECTORY_TASK_AREA));
         if (!ToolPool.isDirectoryExist(taskArea.getPath())) {
             taskArea.mkdir();
@@ -158,10 +156,13 @@ public class JobExecutor extends Thread {
     }
 
     /**
+     * Commented out methods (executeScaleJob, executeCertificateJob)
+     * There is no need to have these methods for the azure-free version
+     *
      * executes scale job - administrator only
      * @return boolean value for executing scale job
      * @throws Exception
-     */
+     *
     private boolean executeScaleJob() throws Exception {
         boolean rtnVal = false;
 
@@ -183,12 +184,13 @@ public class JobExecutor extends Thread {
         }
         return rtnVal;
     }
+    *
 
     /**
      * executes certificate('cert') job - administrator only
      * @return boolean value for executing certificate job
      * @throws Exception
-     */
+     *
     private boolean executeCertificateJob() throws Exception {
         boolean rtnVal = false;
 
@@ -215,6 +217,7 @@ public class JobExecutor extends Thread {
         }
         return rtnVal;
     }
+    */
 
     /**
      * executes general job('execute')
