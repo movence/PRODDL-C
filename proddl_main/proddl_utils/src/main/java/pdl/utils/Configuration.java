@@ -21,6 +21,7 @@
 
 package pdl.utils;
 
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -35,40 +36,6 @@ import java.util.Properties;
  * Time: 11:28 AM
  */
 
-
-/**
- *
- * Sample Configuration file
- *
- * <Master>
- IsMaster={master|worker identifier}
- DeploymentName={postfix to blob directory and table names}
- DeploymentId={deployment ID}
- StoragePath={path to general storage area}
- DataStorePath={path to storage area for task and files}
- StorageAccountName={storage container name}
- StorageAccountPkey={primary access key to storage container}
- SubscriptionId={AZURE subscription ID: can be found in Azure portal}
- CloudRoleWorkerName={worker role name}
- CertificateName={certificate file name of keystore and trustcacert}
- CertificatePassword={password for certificate file}
- CertificateAlias={alias for certificate file}
- WebserverPort={web container port}
- InternalAddress={internal IP address}
- InternalPort={internal port number}
- * </Master>
- *
- * <Worker>
- IsMaster={master|worker identifier, can be omitted}
- DeploymentName={postfix to blob directory and table names}
- DeploymentId={deployment ID}
- StoragePath={path to general storage area}
- StorageAccountName={storage container name}
- StorageAccountPkey={primary access key to storage container}
- * </Worker>
- *
- */
-
 public class Configuration {
 
     private static Configuration instance;
@@ -79,25 +46,24 @@ public class Configuration {
     }
 
     public static Configuration getInstance() {
+        return Configuration.getInstance(null);
+    }
+
+    public static Configuration getInstance(String path) {
         if (instance == null) {
-            try {
-                instance = Configuration.load();
-            } catch (IOException e) {
-                e.printStackTrace();
-                instance = new Configuration();
-            }
+            instance = Configuration.load(path);
         }
         return instance;
     }
 
-    public static Configuration load() throws IOException {
+    public static Configuration load(String path) {
         Configuration config = new Configuration();
         InputStream in = null;
 
         try {
-            in = Configuration.class.getClassLoader().getResourceAsStream(StaticValues.CONFIG_FILENAME);
+            in = new FileInputStream(path);
 
-            if(in==null) {
+            if(in == null) { //if no file present at a path, read default
                 URL url = null;
                 ClassLoader loader = ClassLoader.getSystemClassLoader();
                 if(loader!=null) {
@@ -111,7 +77,7 @@ public class Configuration {
                 }
             }
 
-            if(in!=null) {
+            if(in != null) {
                 Properties props = new Properties();
                 props.load(in);
                 for (Object key : props.keySet()) {
@@ -125,8 +91,13 @@ public class Configuration {
         } catch(Exception ex) {
             ex.printStackTrace();
         } finally {
-            if(in!=null)
-                in.close();
+            if(in!=null) {
+                try {
+                    in.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
         }
 
         return config;
@@ -137,7 +108,8 @@ public class Configuration {
     }
 
     public String getStringProperty(String key) {
-        return (String) getProperty(key);
+        Object value = this.getProperty(key);
+        return value != null ? (String)value : null;
     }
 
     public Integer getIntegerProperty(String key) {
