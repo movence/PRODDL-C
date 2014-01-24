@@ -61,10 +61,11 @@ public class JobManager {
                 ArrayList<JobDetail> prioritisedJobList = new ArrayList<JobDetail>();
                 int scaleJobCount = 0;
                 for (JobDetail currJob : jobs) {
-                    if(currJob.getJobName().contains("scale")) //set highest priority for scaling jobs
+                    if(currJob.getJobName().contains("scale")) { //set highest priority for scaling jobs
                         prioritisedJobList.add(scaleJobCount++, currJob);
-                    else
+                    } else {
                         prioritisedJobList.add(currJob);
+                    }
 
                     //TODO needs more sophisticated reordering mechanism
 

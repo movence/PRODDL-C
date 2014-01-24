@@ -48,7 +48,6 @@ public class CctoolsOperator extends ToolOperator {
     private List<Process> processes;
 
     private String cctoolsBinPath;
-    private String cygwinBinPath;
 
     private String catalogServerAddress = "127.0.0.1";
     private String catalogServerPort;
@@ -87,7 +86,6 @@ public class CctoolsOperator extends ToolOperator {
     private void setPaths() {
         try {
             cctoolsBinPath = ToolPool.buildDirPath(toolPath, "bin");
-            cygwinBinPath = ToolPool.buildDirPath(storagePath, "cygwin", "bin");
             tmpPath = ToolPool.buildDirPath(toolPath, "tmp");
 
             processes = new ArrayList<Process>();
@@ -108,7 +106,7 @@ public class CctoolsOperator extends ToolOperator {
     public ProcessBuilder buildProcessBuilder(String taskDir, List<String> args, boolean setPortRange) {
         boolean isEnvironmentVarialbeSet = false;
 
-        if (cygwinBinPath == null || cctoolsBinPath == null) {
+        if(cctoolsBinPath == null) {
             this.setPaths();
         }
 
@@ -123,7 +121,7 @@ public class CctoolsOperator extends ToolOperator {
         Map<String, String> env = pb.environment();
         for (String key : env.keySet()) {
             if (key.toLowerCase().equals("path")) {
-                env.put(key, cygwinBinPath + File.pathSeparator + cctoolsBinPath + File.pathSeparator + env.get(key));
+                env.put(key, cctoolsBinPath + File.pathSeparator + env.get(key));
                 isEnvironmentVarialbeSet = true;
                 break;
             }
@@ -131,14 +129,16 @@ public class CctoolsOperator extends ToolOperator {
 
         //If no Path variable found in environment, add it
         if(!isEnvironmentVarialbeSet) {
-            env.put("path", cygwinBinPath + File.pathSeparator + cctoolsBinPath);
+            env.put("path", cctoolsBinPath);
         }
 
-        //set the range of port numbers for internal communication, http://www.cse.nd.edu/~ccl/software/manuals/man/makeflow.html
-        env.put("TCP_LOW_PORT", "9001");
-        env.put("TCP_MAX_PORT", "40000");
-        //mutes cygwin warning for using DOS style path
-        env.put("nodosfilewarning", "1");
+        if(setPortRange) {
+            //set the range of port numbers for internal communication, http://www.cse.nd.edu/~ccl/software/manuals/man/makeflow.html
+            env.put("TCP_LOW_PORT", "9001");
+            env.put("TCP_MAX_PORT", "40000");
+            //mutes cygwin warning for using DOS style path
+            env.put("nodosfilewarning", "1");
+        }
 
         return pb;
     }
@@ -197,51 +197,6 @@ public class CctoolsOperator extends ToolOperator {
         return rtnVal;
     }
 
-    public boolean startWorkQ() {
-        boolean rtnVal = false;
-        Process process = null;
-
-        try {
-            //this.isCatalogServerInfoAvailable(); - the availability check for catalog server is done by ServiceOperatorHelper
-
-            //String taskName = storageOperator.dequeue( StaticValues.QUEUE_JOBQUEUE_NAME, true );
-
-            List<String> processArgs = new ArrayList<String>();
-            processArgs.add(cctoolsBinPath + "work_queue_worker");
-            processArgs.addAll(Arrays.asList(workerArgs));
-            processArgs.set(processArgs.indexOf(LOOKUP_KEY_CATALOGSERVER_INFO), catalogServerAddress + ":" + catalogServerPort);
-            processArgs.set(processArgs.indexOf(LOOKUP_KEY_TASK_NAME), GENERIC_TASK_NAME);
-            processArgs.set(processArgs.indexOf(LOOKUP_KEY_TMP_PATH), tmpPath);
-
-            ProcessBuilder pb = this.buildProcessBuilder(null, processArgs, false);
-            process = pb.start();
-            processes.add(process);
-
-            LogStreamReader errorGobbler = new LogStreamReader(process.getErrorStream(), "ERROR-[Worker]");
-            LogStreamReader outputGobbler = new LogStreamReader(process.getInputStream(), "OUTPUT-[Worker]");
-            errorGobbler.start();
-            outputGobbler.start();
-
-            rtnVal = process.waitFor()==0;
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            if(processes!=null && processes.contains(process))
-                processes.remove(process);
-            if(process!=null)
-                process.destroy();
-        }
-        return rtnVal;
-    }
-
-    public void createTmpForWorker() {
-        //create /tmp directory under cctools
-        File tmpDir = new File(tmpPath);
-        if(!tmpDir.exists() || !tmpDir.isDirectory()) {
-            tmpDir.mkdir();
-        }
-    }
-
     public boolean startBash(String taskFileName, String taskDirectory) {
         boolean rtnVal = false;
         Process process = null;
@@ -250,7 +205,7 @@ public class CctoolsOperator extends ToolOperator {
             if (currFile.exists() || currFile.canRead()) {
 
                 List<String> processArgs = new ArrayList<String>();
-                processArgs.add(ToolPool.buildDirPath(cygwinBinPath, "bash"));
+                processArgs.add("bash");
                 processArgs.add(currFile.getPath());
 
                 ProcessBuilder pb = this.buildProcessBuilder(taskDirectory, processArgs, false);
@@ -269,27 +224,6 @@ public class CctoolsOperator extends ToolOperator {
         } finally {
             if(processes!=null && processes.contains(process))
                 processes.remove(process);
-        }
-        return rtnVal;
-    }
-
-    public boolean startExe(String taskFileName, String taskDirectory) {
-        boolean rtnVal = false;
-        try {
-            File currFile = new File(ToolPool.buildFilePath(taskDirectory,taskFileName));
-            if (currFile.exists() || currFile.canRead()) {
-                Process process = Runtime.getRuntime().exec(taskFileName);
-
-                LogStreamReader errorGobbler = new LogStreamReader(process.getErrorStream(), "ERROR-[Exe]");
-                LogStreamReader outputGobbler = new LogStreamReader(process.getInputStream(), "OUTPUT-[Exe]");
-                errorGobbler.start();
-                outputGobbler.start();
-
-                rtnVal = process.waitFor()==0;
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
         }
         return rtnVal;
     }
