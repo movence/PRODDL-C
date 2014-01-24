@@ -50,7 +50,7 @@ public class Configuration {
     }
 
     public static Configuration getInstance(String path) {
-        if (instance == null) {
+        if (instance != null) {
             instance = Configuration.load(path);
         }
         return instance;
@@ -101,6 +101,10 @@ public class Configuration {
         }
 
         return config;
+    }
+
+    public boolean hasProperty(String key) {
+        return properties.containsKey(key);
     }
 
     public Object getProperty(String key) {

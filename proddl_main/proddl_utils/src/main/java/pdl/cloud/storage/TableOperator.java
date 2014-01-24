@@ -115,6 +115,19 @@ public class TableOperator {
         }
     }
 
+    public boolean tableExists(String tableName) {
+        boolean exists = false;
+
+        Map<String, String> table = this.queryEntity("sqlite_master", "type='table' and name='" + tableName + "'");
+        if(table != null && table.containsKey("name")) {
+            if(tableName.equals(table.get("name"))) {
+                exists = true;
+            }
+        }
+
+        return exists;
+    }
+
     public List<Map<String, String>> query(String tableName, String where) {
         List<Map<String, String>> results = new ArrayList<Map<String, String>>();
         Statement statement = null;
