@@ -34,6 +34,7 @@ public class StaticValues {
     public static final String CONFIG_FILENAME = "proddl.ini";
     public static final String CONFIG_KEY_STORAGE_PATH = "storage_path";
     public static final String CONFIG_KEY_WEB_SERVER_PORT = "web_server_port";
+    public static final String CONFIG_KEY_CCTOOLS_PATH = "cctools_path";
     public static final String CONFIG_KEY_START_CATALOG_SERVER = "start_wq_catalog_server";
     public static final String CONFIG_KEY_CATALOG_SERVER_PORT = "wq_catalog_server_port";
     public static final String CONFIG_KEY_START_WORKER_POOL = "start_wq_worker_pool";

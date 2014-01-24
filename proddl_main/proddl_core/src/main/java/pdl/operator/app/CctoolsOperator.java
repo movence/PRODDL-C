@@ -21,6 +21,8 @@
 
 package pdl.operator.app;
 
+import pdl.utils.Configuration;
+import pdl.utils.StaticValues;
 import pdl.utils.ToolPool;
 
 import java.io.*;
@@ -36,57 +38,41 @@ import java.util.Map;
  * Time: 9:08 AM
  * To change this template use File | Settings | File Templates.
  */
-public class CctoolsOperator extends ToolOperator {
-    private final String LOOKUP_KEY_CATALOGSERVER_INFO = "$catalogServer";
-    private final String LOOKUP_KEY_TASK_NAME = "$taskName";
-    private final String LOOKUP_KEY_PORT = "$port";
-    private final String LOOKUP_KEY_DEBUG_LOG = "$debug";
-    private final String LOOKUP_KEY_TMP_PATH = "$tmp";
-
+public class CctoolsOperator {
     private static final String GENERIC_TASK_NAME = "proddl";
+
+    private Configuration conf = null;
 
     private List<Process> processes;
 
-    private String cctoolsBinPath;
+    private String storagePath = null;
+    private String cctoolsPath = null;
+    private boolean useCatalogServer = false;
 
     private String catalogServerAddress = "127.0.0.1";
     private String catalogServerPort;
 
-    private String tmpPath;
-
-    private final String[] makeflowArgs = {
-            "-T", "wq", //batch system
-            "-p", LOOKUP_KEY_PORT, //random port
-            "-C", LOOKUP_KEY_CATALOGSERVER_INFO, "-a", //catalog server and advertise makeflow to catalog server
-            "-N", LOOKUP_KEY_TASK_NAME, //LOOKUP_KEY_TASK_NAME, //project name
-            "-r", "3", //retry
-            "-L", "final.log"
-            /*"-d", "all", //debugging sub-system
-            "-o", LOOKUP_KEY_DEBUG_LOG //debugging log*/
-    };
-
-    private final String[] workerArgs = {
-            "-t", "21600", //max idle time
-            "-C", LOOKUP_KEY_CATALOGSERVER_INFO, "-a", //catalog server and advertise makeflow to catalog server
-            "-z", "1024", //available disk space in MB
-            "-i", "3", //initial back-off time to connection failure to master
-            "-N", LOOKUP_KEY_TASK_NAME,
-            "-s", LOOKUP_KEY_TMP_PATH
-    };
-
-    public CctoolsOperator(String storagePath, String packageName) {
-        super(storagePath, packageName);
+    public CctoolsOperator() {
+        this(null);
     }
 
-    public boolean run() throws Exception {
-        setPaths();
-        return super.run();
+    public CctoolsOperator(String storagePath) {
+        this.init(storagePath);
     }
 
-    private void setPaths() {
+    public void init(String storagePath) {
         try {
-            cctoolsBinPath = ToolPool.buildDirPath(toolPath, "bin");
-            tmpPath = ToolPool.buildDirPath(toolPath, "tmp");
+            conf = Configuration.getInstance();
+
+            if(storagePath == null) {
+                this.storagePath = conf.getStringProperty(StaticValues.CONFIG_KEY_STORAGE_PATH);
+            } else {
+                this.storagePath = storagePath;
+            }
+
+            if(conf.hasProperty(StaticValues.CONFIG_KEY_CCTOOLS_PATH)) {
+                this.cctoolsPath = conf.getStringProperty(StaticValues.CONFIG_KEY_CCTOOLS_PATH) + "bin";
+            }
 
             processes = new ArrayList<Process>();
             Runtime.getRuntime().addShutdownHook(new Thread() {
@@ -103,41 +89,28 @@ public class CctoolsOperator extends ToolOperator {
         }
     }
 
-    public ProcessBuilder buildProcessBuilder(String taskDir, List<String> args, boolean setPortRange) {
-        boolean isEnvironmentVarialbeSet = false;
-
-        if(cctoolsBinPath == null) {
-            this.setPaths();
-        }
-
+    public ProcessBuilder buildProcessBuilder(String taskDir, List<String> args) {
         ProcessBuilder pb = new ProcessBuilder(args);
-        if(taskDir==null) {
-            pb.directory(new File(cctoolsBinPath));
-        } else {
+        if(taskDir != null) {
             pb.directory(new File(taskDir));
         }
         pb.redirectErrorStream(true);
 
         Map<String, String> env = pb.environment();
-        for (String key : env.keySet()) {
-            if (key.toLowerCase().equals("path")) {
-                env.put(key, cctoolsBinPath + File.pathSeparator + env.get(key));
-                isEnvironmentVarialbeSet = true;
-                break;
+        boolean isPathSet = false;
+
+        if(cctoolsPath != null) {
+            for (String key : env.keySet()) {
+                if (key.toLowerCase().equals("path")) {
+                    env.put(key, cctoolsPath + File.pathSeparator + env.get(key));
+                    isPathSet = true;
+                    break;
+                }
             }
-        }
 
-        //If no Path variable found in environment, add it
-        if(!isEnvironmentVarialbeSet) {
-            env.put("path", cctoolsBinPath);
-        }
-
-        if(setPortRange) {
-            //set the range of port numbers for internal communication, http://www.cse.nd.edu/~ccl/software/manuals/man/makeflow.html
-            env.put("TCP_LOW_PORT", "9001");
-            env.put("TCP_MAX_PORT", "40000");
-            //mutes cygwin warning for using DOS style path
-            env.put("nodosfilewarning", "1");
+            if(!isPathSet) {
+                env.put("PATH", cctoolsPath);
+            }
         }
 
         return pb;
@@ -156,21 +129,32 @@ public class CctoolsOperator extends ToolOperator {
                     if (currFile.exists() || currFile.canRead()) {
 
                         List<String> processArgs = new ArrayList<String>();
-                        processArgs.add(cctoolsBinPath+"makeflow");
+                        processArgs.add("bash");
+                        processArgs.add("-c");
+                        processArgs.add("makeflow");
 
                         if(isClean)
                             processArgs.add("-c"); //clean up log files and all targets
                         else {
-                            processArgs.addAll(Arrays.asList(makeflowArgs));
-                            processArgs.set(processArgs.indexOf(LOOKUP_KEY_CATALOGSERVER_INFO), catalogServerAddress + ":" + catalogServerPort);
-                            //processArgs.set(processArgs.indexOf(LOOKUP_KEY_TASK_NAME), taskName);
-                            processArgs.set(processArgs.indexOf(LOOKUP_KEY_TASK_NAME), GENERIC_TASK_NAME);
-                            processArgs.set(processArgs.indexOf(LOOKUP_KEY_PORT), "0"/*String.valueOf(makeflowPort++)*/);
-                            //processArgs.set(processArgs.indexOf(LOOKUP_KEY_DEBUG_LOG), "mf_debug.log");
+                            if(conf.hasProperty(StaticValues.CONFIG_KEY_MAKEFLOW_ARGS)) {
+                                String makeflowArgs = conf.getStringProperty(StaticValues.CONFIG_KEY_MAKEFLOW_ARGS);
+                                String[] makeflowArgsArr = makeflowArgs.split(" ");
+                                processArgs.addAll(Arrays.asList(makeflowArgsArr));
+                            }
+
+                            if(this.useCatalogServer) {
+                                processArgs.add("-C");
+                                processArgs.add(catalogServerAddress + ":" + catalogServerPort);
+                                processArgs.add("-a"); //advertise to catalog server
+                            }
+
+                            //add task name
+                            processArgs.add("-N");
+                            processArgs.add(GENERIC_TASK_NAME);
                         }
                         processArgs.add(currFile.getPath());
 
-                        ProcessBuilder pb = this.buildProcessBuilder(taskDirectory, processArgs, true);
+                        ProcessBuilder pb = this.buildProcessBuilder(taskDirectory, processArgs);
                         process = pb.start();
                         processes.add(process);
 
@@ -197,6 +181,43 @@ public class CctoolsOperator extends ToolOperator {
         return rtnVal;
     }
 
+    public boolean startCatalogServer() {
+        Process process = null;
+        boolean rtnVal = false;
+
+        try {
+            this.catalogServerPort = conf.getStringProperty(StaticValues.CONFIG_KEY_CATALOG_SERVER_PORT);
+
+            List<String> processArgs = new ArrayList<String>();
+            processArgs.add("bash");
+            processArgs.add("-c");
+            processArgs.add("catalog_server");
+
+            if(this.catalogServerPort != null && !this.catalogServerPort.isEmpty()) {
+                processArgs.add("-p");
+                processArgs.add(this.catalogServerPort);
+            }
+
+            ProcessBuilder pb = this.buildProcessBuilder(null, processArgs);
+            process = pb.start();
+            processes.add(process);
+
+            this.useCatalogServer = true;
+            rtnVal = true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            if(processes!=null && processes.contains(process))
+                processes.remove(process);
+
+            if(process!=null) {
+                process.destroy();
+            }
+        } finally {
+        }
+        return rtnVal;
+    }
+
+
     public boolean startBash(String taskFileName, String taskDirectory) {
         boolean rtnVal = false;
         Process process = null;
@@ -208,7 +229,7 @@ public class CctoolsOperator extends ToolOperator {
                 processArgs.add("bash");
                 processArgs.add(currFile.getPath());
 
-                ProcessBuilder pb = this.buildProcessBuilder(taskDirectory, processArgs, false);
+                ProcessBuilder pb = this.buildProcessBuilder(taskDirectory, processArgs);
                 process = pb.start();
                 processes.add(process);
 

@@ -50,7 +50,7 @@ public class Configuration {
     }
 
     public static Configuration getInstance(String path) {
-        if (instance != null) {
+        if (instance == null) {
             instance = Configuration.load(path);
         }
         return instance;
