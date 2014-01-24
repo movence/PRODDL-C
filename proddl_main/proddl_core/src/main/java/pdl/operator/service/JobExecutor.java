@@ -259,7 +259,7 @@ public class JobExecutor extends Thread {
                         else if(interpreter.equals("bash"))
                             executed = cctoolsOperator.startBash(scriptFile, workDir);
                     } else {
-                        executed = cctoolsOperator.startExe(null, workDir);
+                        executed = false;
                     }
 
                     if(executed) {
