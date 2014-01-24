@@ -23,7 +23,6 @@ package pdl.utils;
 
 import org.apache.commons.io.FileUtils;
 import pdl.cloud.model.FileInfo;
-import pdl.cloud.storage.BlobOperator;
 import pdl.cloud.storage.TableOperator;
 
 import java.io.File;
@@ -141,26 +140,6 @@ public class FileTool {
 
             fileIn.close();
             fileIn = null;
-
-            //tools or special files that need to be copied to blob storage
-            if (type != null && !type.isEmpty()) {
-                if(type.equals("blob")) {
-                    fileInfo.setContainer("files");
-                } else if(type.startsWith("tool:")) {
-                    fileInfo.setContainer("tools");
-                }
-
-                BlobOperator blobOperator = new BlobOperator(conf);
-                boolean uploaded = blobOperator.uploadFileToBlob(fileInfo.getContainer(), fileInfo.getName(), newFilePath, fileInfo.getType(), false);
-                //boolean uploaded = storageServices.uploadFileToBlob(fileInfo, newFilePath, false);
-
-                if(!uploaded) {
-                    File file = new File(newFilePath);
-                    if(file.exists())
-                        file.delete();
-                    throw new Exception("FileTool:Failed to upload file to Blob storage.");
-                }
-            }
 
             fileInfo.setStatus(StaticValues.FILE_STATUS_COMMITTED);
             boolean recordInserted = this.insertFileRecord(fileInfo);

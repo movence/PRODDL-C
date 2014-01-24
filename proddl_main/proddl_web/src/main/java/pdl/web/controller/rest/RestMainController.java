@@ -55,12 +55,6 @@ public class RestMainController {
         return rtnJson;
     }
 
-    @RequestMapping(value = "instance", method = RequestMethod.GET)
-    public @ResponseBody Map<String, Object> getInstanceCount(Principal principal) {
-        Map<String, Object> rtnJson = handler.getInstanceCount();
-        return rtnJson;
-    }
-
     /**
      * Returns list of job ids for current user
      * @param principal user principal

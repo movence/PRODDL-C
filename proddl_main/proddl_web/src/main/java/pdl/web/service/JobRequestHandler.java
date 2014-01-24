@@ -22,7 +22,6 @@
 package pdl.web.service;
 
 import org.springframework.web.multipart.MultipartFile;
-import pdl.cloud.management.CloudInstanceManager;
 import pdl.cloud.management.JobManager;
 import pdl.cloud.management.UserService;
 import pdl.cloud.model.FileInfo;
@@ -168,20 +167,6 @@ public class JobRequestHandler {
         user.setPhone(inputInMap.containsKey("phone")?(String)inputInMap.get("phone"):null);
 
         return userService.loadUser(user);
-    }
-
-    /**
-     * return current instance count of worker node
-     * @return json object
-     */
-    public Map<String, Object> getInstanceCount() {
-        HashMap<String, Object> rtnVal = new HashMap<String, Object>();
-        CloudInstanceManager instanceManager = new CloudInstanceManager();
-        Integer workers = instanceManager.getCurrentInstanceCount();
-        rtnVal.put("c_c", workers);
-        rtnVal.put("max", StaticValues.MAX_TOTAL_WORKER_INSTANCE);
-
-        return rtnVal;
     }
 
     /**
