@@ -81,7 +81,7 @@ public class User extends AbstractModel {
     }
 
     public void setAdmin(int admin) {
-        admin = admin;
+        this.admin = admin;
     }
 
     public String getEmail() {

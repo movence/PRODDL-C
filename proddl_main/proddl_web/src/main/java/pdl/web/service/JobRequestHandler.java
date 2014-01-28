@@ -80,7 +80,7 @@ public class JobRequestHandler {
                 else
                     result = "failed";
             } else { //regular job submission
-                JobDetail jobDetail = new JobDetail(jobName);
+                JobDetail jobDetail = new JobDetail();
                 jobDetail.setJobName(jobName);
                 jobDetail.setUserId(userName);
                 jobDetail.setStatus(StaticValues.JOB_STATUS_SUBMITTED);
