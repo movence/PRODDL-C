@@ -61,25 +61,28 @@ public class Configuration {
         InputStream in = null;
 
         try {
-            if(path == null) {
+
+            if(path == null || path.isEmpty()) { //when empty path is given
+                //try to load a configuration file from the classloader
                 in = Configuration.class.getClassLoader().getResourceAsStream(StaticValues.CONFIG_FILENAME);
+
+                //if no file present at a path, load from the classpath
+                if(in == null) {
+                    URL url = null;
+                    ClassLoader loader = ClassLoader.getSystemClassLoader();
+                    if(loader!=null) {
+                        url = loader.getResource(StaticValues.CONFIG_FILENAME);
+                        if(url == null) {
+                            url = loader.getResource("/"+StaticValues.CONFIG_FILENAME);
+                        }
+                        if(url != null) {
+                            in = url.openStream();
+                        }
+                    }
+                }
                 //throw new Exception(StaticValues.CONFIG_FILENAME + " cannot be found.");
             } else {
                 in = new FileInputStream(path);
-            }
-
-            if(in == null) { //if no file present at a path, read default
-                URL url = null;
-                ClassLoader loader = ClassLoader.getSystemClassLoader();
-                if(loader!=null) {
-                    url = loader.getResource(StaticValues.CONFIG_FILENAME);
-                    if(url == null) {
-                        url = loader.getResource("/"+StaticValues.CONFIG_FILENAME);
-                    }
-                    if(url != null) {
-                        in = url.openStream();
-                    }
-                }
             }
 
             if(in != null) {
