@@ -49,21 +49,16 @@ public class ServiceOperator {
             configArg = configArg.replace(" = ", "=");
             String iniPath = configArg.substring(configArg.indexOf("=") + 1);
 
+            String iniFilePath = null;
             File iniFile = new File(iniPath);
             if(iniFile.exists() && iniFile.canRead()) {
-                conf = Configuration.getInstance(iniFile.getAbsolutePath());
-                /*
-                remove configuration loading from here then add it to the helper
-                helper path the parent directory to the embedded jetty as a classpath
-                 */
+                iniFilePath = iniFile.getAbsolutePath();
+            } else {
+                throw new IllegalArgumentException("cannot find config file - " + StaticValues.CONFIG_FILENAME);
             }
-        }
 
-        if(conf.getStringProperty(StaticValues.CONFIG_KEY_STORAGE_PATH) == null) {
-            throw new IllegalArgumentException("cannot find config file - " + StaticValues.CONFIG_FILENAME);
+            ServiceOperatorHelper helper = new ServiceOperatorHelper(iniFilePath);
+            helper.run();
         }
-
-        ServiceOperatorHelper helper = new ServiceOperatorHelper();
-        helper.run();
     }
 }

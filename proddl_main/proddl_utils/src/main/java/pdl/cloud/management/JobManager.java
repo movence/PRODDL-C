@@ -174,12 +174,6 @@ public class JobManager {
         JobDetail job = null;
 
         try {
-            /*if(!tableOperator.tableExists(StaticValues.TABLE_NAME_JOB_DETAIL)) {
-                job = new JobDetail();
-                tableOperator.createTable(StaticValues.TABLE_NAME_JOB_DETAIL, job.generate("create"));
-                job = null;
-            }*/
-
             StringBuilder where = new StringBuilder();
 
             //gets job which has the highest priority

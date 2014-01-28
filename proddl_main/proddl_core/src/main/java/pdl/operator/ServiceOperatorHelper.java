@@ -21,6 +21,7 @@
 
 package pdl.operator;
 
+import org.apache.commons.io.FileUtils;
 import pdl.cloud.management.JobManager;
 import pdl.cloud.model.JobDetail;
 import pdl.operator.app.JettyThreadedOperator;
@@ -30,6 +31,7 @@ import pdl.operator.service.RejectedJobExecutorHandler;
 import pdl.utils.Configuration;
 import pdl.utils.StaticValues;
 
+import java.io.File;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
 
@@ -40,11 +42,16 @@ import java.util.concurrent.TimeUnit;
  * Time: 2:31 PM
  */
 public class ServiceOperatorHelper {
-
+    private final String iniFilePath;
     private Configuration conf;
 
+    public ServiceOperatorHelper(String iniFilePath) {
+        this.iniFilePath = iniFilePath;
+        conf = Configuration.getInstance(iniFilePath);
+    }
+
     public ServiceOperatorHelper() {
-        conf = Configuration.getInstance();
+        this(null);
     }
 
     /**
@@ -67,12 +74,30 @@ public class ServiceOperatorHelper {
      * @throws Exception
      */
     private void runMaster() throws Exception {
-        String storagePath = conf.getStringProperty(StaticValues.CONFIG_KEY_STORAGE_PATH);
         String webServerPort = conf.getStringProperty(StaticValues.CONFIG_KEY_WEB_SERVER_PORT);
         //default web server port to 80
         if(webServerPort == null || webServerPort.isEmpty()) {
             webServerPort = "80";
         }
+
+        //copy .ini file into storage area
+        String storagePath = conf.getStringProperty(StaticValues.CONFIG_KEY_STORAGE_PATH);
+        if(storagePath == null || storagePath.isEmpty()) {
+            throw new Exception(String.format("'%s' is not found in %s.", StaticValues.CONFIG_KEY_STORAGE_PATH, StaticValues.CONFIG_FILENAME));
+        }
+
+        File storageDir = new File(storagePath);
+        if(!storageDir.exists() || !storageDir.isDirectory()) { //create storage directory if not exist
+            storageDir.mkdirs();
+        }
+
+        /*File newIniFile = new File(storageDir.getAbsolutePath() + StaticValues.CONFIG_FILENAME);
+        if(newIniFile.exists()) { //removes existing .ini file
+            FileUtils.deleteQuietly(newIniFile);
+        }*/
+
+        File iniFile = new File(iniFilePath);
+        FileUtils.copyFileToDirectory(iniFile, storageDir);
 
         JettyThreadedOperator jettyOperator = new JettyThreadedOperator(webServerPort, storagePath);
         jettyOperator.start();
