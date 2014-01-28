@@ -39,9 +39,11 @@ import java.security.ProtectionDomain;
  */
 public class JettyThreadedOperator extends Thread {
     private String jettyPort;
+    private String configurationPath;
 
-    public JettyThreadedOperator(String port) {
-        jettyPort = port;
+    public JettyThreadedOperator(String port, String confPath) {
+        this.jettyPort = port;
+        this.configurationPath = configurationPath;
     }
 
     public void run() {
@@ -63,6 +65,8 @@ public class JettyThreadedOperator extends Thread {
 
             WebAppContext context = new WebAppContext(warFile, "/");
             context.setServer(jettyServer);
+            //set .ini file location as a classpath so that Configuration class can load it
+            context.setExtraClasspath(configurationPath);
 
             HandlerList handlers = new HandlerList();
             handlers.addHandler(context);

@@ -52,12 +52,7 @@ public class ServiceOperatorHelper {
      */
     public void run() {
         try {
-            //default web server port to 80
-            String webServerPort = conf.getStringProperty(StaticValues.CONFIG_KEY_WEB_SERVER_PORT);
-            if(webServerPort == null || webServerPort.isEmpty()) {
-                webServerPort = "80";
-            }
-            this.runMaster(webServerPort);
+            this.runMaster();
 
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -69,11 +64,17 @@ public class ServiceOperatorHelper {
      *  -rolls back any pending or running job statues
      *  -starts catalog server
      *  -runs a job
-     * @param jettyPort port number Jetty uses
      * @throws Exception
      */
-    private void runMaster(String jettyPort) throws Exception {
-        JettyThreadedOperator jettyOperator = new JettyThreadedOperator(jettyPort);
+    private void runMaster() throws Exception {
+        String storagePath = conf.getStringProperty(StaticValues.CONFIG_KEY_STORAGE_PATH);
+        String webServerPort = conf.getStringProperty(StaticValues.CONFIG_KEY_WEB_SERVER_PORT);
+        //default web server port to 80
+        if(webServerPort == null || webServerPort.isEmpty()) {
+            webServerPort = "80";
+        }
+
+        JettyThreadedOperator jettyOperator = new JettyThreadedOperator(webServerPort, storagePath);
         jettyOperator.start();
 
         JobManager jobManager = new JobManager();

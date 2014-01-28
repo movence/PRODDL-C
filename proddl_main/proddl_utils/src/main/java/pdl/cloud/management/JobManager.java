@@ -123,7 +123,7 @@ public class JobManager {
             if(rtnVal)
                 this.reorderSubmittedJobs();
             else
-                throw new Exception("Adding job to Azure table failed.");
+                throw new Exception("Adding a job failed.");
 
         } catch (Exception ex) {
             throw ex;
@@ -174,10 +174,11 @@ public class JobManager {
         JobDetail job = null;
 
         try {
-            if(!tableOperator.tableExists(StaticValues.TABLE_NAME_JOB_DETAIL)) {
+            /*if(!tableOperator.tableExists(StaticValues.TABLE_NAME_JOB_DETAIL)) {
                 job = new JobDetail();
                 tableOperator.createTable(StaticValues.TABLE_NAME_JOB_DETAIL, job.generate("create"));
-            }
+                job = null;
+            }*/
 
             StringBuilder where = new StringBuilder();
 

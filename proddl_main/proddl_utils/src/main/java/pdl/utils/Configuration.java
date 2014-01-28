@@ -61,7 +61,12 @@ public class Configuration {
         InputStream in = null;
 
         try {
-            in = new FileInputStream(path);
+            if(path == null) {
+                in = Configuration.class.getClassLoader().getResourceAsStream(StaticValues.CONFIG_FILENAME);
+                //throw new Exception(StaticValues.CONFIG_FILENAME + " cannot be found.");
+            } else {
+                in = new FileInputStream(path);
+            }
 
             if(in == null) { //if no file present at a path, read default
                 URL url = null;
@@ -84,7 +89,7 @@ public class Configuration {
                     config.setProperty(key.toString(), props.get(key));
                 }
             } else {
-                System.err.println(StaticValues.CONFIG_FILENAME + " cannot be found.");
+                throw new Exception(StaticValues.CONFIG_FILENAME + " cannot be found.");
             }
         } catch(IOException ioe) {
             ioe.printStackTrace();

@@ -52,6 +52,10 @@ public class ServiceOperator {
             File iniFile = new File(iniPath);
             if(iniFile.exists() && iniFile.canRead()) {
                 conf = Configuration.getInstance(iniFile.getAbsolutePath());
+                /*
+                remove configuration loading from here then add it to the helper
+                helper path the parent directory to the embedded jetty as a classpath
+                 */
             }
         }
 
