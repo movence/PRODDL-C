@@ -118,9 +118,10 @@ public class TableOperator {
     public boolean tableExists(String tableName) {
         boolean exists = false;
 
-        Map<String, String> table = this.queryEntity("sqlite_master", "type='table' and name='" + tableName + "'");
-        if(table != null && table.containsKey("name")) {
-            if(tableName.equals(table.get("name"))) {
+        List<Map<String, String>> result = this.query("sqlite_master", "type='table' and name='" + tableName + "'");
+        if(result != null && result.size() > 0) {
+            Map<String, String> row = result.get(0);
+            if(tableName.equals(row.get("name"))) {
                 exists = true;
             }
         }
@@ -180,23 +181,31 @@ public class TableOperator {
 
     public Map<String, String> queryEntity(String tableName, String where) {
         Map<String, String> entity = null;
-        List<Map<String, String>> list = this.query(tableName, where);
-        if(list != null && list.size() > 0) {
-            entity = list.get(0);
+
+        if(this.tableExists(tableName)) {
+            List<Map<String, String>> list = this.query(tableName, where);
+            if(list != null && list.size() > 0) {
+                entity = list.get(0);
+            }
         }
         return entity;
     }
 
     public List<Map<String, String>> queryListBySearchKey(String tableName, String searchColumn, Object value) {
-        StringBuilder where = new StringBuilder("WHERE ");
-        where.append(searchColumn).append("=");
+        List<Map<String, String>> list = null;
 
-        if(value.getClass() == java.lang.String.class) {
-            where.append("'").append(value).append("'");
-        } else {
-            where.append(value);
+        if(this.tableExists(tableName)) {
+            StringBuilder where = new StringBuilder("WHERE ");
+            where.append(searchColumn).append("=");
+
+            if(value.getClass() == java.lang.String.class) {
+                where.append("'").append(value).append("'");
+            } else {
+                where.append(value);
+            }
+            list = this.query(tableName, where.toString());
         }
-        return this.query(tableName, where.toString());
+        return list;
     }
 
     public Map<String, String> queryEntityBySearchKey(String tableName, String searchColumn, Object value) {
@@ -275,8 +284,10 @@ public class TableOperator {
 
         if(rows != null && rows.size() > 0) { //run only when there is data
             //create table if not exist with top entity
-            M top = rows.get(0);
-            this.createTable(tableName, top.generate("create"));
+            if(!this.tableExists(tableName)) {
+                M top = rows.get(0);
+                this.createTable(tableName, top.generate("create"));
+            }
 
             //batch update
             List<String> sqls = new ArrayList<String>(rows.size());
