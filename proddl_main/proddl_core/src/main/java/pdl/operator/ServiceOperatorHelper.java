@@ -24,6 +24,7 @@ package pdl.operator;
 import org.apache.commons.io.FileUtils;
 import pdl.cloud.management.JobManager;
 import pdl.cloud.model.JobDetail;
+import pdl.operator.app.CctoolsOperator;
 import pdl.operator.app.JettyThreadedOperator;
 import pdl.operator.service.JobExecutor;
 import pdl.operator.service.JobExecutorThreadPool;
@@ -127,11 +128,12 @@ public class ServiceOperatorHelper {
         });
 
         ThreadGroup threadGroup = new ThreadGroup(Thread.currentThread().getThreadGroup(), "worker");
+        CctoolsOperator cctoolsOperator = new CctoolsOperator(storagePath);
         //checks available job indefinitely
         while (true) {
             JobDetail submittedJob = jobManager.getSingleSubmittedJob();
             if (submittedJob != null) {
-                JobExecutor jobExecutor = new JobExecutor(threadGroup, submittedJob, null, jobManager);
+                JobExecutor jobExecutor = new JobExecutor(threadGroup, submittedJob, cctoolsOperator, jobManager);
                 threadExecutor.execute(jobExecutor);
             }
         }

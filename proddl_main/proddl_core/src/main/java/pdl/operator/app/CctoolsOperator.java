@@ -129,8 +129,6 @@ public class CctoolsOperator {
                     if (currFile.exists() || currFile.canRead()) {
 
                         List<String> processArgs = new ArrayList<String>();
-                        processArgs.add("bash");
-                        processArgs.add("-c");
                         processArgs.add("makeflow");
 
                         if(isClean)
