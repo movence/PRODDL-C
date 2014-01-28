@@ -316,7 +316,7 @@ public class JobManager {
     public List<JobDetail> getJobList(String condition) throws Exception {
         List<JobDetail> jobs = null;
         try {
-            List<Map<String, String>> list = tableOperator.query(jobDetailTableName, condition);
+            List<Map<String, String>> list = tableOperator.queryList(jobDetailTableName, condition);
             if(list != null && list.size() > 0) {
                 jobs = new ArrayList<JobDetail>();
                 for(Map<String, String> entity : list) {

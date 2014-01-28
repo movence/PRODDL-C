@@ -182,13 +182,22 @@ public class TableOperator {
     public Map<String, String> queryEntity(String tableName, String where) {
         Map<String, String> entity = null;
 
-        if(this.tableExists(tableName)) {
-            List<Map<String, String>> list = this.query(tableName, where);
-            if(list != null && list.size() > 0) {
-                entity = list.get(0);
-            }
+        List<Map<String, String>> list = this.queryList(tableName, where);
+        if(list != null && list.size() > 0) {
+            entity = list.get(0);
         }
+
         return entity;
+    }
+
+    public List<Map<String, String>> queryList(String tableName, String where) {
+        List<Map<String, String>> list = null;
+
+        if(this.tableExists(tableName)) {
+            list = this.query(tableName, where);
+        }
+
+        return list;
     }
 
     public List<Map<String, String>> queryListBySearchKey(String tableName, String searchColumn, Object value) {
