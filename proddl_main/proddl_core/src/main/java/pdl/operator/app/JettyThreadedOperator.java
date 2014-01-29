@@ -65,6 +65,8 @@ public class JettyThreadedOperator extends Thread {
 
             WebAppContext context = new WebAppContext(warFile, "/");
             context.setServer(jettyServer);
+            //give the priority of classloading of parent
+            context.setParentLoaderPriority(true);
             //set .ini file location as a classpath so that Configuration class can load it
             context.setExtraClasspath(storagePath);
 
