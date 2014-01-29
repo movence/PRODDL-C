@@ -184,17 +184,16 @@ public class CctoolsOperator {
         boolean rtnVal = false;
 
         try {
-            this.catalogServerPort = conf.getStringProperty(StaticValues.CONFIG_KEY_CATALOG_SERVER_PORT);
+            catalogServerPort = conf.getStringProperty(StaticValues.CONFIG_KEY_CATALOG_SERVER_PORT);
+
+            if(catalogServerPort == null || catalogServerPort.isEmpty()) {
+                catalogServerPort = "9999";
+            }
 
             List<String> processArgs = new ArrayList<String>();
-            processArgs.add("bash");
-            processArgs.add("-c");
             processArgs.add("catalog_server");
-
-            if(this.catalogServerPort != null && !this.catalogServerPort.isEmpty()) {
-                processArgs.add("-p");
-                processArgs.add(this.catalogServerPort);
-            }
+            processArgs.add("-p");
+            processArgs.add(this.catalogServerPort);
 
             ProcessBuilder pb = this.buildProcessBuilder(null, processArgs);
             process = pb.start();

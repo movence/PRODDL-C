@@ -92,11 +92,6 @@ public class ServiceOperatorHelper {
             storageDir.mkdirs();
         }
 
-        /*File newIniFile = new File(storageDir.getAbsolutePath() + StaticValues.CONFIG_FILENAME);
-        if(newIniFile.exists()) { //removes existing .ini file
-            FileUtils.deleteQuietly(newIniFile);
-        }*/
-
         File iniFile = new File(iniFilePath);
         FileUtils.copyFileToDirectory(iniFile, storageDir);
 
@@ -108,6 +103,13 @@ public class ServiceOperatorHelper {
         //clear the "being processed" or "running" states from all jobs
         jobManager.updateMultipleJobStatus(StaticValues.JOB_STATUS_RUNNING, StaticValues.JOB_STATUS_SUBMITTED);
         jobManager.updateMultipleJobStatus(StaticValues.JOB_STATUS_PENDING, StaticValues.JOB_STATUS_SUBMITTED);
+
+
+        CctoolsOperator cctoolsOperator = new CctoolsOperator(storagePath);
+        String useCatalogServer = conf.getStringProperty(StaticValues.CONFIG_KEY_START_CATALOG_SERVER);
+        if(useCatalogServer != null && useCatalogServer.toLowerCase().equals("true")) {
+            cctoolsOperator.startCatalogServer();
+        }
 
         //Job running threads pool
         final JobExecutorThreadPool threadExecutor = new JobExecutorThreadPool(
@@ -128,7 +130,6 @@ public class ServiceOperatorHelper {
         });
 
         ThreadGroup threadGroup = new ThreadGroup(Thread.currentThread().getThreadGroup(), "worker");
-        CctoolsOperator cctoolsOperator = new CctoolsOperator(storagePath);
         //checks available job indefinitely
         while (true) {
             JobDetail submittedJob = jobManager.getSingleSubmittedJob();
