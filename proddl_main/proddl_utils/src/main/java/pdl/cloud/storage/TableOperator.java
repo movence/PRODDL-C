@@ -39,20 +39,43 @@ import java.util.Map;
  * pdl.cloud.storage
  */
 public class TableOperator {
+    private static TableOperator tableOperator;
 
     private Connection connection;
     private String dbFilePath;
     private boolean isOpened = false;
 
+    private Connection readConnection;
+    private boolean isReadOpen = false;
+    private Connection writeConnection;
+    private boolean isWriteOpen = false;
+
     public final static String DATABASE = "proddlc.db";
 
-    static {
+    public static synchronized TableOperator getInstance(String path) {
+        if(tableOperator == null) {
+            try {
+                Class.forName("org.sqlite.JDBC");
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
+            }
+
+            if(path == null) {
+                tableOperator = new TableOperator();
+            } else {
+                tableOperator = new TableOperator(path);
+            }
+        }
+        return tableOperator;
+    }
+
+    /*static {
         try {
             Class.forName("org.sqlite.JDBC");
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
         }
-    }
+    }*/
 
     public TableOperator() {
         this(Configuration.getInstance().getStringProperty(StaticValues.CONFIG_KEY_STORAGE_PATH));
@@ -72,10 +95,14 @@ public class TableOperator {
 
             if(isReadOnly) {
                 config.setReadOnly(true);
+                readConnection = DriverManager.getConnection("jdbc:sqlite:/" + this.dbFilePath, config.toProperties());
+                isReadOpen = true;
+            } else {
+                writeConnection = DriverManager.getConnection("jdbc:sqlite:/" + this.dbFilePath, config.toProperties());
+                isWriteOpen = true;
             }
-            this.connection = DriverManager.getConnection("jdbc:sqlite:/" + this.dbFilePath, config.toProperties());
-            this.connection.setAutoCommit(false);
-            isOpened = true;
+            /*connection = DriverManager.getConnection("jdbc:sqlite:/" + this.dbFilePath, config.toProperties());
+            isOpened = true;*/
         } catch(SQLException e) {
             e.printStackTrace();
             isOpened = false;
@@ -84,13 +111,13 @@ public class TableOperator {
     }
 
     public boolean close() {
-        if(!this.isOpened) {
+        if(!isOpened) {
             return true;
         }
 
         try {
-            this.connection.close();
-            this.isOpened = false;
+            connection.close();
+            isOpened = false;
         } catch(SQLException e) {
             e.printStackTrace();
             return false;
@@ -101,7 +128,7 @@ public class TableOperator {
 
     public void commit() {
         try {
-            this.connection.commit();
+            connection.commit();
         } catch(SQLException e) {
             e.printStackTrace();
         }
@@ -109,7 +136,7 @@ public class TableOperator {
 
     public void rollback() {
         try {
-            this.connection.rollback();
+            writeConnection.rollback();
         } catch(SQLException e) {
             e.printStackTrace();
         }
@@ -125,7 +152,6 @@ public class TableOperator {
                 exists = true;
             }
         }
-
         return exists;
     }
 
@@ -134,12 +160,12 @@ public class TableOperator {
         Statement statement = null;
         ResultSet rs = null;
 
-        if(!this.isOpened) {
+        if(!this.isReadOpen) {
             this.open(true);
         }
 
         try {
-            statement = connection.createStatement();
+            statement = readConnection.createStatement();
             StringBuilder sql = new StringBuilder("SELECT * FROM ").append(tableName).append(" ");
             if(!where.startsWith("WHERE")) {
                 sql.append("WHERE ");
@@ -169,8 +195,7 @@ public class TableOperator {
                 if(statement != null) {
                     statement.close();
                 }
-                this.commit();
-                this.close();
+                //this.close();
             } catch(SQLException e) {
                 e.printStackTrace();
             }
@@ -237,12 +262,14 @@ public class TableOperator {
         Statement statement = null;
         int executeResult = isTable ? 0 : 1;
 
-        if(!this.isOpened) {
+        if(!this.isWriteOpen) {
             this.open(false);
         }
 
         try {
-            statement = connection.createStatement();
+            writeConnection.setAutoCommit(false);
+
+            statement = writeConnection.createStatement();
             statement.setQueryTimeout(30);
             for(String sql : sqls) {
                 statement.addBatch(sql);
@@ -260,8 +287,8 @@ public class TableOperator {
                 if(statement != null) {
                     statement.close();
                 }
-                this.commit();
-                this.close();
+                writeConnection.commit();
+                //this.close();
             } catch (SQLException e) {
                 e.printStackTrace();
             }

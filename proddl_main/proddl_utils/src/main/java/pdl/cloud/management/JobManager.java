@@ -42,7 +42,7 @@ public class JobManager {
     private String jobDetailTableName;
 
     public JobManager() {
-        tableOperator = new TableOperator();
+        tableOperator = TableOperator.getInstance(null);
         jobDetailTableName = StaticValues.TABLE_NAME_JOB_DETAIL;
     }
 

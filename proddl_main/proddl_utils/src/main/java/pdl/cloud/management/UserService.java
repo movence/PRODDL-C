@@ -48,8 +48,8 @@ public class UserService {
 
     public UserService(Configuration conf) {
         this.conf = conf;
-        this.tableOperator = new TableOperator(conf);
-        this.userTableName = StaticValues.TABLE_NAME_USER;
+        tableOperator = TableOperator.getInstance(conf.getStringProperty(StaticValues.CONFIG_KEY_STORAGE_PATH));
+        userTableName = StaticValues.TABLE_NAME_USER;
     }
 
     /**

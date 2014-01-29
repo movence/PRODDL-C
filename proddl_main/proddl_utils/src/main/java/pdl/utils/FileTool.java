@@ -55,9 +55,10 @@ public class FileTool {
      * Initialize FileTool by getting configuration values
      */
     private void initialize() {
-        if(conf==null)
+        if(conf==null) {
             conf = Configuration.getInstance();
-        tableOperator = new TableOperator(conf);
+        }
+        tableOperator = TableOperator.getInstance(conf.getStringProperty(StaticValues.CONFIG_KEY_STORAGE_PATH));
 
         fileTableName = StaticValues.TABLE_NAME_FILES;
 

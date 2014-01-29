@@ -44,7 +44,7 @@ public class StorageServices {
      */
     private TableOperator getTableOperator() {
         if (tableOperator == null) {
-            tableOperator = new TableOperator();
+            tableOperator = TableOperator.getInstance(null);
         }
         return tableOperator;
     }

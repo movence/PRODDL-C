@@ -40,7 +40,7 @@ public class FileManager {
 
     public FileManager() {
         conf = Configuration.getInstance();
-        tableOperator = new TableOperator(conf);
+        tableOperator = TableOperator.getInstance(conf.getStringProperty(StaticValues.CONFIG_KEY_STORAGE_PATH));
         filesTableName = StaticValues.TABLE_NAME_FILES;
     }
 
