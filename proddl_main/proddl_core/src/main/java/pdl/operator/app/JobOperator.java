@@ -38,7 +38,7 @@ import java.util.Map;
  * Time: 9:08 AM
  * To change this template use File | Settings | File Templates.
  */
-public class CctoolsOperator {
+public class JobOperator {
     private static final String GENERIC_TASK_NAME = "proddl";
 
     private Configuration conf = null;
@@ -52,11 +52,11 @@ public class CctoolsOperator {
     private String catalogServerAddress = "127.0.0.1";
     private String catalogServerPort;
 
-    public CctoolsOperator() {
+    public JobOperator() {
         this(null);
     }
 
-    public CctoolsOperator(String storagePath) {
+    public JobOperator(String storagePath) {
         this.init(storagePath);
     }
 
@@ -187,7 +187,7 @@ public class CctoolsOperator {
             catalogServerPort = conf.getStringProperty(StaticValues.CONFIG_KEY_CATALOG_SERVER_PORT);
 
             if(catalogServerPort == null || catalogServerPort.isEmpty()) {
-                catalogServerPort = "9999";
+                catalogServerPort = "8999";
             }
 
             List<String> processArgs = new ArrayList<String>();
