@@ -149,7 +149,10 @@ public class TableOperator {
                     existingTables.add(tableName);
                 }
             }
+        } else {
+            exists = true;
         }
+
         return exists;
     }
 
