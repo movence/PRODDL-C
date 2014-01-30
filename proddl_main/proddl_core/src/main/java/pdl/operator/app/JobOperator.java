@@ -39,46 +39,24 @@ import java.util.Map;
  * To change this template use File | Settings | File Templates.
  */
 public class JobOperator {
-    private static final String GENERIC_TASK_NAME = "proddl";
-
     private Configuration conf = null;
 
-    private List<Process> processes;
-
-    private String storagePath = null;
-    private String cctoolsPath = null;
-    private boolean useCatalogServer = false;
-
-    private String catalogServerAddress = "127.0.0.1";
-    private String catalogServerPort;
+    private static List<Process> processes;
 
     public JobOperator() {
-        this(null);
+        this.init();
     }
 
-    public JobOperator(String storagePath) {
-        this.init(storagePath);
-    }
-
-    public void init(String storagePath) {
+    public void init() {
         try {
             conf = Configuration.getInstance();
 
-            if(storagePath == null) {
-                this.storagePath = conf.getStringProperty(StaticValues.CONFIG_KEY_STORAGE_PATH);
-            } else {
-                this.storagePath = storagePath;
-            }
-
-            if(conf.hasProperty(StaticValues.CONFIG_KEY_CCTOOLS_PATH)) {
-                this.cctoolsPath = conf.getStringProperty(StaticValues.CONFIG_KEY_CCTOOLS_PATH) + "bin";
-            }
-
+            //add shutdown hook to any running processes
             processes = new ArrayList<Process>();
             Runtime.getRuntime().addShutdownHook(new Thread() {
                 @Override
                 public void run() {
-                    if (processes != null && processes.size() > 0) {
+                    if (processes.size() > 0) {
                         for (Process currProcess : processes)
                             currProcess.destroy();
                     }
@@ -89,7 +67,7 @@ public class JobOperator {
         }
     }
 
-    public ProcessBuilder buildProcessBuilder(String taskDir, List<String> args) {
+    public ProcessBuilder buildProcessBuilder(String taskDir, List<String> args, String envPath) {
         ProcessBuilder pb = new ProcessBuilder(args);
         if(taskDir != null) {
             pb.directory(new File(taskDir));
@@ -99,17 +77,17 @@ public class JobOperator {
         Map<String, String> env = pb.environment();
         boolean isPathSet = false;
 
-        if(cctoolsPath != null) {
+        if(envPath != null && !envPath.isEmpty()) {
             for (String key : env.keySet()) {
                 if (key.toLowerCase().equals("path")) {
-                    env.put(key, cctoolsPath + File.pathSeparator + env.get(key));
+                    env.put(key, envPath + File.pathSeparator + env.get(key));
                     isPathSet = true;
                     break;
                 }
             }
 
             if(!isPathSet) {
-                env.put("PATH", cctoolsPath);
+                env.put("PATH", envPath);
             }
         }
 
@@ -121,11 +99,9 @@ public class JobOperator {
         Process process = null;
 
         try {
-            //this.isCatalogServerInfoAvailable(); - catalog server information are already available by ServiceOperatorHelper
-
             if (taskFileName != null && !taskFileName.isEmpty() && taskDirectory != null && !taskDirectory.isEmpty()) {
                 if (ToolPool.isDirectoryExist(taskDirectory)) {
-                    File currFile = new File(ToolPool.buildFilePath(taskDirectory,taskFileName));
+                    File currFile = new File(ToolPool.buildFilePath(taskDirectory, taskFileName));
                     if (currFile.exists() || currFile.canRead()) {
 
                         List<String> processArgs = new ArrayList<String>();
@@ -140,19 +116,26 @@ public class JobOperator {
                                 processArgs.addAll(Arrays.asList(makeflowArgsArr));
                             }
 
-                            if(this.useCatalogServer) {
+                            if(conf.hasProperty(StaticValues.CONFIG_KEY_START_CATALOG_SERVER)
+                                    && "true".equals(conf.getStringProperty(StaticValues.CONFIG_KEY_START_CATALOG_SERVER).toLowerCase())) {
                                 processArgs.add("-C");
-                                processArgs.add(catalogServerAddress + ":" + catalogServerPort);
+                                processArgs.add("127.0.0.1" + ":" + conf.getStringProperty(StaticValues.CONFIG_KEY_CATALOG_SERVER_PORT));
                                 processArgs.add("-a"); //advertise to catalog server
                             }
 
                             //add task name
                             processArgs.add("-N");
-                            processArgs.add(GENERIC_TASK_NAME);
+                            processArgs.add("proddl");
                         }
                         processArgs.add(currFile.getPath());
 
-                        ProcessBuilder pb = this.buildProcessBuilder(taskDirectory, processArgs);
+                        //if there is configuration value of path to cctools
+                        String cctoolsPath = null;
+                        if(conf.hasProperty(StaticValues.CONFIG_KEY_CCTOOLS_PATH)) {
+                            cctoolsPath = conf.getStringProperty(StaticValues.CONFIG_KEY_CCTOOLS_PATH) + "bin";
+                        }
+
+                        ProcessBuilder pb = this.buildProcessBuilder(taskDirectory, processArgs, cctoolsPath);
                         process = pb.start();
                         processes.add(process);
 
@@ -162,19 +145,21 @@ public class JobOperator {
                         outputGobbler.start();
 
                         rtnVal = process.waitFor()==0;
-                        System.out.printf("Makeflow process for job(%s) has been completed.%n", taskName);
+                        System.out.printf("makeflow process for job(%s) completed.%n", taskName);
                     } else
-                        throw new Exception("CCTOOLS-startMakeflow(): Makeflow(task) file does not exist!");
+                        throw new Exception("CCTOOLS-startMakeflow(): makeflow(task) file not found!");
                 } else
-                    throw new Exception("CCTOOLS-startMakeflow(): Task directory does not exist!");
+                    throw new Exception("CCTOOLS-startMakeflow(): task directory not found!");
             }
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
-            if(processes!=null && processes.contains(process))
+            if(processes != null && processes.contains(process)) {
                 processes.remove(process);
-            if(process!=null)
+            }
+            if(process != null) {
                 process.destroy();
+            }
         }
         return rtnVal;
     }
@@ -184,29 +169,29 @@ public class JobOperator {
         boolean rtnVal = false;
 
         try {
-            catalogServerPort = conf.getStringProperty(StaticValues.CONFIG_KEY_CATALOG_SERVER_PORT);
+            String catalogServerPort = conf.getStringProperty(StaticValues.CONFIG_KEY_CATALOG_SERVER_PORT);
 
             if(catalogServerPort == null || catalogServerPort.isEmpty()) {
                 catalogServerPort = "8999";
+                conf.setProperty(StaticValues.CONFIG_KEY_CATALOG_SERVER_PORT, catalogServerPort);
             }
 
             List<String> processArgs = new ArrayList<String>();
             processArgs.add("catalog_server");
             processArgs.add("-p");
-            processArgs.add(this.catalogServerPort);
+            processArgs.add(catalogServerPort);
 
-            ProcessBuilder pb = this.buildProcessBuilder(null, processArgs);
+            ProcessBuilder pb = this.buildProcessBuilder(null, processArgs, null);
             process = pb.start();
             processes.add(process);
 
-            this.useCatalogServer = true;
             rtnVal = true;
         } catch (Exception e) {
             e.printStackTrace();
-            if(processes!=null && processes.contains(process))
+            if(processes != null && processes.contains(process)) {
                 processes.remove(process);
-
-            if(process!=null) {
+            }
+            if(process != null) {
                 process.destroy();
             }
         } finally {
@@ -226,7 +211,7 @@ public class JobOperator {
                 processArgs.add("bash");
                 processArgs.add(currFile.getPath());
 
-                ProcessBuilder pb = this.buildProcessBuilder(taskDirectory, processArgs);
+                ProcessBuilder pb = this.buildProcessBuilder(taskDirectory, processArgs, null);
                 process = pb.start();
                 processes.add(process);
 
@@ -240,8 +225,12 @@ public class JobOperator {
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
-            if(processes!=null && processes.contains(process))
+            if(processes != null && processes.contains(process)) {
                 processes.remove(process);
+            }
+            if(process != null) {
+                process.destroy();
+            }
         }
         return rtnVal;
     }
