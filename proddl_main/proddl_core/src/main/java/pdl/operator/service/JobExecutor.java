@@ -25,7 +25,7 @@ import org.apache.commons.io.FileUtils;
 import pdl.cloud.management.JobManager;
 import pdl.cloud.model.FileInfo;
 import pdl.cloud.model.JobDetail;
-import pdl.operator.app.CctoolsOperator;
+import pdl.operator.app.JobOperator;
 import pdl.utils.Configuration;
 import pdl.utils.FileTool;
 import pdl.utils.StaticValues;
@@ -43,19 +43,25 @@ import java.util.Map;
  * Time: 10:19 AM
  */
 public class JobExecutor extends Thread {
-    private CctoolsOperator cctoolsOperator;
     private JobDetail currJob;
     private JobManager jobManager;
+    private JobOperator jobOperator;
 
-    public JobExecutor(ThreadGroup group, JobDetail currJob, CctoolsOperator operator, JobManager jobManager) {
+    public JobExecutor(ThreadGroup group, JobDetail currJob) {
         super(group, currJob.getUuid() + "_job");
         this.currJob=currJob;
-        this.cctoolsOperator = operator;
+    }
+
+    public JobExecutor(JobDetail currJob) {
+        this(new ThreadGroup("worker"), currJob);
+    }
+
+    public void setJobManager(JobManager jobManager) {
         this.jobManager = jobManager;
     }
 
-    public JobExecutor(JobDetail currJob, CctoolsOperator operator) {
-        this(new ThreadGroup("worker"), currJob, operator, new JobManager());
+    public void setJobOperator(JobOperator jobOperator) {
+        this.jobOperator = jobOperator;
     }
 
     /**
@@ -75,6 +81,12 @@ public class JobExecutor extends Thread {
      * thread run
      */
     public void run() {
+
+        //create jobManager instance if not set by caller
+        if(jobManager == null) {
+            jobManager = new JobManager();
+        }
+
         if (currJob != null && currJob.getUuid() != null) {
             boolean jobExecuted = this.executeJob();
             jobManager.updateJobStatus(currJob.getUuid(), jobExecuted?StaticValues.JOB_STATUS_COMPLETED:StaticValues.JOB_STATUS_FAILED);
@@ -89,29 +101,27 @@ public class JobExecutor extends Thread {
         boolean rtnVal = false;
 
         try {
-            if (currJob != null) {
-                String jobId = currJob.getUuid();
-                String jobName = currJob.getJobName();
+            String jobId = currJob.getUuid();
+            String jobName = currJob.getJobName();
 
-                System.out.printf("starting a job - %s:%s%n", jobName, jobId);
+            System.out.printf("starting a job - %s:%s%n", jobName, jobId);
 
-                if(jobName.equals("scale")) {
-                    rtnVal = false; //this.executeScaleJob();
-                } else if(jobName.equals("cert")) {
-                    rtnVal = false; //this.executeCertificateJob();
-                } else {
-                    String workDirPath = createJobDirectoryIfNotExist(jobId);
-                    if (workDirPath != null) {
-                        if(currJob.getInput()!=null) {
-                            this.createInputJsonFile(workDirPath);
-                        }
+            if(jobName.equals("scale")) {
+                rtnVal = false; //this.executeScaleJob();
+            } else if(jobName.equals("cert")) {
+                rtnVal = false; //this.executeCertificateJob();
+            } else {
+                String workDirPath = createJobDirectoryIfNotExist(jobId);
+                if (workDirPath != null) {
+                    if(currJob.getInput()!=null) {
+                        this.createInputJsonFile(workDirPath);
+                    }
 
-                        if(jobName.equals(StaticValues.SPECIAL_EXECUTION_JOB)) {
-                            rtnVal = this.genericJob(workDirPath);
-                        } else {
-                            //executes universal job script then waits until its execution finishes
-                            //TODO This part should be replaced to python execution code
-                        }
+                    if(jobName.equals(StaticValues.SPECIAL_EXECUTION_JOB)) {
+                        rtnVal = this.genericJob(workDirPath);
+                    } else {
+                        //executes universal job script then waits until its execution finishes
+                        //TODO This part should be replaced to python execution code
                     }
                 }
                 System.out.printf("job %s - %s:%s\n", rtnVal?"completed":"failed", jobName, jobId);
@@ -164,27 +174,27 @@ public class JobExecutor extends Thread {
      * @throws Exception
      *
     private boolean executeScaleJob() throws Exception {
-        boolean rtnVal = false;
+    boolean rtnVal = false;
 
-        final String WORKER_INSTANCE_COUNT_KEY = "n_worker";  //for scale
-        int workerCount = -1;
+    final String WORKER_INSTANCE_COUNT_KEY = "n_worker";  //for scale
+    int workerCount = -1;
 
-        if(currJob.getInput()!=null) {
-            Map<String, Object> inputInMap = ToolPool.jsonStringToMap(currJob.getInput());
-            if(inputInMap.containsKey(WORKER_INSTANCE_COUNT_KEY)) {
-                String strCount = (String)inputInMap.get(WORKER_INSTANCE_COUNT_KEY);
-                if(!strCount.equals("0"))
-                    workerCount = Integer.parseInt(strCount);
-            }
-        }
-
-        if(workerCount>0) {
-            CloudInstanceManager instanceManager = new CloudInstanceManager();
-            rtnVal = instanceManager.scaleService(workerCount);
-        }
-        return rtnVal;
+    if(currJob.getInput()!=null) {
+    Map<String, Object> inputInMap = ToolPool.jsonStringToMap(currJob.getInput());
+    if(inputInMap.containsKey(WORKER_INSTANCE_COUNT_KEY)) {
+    String strCount = (String)inputInMap.get(WORKER_INSTANCE_COUNT_KEY);
+    if(!strCount.equals("0"))
+    workerCount = Integer.parseInt(strCount);
     }
-    *
+    }
+
+    if(workerCount>0) {
+    CloudInstanceManager instanceManager = new CloudInstanceManager();
+    rtnVal = instanceManager.scaleService(workerCount);
+    }
+    return rtnVal;
+    }
+     *
 
     /**
      * executes certificate('cert') job - administrator only
@@ -192,32 +202,32 @@ public class JobExecutor extends Thread {
      * @throws Exception
      *
     private boolean executeCertificateJob() throws Exception {
-        boolean rtnVal = false;
+    boolean rtnVal = false;
 
-        final String CER_CERTIFICATE_KEY = "cer_fid"; // file UUID for cer
-        final String PFX_CERTIFICATE_KEY = "pfx_fid"; // file UUID for pfx
-        final String CERTIFICATE_PASSWORD_KEY = "c_password"; //certification password
+    final String CER_CERTIFICATE_KEY = "cer_fid"; // file UUID for cer
+    final String PFX_CERTIFICATE_KEY = "pfx_fid"; // file UUID for pfx
+    final String CERTIFICATE_PASSWORD_KEY = "c_password"; //certification password
 
-        if(currJob.getInput()!=null) {
-            Map<String, Object> inputInMap = ToolPool.jsonStringToMap(currJob.getInput());
-            if(inputInMap.containsKey(CER_CERTIFICATE_KEY)
-                    && inputInMap.containsKey(PFX_CERTIFICATE_KEY)
-                    && inputInMap.containsKey(CERTIFICATE_PASSWORD_KEY)) {
-                String cerFileId = (String)inputInMap.get(CER_CERTIFICATE_KEY);
-                String pfxFileId = (String)inputInMap.get(PFX_CERTIFICATE_KEY);
-                String certPass = (String)inputInMap.get(CERTIFICATE_PASSWORD_KEY);
+    if(currJob.getInput()!=null) {
+    Map<String, Object> inputInMap = ToolPool.jsonStringToMap(currJob.getInput());
+    if(inputInMap.containsKey(CER_CERTIFICATE_KEY)
+    && inputInMap.containsKey(PFX_CERTIFICATE_KEY)
+    && inputInMap.containsKey(CERTIFICATE_PASSWORD_KEY)) {
+    String cerFileId = (String)inputInMap.get(CER_CERTIFICATE_KEY);
+    String pfxFileId = (String)inputInMap.get(PFX_CERTIFICATE_KEY);
+    String certPass = (String)inputInMap.get(CERTIFICATE_PASSWORD_KEY);
 
-                if(cerFileId!=null && !cerFileId.isEmpty()
-                        && pfxFileId!=null && !pfxFileId.isEmpty()
-                        && certPass!=null && !cerFileId.isEmpty()) {
-                    CertificateManager certManager = new CertificateManager();
-                    rtnVal = certManager.execute(pfxFileId, cerFileId, certPass);
-                }
-            }
-        }
-        return rtnVal;
+    if(cerFileId!=null && !cerFileId.isEmpty()
+    && pfxFileId!=null && !pfxFileId.isEmpty()
+    && certPass!=null && !cerFileId.isEmpty()) {
+    CertificateManager certManager = new CertificateManager();
+    rtnVal = certManager.execute(pfxFileId, cerFileId, certPass);
     }
-    */
+    }
+    }
+    return rtnVal;
+    }
+     */
 
     /**
      * executes general job('execute')
@@ -254,26 +264,35 @@ public class JobExecutor extends Thread {
 
                     boolean executed = false;
                     if(interpreter!=null) {
-                        if(interpreter.equals("makeflow"))
-                            executed = cctoolsOperator.startMakeflow(false, currJob.getUuid(), scriptFile, workDir);
-                        else if(interpreter.equals("bash"))
-                            executed = cctoolsOperator.startBash(scriptFile, workDir);
+                        if(jobOperator == null) {
+                            jobOperator = new JobOperator();
+                        }
+
+                        if(interpreter.equals("makeflow")) {
+                            executed = jobOperator.startMakeflow(false, currJob.getUuid(), scriptFile, workDir);
+                        } else if(interpreter.equals("bash")) {
+                            executed = jobOperator.startBash(scriptFile, workDir);
+                        }
                     } else {
                         executed = false;
                     }
 
                     if(executed) {
                         FileTool fileTool = new FileTool();
+
                         //task output
                         String outputFileId = null;
                         String outputFilePath = ToolPool.buildFilePath(workDir, "output" + StaticValues.FILE_EXTENSION_DAT);
-                        if(ToolPool.canReadFile(outputFilePath))
+                        if(ToolPool.canReadFile(outputFilePath)) {
                             outputFileId = fileTool.createFile(null, new FileInputStream(outputFilePath), null, currJob.getUserId());
+                        }
+
                         //log file
                         String logFilePath = ToolPool.buildFilePath(workDir, "final.log");
                         String logFileId = null;
-                        if(ToolPool.canReadFile(logFilePath))
+                        if(ToolPool.canReadFile(logFilePath)) {
                             logFileId = fileTool.createFile(null, new FileInputStream(ToolPool.buildFilePath(workDir, "final.log")), null, currJob.getUserId());
+                        }
 
                         //if(outputFileId!=null && !outputFileId.isEmpty())
                         completed = jobManager.updateJob(currJob.getUuid(), StaticValues.JOB_STATUS_COMPLETED, outputFileId, logFileId);
@@ -296,7 +315,7 @@ public class JobExecutor extends Thread {
                         ToolPool.buildFilePath(workingDirectory, scriptFileName)))
                     throw new Exception("Copying script file failed.");
             } else {
-                throw new Exception("script file record does not exit - " + currJob.getScriptFileUUID());
+                throw new Exception("script file record not found - " + currJob.getScriptFileUUID());
             }
         }
 
@@ -308,7 +327,7 @@ public class JobExecutor extends Thread {
                         ToolPool.buildFilePath(workingDirectory, "input" + StaticValues.FILE_EXTENSION_DAT)))
                     throw new Exception("Copying input file failed.");
             } else {
-                throw new Exception("Input file record does not exit - " + currJob.getInputFileUUID());
+                throw new Exception("Input file record not found - " + currJob.getInputFileUUID());
             }
         }
 

@@ -24,7 +24,7 @@ package pdl.operator;
 import org.apache.commons.io.FileUtils;
 import pdl.cloud.management.JobManager;
 import pdl.cloud.model.JobDetail;
-import pdl.operator.app.CctoolsOperator;
+import pdl.operator.app.JobOperator;
 import pdl.operator.app.JettyThreadedOperator;
 import pdl.operator.service.JobExecutor;
 import pdl.operator.service.JobExecutorThreadPool;
@@ -105,10 +105,10 @@ public class ServiceOperatorHelper {
         jobManager.updateMultipleJobStatus(StaticValues.JOB_STATUS_PENDING, StaticValues.JOB_STATUS_SUBMITTED);
 
 
-        CctoolsOperator cctoolsOperator = new CctoolsOperator(storagePath);
+        JobOperator jobOperator = new JobOperator();
         String useCatalogServer = conf.getStringProperty(StaticValues.CONFIG_KEY_START_CATALOG_SERVER);
         if(useCatalogServer != null && useCatalogServer.toLowerCase().equals("true")) {
-            cctoolsOperator.startCatalogServer();
+            jobOperator.startCatalogServer();
         }
 
         //Job running threads pool
@@ -134,7 +134,9 @@ public class ServiceOperatorHelper {
         while (true) {
             JobDetail submittedJob = jobManager.getSingleSubmittedJob();
             if (submittedJob != null) {
-                JobExecutor jobExecutor = new JobExecutor(threadGroup, submittedJob, cctoolsOperator, jobManager);
+                JobExecutor jobExecutor = new JobExecutor(threadGroup, submittedJob);
+                jobExecutor.setJobManager(jobManager);
+                jobExecutor.setJobOperator(jobOperator);
                 threadExecutor.execute(jobExecutor);
             }
         }
