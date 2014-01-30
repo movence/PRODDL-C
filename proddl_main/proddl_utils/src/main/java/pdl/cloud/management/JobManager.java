@@ -123,7 +123,7 @@ public class JobManager {
             if(rtnVal)
                 this.reorderSubmittedJobs();
             else
-                throw new Exception("Adding a job failed.");
+                throw new Exception("failed to add job.");
 
         } catch (Exception ex) {
             throw ex;
@@ -153,7 +153,7 @@ public class JobManager {
                 job = new JobDetail();
                 job.map(retrievedJob);
             } else {
-                throw new Exception(String.format("Job (ID:'%s') does not exist.", jobId));
+                throw new Exception(String.format("job - '%s' not found", jobId));
             }
 
         } catch (Exception ex) {

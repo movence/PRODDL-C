@@ -203,7 +203,7 @@ public class JobRequestHandler {
 
         } catch (Exception ex) {
             ex.printStackTrace();
-            rtnVal.put("error", "failed to get job");
+            rtnVal.put("error", "failed to get the job");
         }
         return rtnVal;
     }
