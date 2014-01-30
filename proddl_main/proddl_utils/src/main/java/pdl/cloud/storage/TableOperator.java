@@ -40,6 +40,7 @@ import java.util.Map;
  */
 public class TableOperator {
     private static TableOperator tableOperator;
+    private static List<String> existingTables;
 
     private Connection connection;
     private String dbFilePath;
@@ -52,7 +53,7 @@ public class TableOperator {
 
     public final static String DATABASE = "proddlc.db";
 
-    public static synchronized TableOperator getInstance(String path) {
+    public static TableOperator getInstance(String path) {
         if(tableOperator == null) {
             try {
                 Class.forName("org.sqlite.JDBC");
@@ -65,17 +66,11 @@ public class TableOperator {
             } else {
                 tableOperator = new TableOperator(path);
             }
+
+            existingTables = new ArrayList<String>();
         }
         return tableOperator;
     }
-
-    /*static {
-        try {
-            Class.forName("org.sqlite.JDBC");
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        }
-    }*/
 
     public TableOperator() {
         this(Configuration.getInstance().getStringProperty(StaticValues.CONFIG_KEY_STORAGE_PATH));
@@ -145,11 +140,14 @@ public class TableOperator {
     public boolean tableExists(String tableName) {
         boolean exists = false;
 
-        List<Map<String, String>> result = this.query("sqlite_master", "type='table' and name='" + tableName + "'");
-        if(result != null && result.size() > 0) {
-            Map<String, String> row = result.get(0);
-            if(tableName.equals(row.get("name"))) {
-                exists = true;
+        if(!existingTables.contains(tableName)) { //do not run if a table name has already been checked
+            List<Map<String, String>> result = this.query("sqlite_master", "type='table' and name='" + tableName + "'");
+            if(result != null && result.size() > 0) {
+                Map<String, String> row = result.get(0);
+                if(tableName.equals(row.get("name"))) {
+                    exists = true;
+                    existingTables.add(tableName);
+                }
             }
         }
         return exists;
@@ -257,7 +255,7 @@ public class TableOperator {
         return this.update(sqls, isTable);
     }
 
-    public boolean update(List<String> sqls, boolean isTable) {
+    public synchronized boolean update(List<String> sqls, boolean isTable) {
         boolean result = true;
         Statement statement = null;
         int executeResult = isTable ? 0 : 1;
