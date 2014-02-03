@@ -120,25 +120,16 @@ public class FileTool {
     public String createFile(String type, InputStream fileIn, String fileName, String userName) throws Exception{
         String rtnVal = null;
         try {
-            boolean uploadToBlob = type != null && !type.isEmpty() && (type.equals("blob") || type.startsWith("tool:"));
-
             FileInfo fileInfo = this.createFileRecord(fileName, userName);
 
             String newFilePath = ToolPool.buildFilePath(fileStoragePath, fileInfo.getPath(), fileInfo.getName());
             File newFile = new File(newFilePath);
             FileUtils.copyInputStreamToFile(fileIn, newFile);
-            /*IOUtils.copy(fileIn, fileOut);
-            fileOut = new FileOutputStream(newFilePath);*/
-
-            /*int readBytes = 0;
-            int readBlockSize = 4 * 1024 * 1024;
-            byte[] buffer = new byte[readBlockSize];
-            while ((readBytes = fileIn.read(buffer, 0, readBlockSize)) != -1) {
-                fileOut.write(buffer, 0, readBytes);
-            }*/
 
             fileIn.close();
             fileIn = null;
+
+            boolean overwrite = false;
 
             //tools or special files that need to be copied to blob storage
             if (type != null && !type.isEmpty()) {
@@ -146,10 +137,16 @@ public class FileTool {
                     fileInfo.setContainer("files");
                 } else if(type.startsWith("tool:")) {
                     fileInfo.setContainer("tools");
+                    String toolName = type.substring(type.indexOf(":") + 1);
+                    if(toolName == null || toolName.isEmpty() || !toolName.contains(".")) {
+                        throw new Exception("tool name not found. {tool:toolName.zip}");
+                    }
+                    fileInfo.setName(toolName);
+                    overwrite = true;
                 }
 
                 BlobOperator blobOperator = new BlobOperator(conf);
-                boolean uploaded = blobOperator.uploadFileToBlob(fileInfo.getContainer(), fileInfo.getName(), newFilePath, fileInfo.getType(), false);
+                boolean uploaded = blobOperator.uploadFileToBlob(fileInfo.getContainer(), fileInfo.getName(), newFilePath, fileInfo.getType(), overwrite);
                 //boolean uploaded = storageServices.uploadFileToBlob(fileInfo, newFilePath, false);
 
                 if(!uploaded) {

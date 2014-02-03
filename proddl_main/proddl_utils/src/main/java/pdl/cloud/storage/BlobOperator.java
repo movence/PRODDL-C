@@ -153,8 +153,13 @@ public class BlobOperator {
         boolean rtnVal = false;
         try {
             IBlobContainer theContainer = getBlobContainer(containerName);
-            if (theContainer.isBlobExist(blobName) && !overWrite)
-                throw new Exception(String.format("Blob '%s' Already Exists! Cannot overwrite.", blobName));
+            if (theContainer.isBlobExist(blobName)) {
+                if(overWrite) {
+                    theContainer.deleteBlob(blobName);
+                } else {
+                    throw new Exception(String.format("Blob '%s' Already Exists! Cannot overwrite.", blobName));
+                }
+            }
 
             if (null == fileBytes || fileBytes.length == 0)
                 throw new Exception("File Binary is null or empty");
