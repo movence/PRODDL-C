@@ -39,3 +39,8 @@ proddl_bootstrap/CommonTool/bin/Release
 proddl_bootstrap/CommonTool/obj/Release
 proddl_bootstrap/csx/Release
 proddl_bootstrap/obj/Release
+OLD_proddl_c
+proddl.ini
+proddl.properties.SAMPLE
+pom.properties
+proddl_utils-1.0.jar
