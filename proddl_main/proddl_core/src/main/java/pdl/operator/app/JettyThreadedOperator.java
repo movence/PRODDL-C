@@ -63,6 +63,7 @@ public class JettyThreadedOperator extends Thread {
 
             WebAppContext context = new WebAppContext(warFile, "/");
             context.setServer(jettyServer);
+            context.setParentLoaderPriority(true);
 
             HandlerList handlers = new HandlerList();
             handlers.addHandler(context);

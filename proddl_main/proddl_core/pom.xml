@@ -46,7 +46,7 @@
         <group.name>proddl</group.name>
         <artifact.id>proddl_core</artifact.id>
         <web.artifact.id>proddl_web</web.artifact.id>
-        <cloud.artifact.id>proddl_cloud</cloud.artifact.id>
+        <cloud.artifact.id>proddl_utils</cloud.artifact.id>
 
         <jetty.version>7.5.4.v20111024</jetty.version>
         <glassfish-jsp-2.1.version>2.1.v20100127</glassfish-jsp-2.1.version>

@@ -24,7 +24,7 @@ package pdl.web.controller.rest;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import pdl.common.StaticValues;
+import pdl.utils.StaticValues;
 import pdl.web.service.JobRequestHandler;
 
 import javax.servlet.http.HttpServletRequest;
@@ -179,7 +179,7 @@ public class RestMainController {
      * @format curl <ip address>:<port>/pdl/r/file/upload/?type=<type> -u <user id>:<pass> -F file=@<file> --keepalive-time <seconds> -X POST|PUT
      *
      * Admin users can upload tools such as python and cctools using this method.
-     * @format curl <ip address>:<port>/pdl/r/file/upload/?type=tool -u <user id>:<pass> -F file=@<file> --keepalive-time <seconds> -X POST|PUT
+     * @format curl <ip address>:<port>/pdl/r/file/upload/?type=tool:<tool> -u <user id>:<pass> -F file=@<file> --keepalive-time <seconds> -X POST|PUT
      */
     @RequestMapping(value = "file/upload", method = {RequestMethod.POST, RequestMethod.PUT})
     public @ResponseBody Map<String, String> fileUpload(

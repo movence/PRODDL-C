@@ -28,7 +28,9 @@ import pdl.cloud.management.UserService;
 import pdl.cloud.model.FileInfo;
 import pdl.cloud.model.JobDetail;
 import pdl.cloud.model.User;
-import pdl.common.*;
+import pdl.utils.QueryTool;
+import pdl.utils.StaticValues;
+import pdl.utils.ToolPool;
 import pdl.web.service.common.FileService;
 
 import javax.servlet.http.HttpServletResponse;
@@ -321,7 +323,7 @@ public class JobRequestHandler {
             boolean uploadable = true;
 
             //upload tools only if the user is admin
-            if(fileType != null &&  !fileType.isEmpty() && fileType.equals("tool")) {
+            if(fileType != null &&  !fileType.isEmpty() && fileType.startsWith("tool:")) {
                 uploadable = this.isUserAdmin(userName);
                 if(!uploadable) {
                     throw new Exception("only admin is allowed to upload a tool.");

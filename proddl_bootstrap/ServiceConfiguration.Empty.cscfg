@@ -29,7 +29,7 @@
       <Setting name="Microsoft.WindowsAzure.Plugins.RemoteAccess.Enabled" value="true" />
       <Setting name="Microsoft.WindowsAzure.Plugins.RemoteAccess.AccountUsername" value="hkim" />
       <Setting name="Microsoft.WindowsAzure.Plugins.RemoteAccess.AccountEncryptedPassword" value="MIIBnQYJKoZIhvcNAQcDoIIBjjCCAYoCAQAxggFOMIIBSgIBADAyMB4xHDAaBgNVBAMME1dpbmRvd3MgQXp1cmUgVG9vbHMCEFMDL1evM0yqRCxrPO5L7ikwDQYJKoZIhvcNAQEBBQAEggEAkJUOFYj7FKQZPJtr2vU2mfAbuT0bu+PK/5RxUCeAig15PfUIA4om3ICStl3W7dJ2bssKCvNKVwc+d5rSAhMmPVYp2pe2hqWSUc8tOx81TnE8uMxzCDdrvJOTsAk+G8Xvsb1RAQJEYVnHzgpDRgkjoe0PyWtNm8Mbz9Asrm+PAV9qFqdSALwlYR6S1pxZOKmhyPJF8aRyu4j/YclrYttuhgn2pbfQpgGe1B7XyNxOk95LU7OKPs2OBGJcYbpGNLj8ypMmTHou5v9EZz3TUPou9cIpTNzsvpRRf9UCqU41aCpygTIJFpc1j8Fa9c956uVS4gvcqI2gGoGhctveL6a1tTAzBgkqhkiG9w0BBwEwFAYIKoZIhvcNAwcECBGCWFvHBfRKgBA3r3q58fR+fSankKK0INOS" />
-      <Setting name="Microsoft.WindowsAzure.Plugins.RemoteAccess.AccountExpiration" value="2013-12-31T23:59:59.0000000-05:00" />
+      <Setting name="Microsoft.WindowsAzure.Plugins.RemoteAccess.AccountExpiration" value="2014-12-31T23:59:59.0000000-05:00" />
       <Setting name="DeploymentName" value="" />
       <Setting name="ConfigurationFinalized" value="0" />
     </ConfigurationSettings>
@@ -45,7 +45,7 @@
       <Setting name="Microsoft.WindowsAzure.Plugins.RemoteAccess.Enabled" value="true" />
       <Setting name="Microsoft.WindowsAzure.Plugins.RemoteAccess.AccountUsername" value="hkim" />
       <Setting name="Microsoft.WindowsAzure.Plugins.RemoteAccess.AccountEncryptedPassword" value="MIIBnQYJKoZIhvcNAQcDoIIBjjCCAYoCAQAxggFOMIIBSgIBADAyMB4xHDAaBgNVBAMME1dpbmRvd3MgQXp1cmUgVG9vbHMCEFMDL1evM0yqRCxrPO5L7ikwDQYJKoZIhvcNAQEBBQAEggEAkJUOFYj7FKQZPJtr2vU2mfAbuT0bu+PK/5RxUCeAig15PfUIA4om3ICStl3W7dJ2bssKCvNKVwc+d5rSAhMmPVYp2pe2hqWSUc8tOx81TnE8uMxzCDdrvJOTsAk+G8Xvsb1RAQJEYVnHzgpDRgkjoe0PyWtNm8Mbz9Asrm+PAV9qFqdSALwlYR6S1pxZOKmhyPJF8aRyu4j/YclrYttuhgn2pbfQpgGe1B7XyNxOk95LU7OKPs2OBGJcYbpGNLj8ypMmTHou5v9EZz3TUPou9cIpTNzsvpRRf9UCqU41aCpygTIJFpc1j8Fa9c956uVS4gvcqI2gGoGhctveL6a1tTAzBgkqhkiG9w0BBwEwFAYIKoZIhvcNAwcECBGCWFvHBfRKgBA3r3q58fR+fSankKK0INOS" />
-      <Setting name="Microsoft.WindowsAzure.Plugins.RemoteAccess.AccountExpiration" value="2013-12-31T23:59:59.0000000-05:00" />
+      <Setting name="Microsoft.WindowsAzure.Plugins.RemoteAccess.AccountExpiration" value="2014-12-31T23:59:59.0000000-05:00" />
       <Setting name="Microsoft.WindowsAzure.Plugins.RemoteForwarder.Enabled" value="true" />
       <Setting name="VHDSize" value="" />
       <Setting name="DeploymentName" value="" />

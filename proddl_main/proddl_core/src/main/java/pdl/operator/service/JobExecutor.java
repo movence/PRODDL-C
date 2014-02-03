@@ -27,10 +27,10 @@ import pdl.cloud.management.CloudInstanceManager;
 import pdl.cloud.management.JobManager;
 import pdl.cloud.model.FileInfo;
 import pdl.cloud.model.JobDetail;
-import pdl.common.Configuration;
-import pdl.common.FileTool;
-import pdl.common.StaticValues;
-import pdl.common.ToolPool;
+import pdl.utils.Configuration;
+import pdl.utils.FileTool;
+import pdl.utils.StaticValues;
+import pdl.utils.ToolPool;
 import pdl.operator.app.CctoolsOperator;
 
 import java.io.File;
